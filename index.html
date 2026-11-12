@@ -1,3 +1,19 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1D5BBF">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sổ từ TOEIC">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
 <title>Sổ từ TOEIC 45 chủ đề</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,6 +187,10 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .player{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
 .player audio{width:100%;height:40px;display:block}
 .player .seg button{padding:5px 11px;font-size:13px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tab .short,.seg .short{display:none}
+.agroup{display:flex;flex-direction:column;gap:12px}
+.agroup .player{position:sticky;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:4;box-shadow:0 6px 16px -10px rgb(0 0 0 / .35)}
 .empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:22px;color:var(--muted);text-align:center}
 @media (max-width:860px){
   .app{grid-template-columns:minmax(0,1fr)}
@@ -182,6 +202,39 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   #sub.seg{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
   #sub.seg button,#dir.seg button{padding:7px 6px;font-size:13px;line-height:1.3}
   #dir.seg{display:grid;grid-template-columns:repeat(2,1fr);width:100%}
+  /* điện thoại: thanh 4 phần ở đáy màn hình */
+  .main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .wrap{gap:16px}
+  .mobile-pick{flex-direction:row;align-items:center;gap:8px}
+  .mobile-pick select{flex:1;min-width:0;font-size:16px;font-weight:600;height:44px}
+  .nav-btn{width:44px;height:44px}
+  .nav-btn svg{width:20px;height:20px}
+  .thead h1{font-size:26px}
+  .thead .en{display:block;font-size:14px;margin-top:2px}
+  .meta{font-size:12.5px;gap:4px 10px}
+  .tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:20;margin:0;gap:0;justify-content:space-around;border-bottom:0;border-top:1px solid var(--line);background:var(--surface);padding:0 max(6px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px,env(safe-area-inset-left,0px));overflow:visible;box-shadow:0 -6px 18px -12px rgb(0 0 0 / .3)}
+  .tab{flex:1 1 0;flex-direction:column;gap:3px;padding:8px 2px 9px;margin:0;border-bottom:0;border-top:2.5px solid transparent;font-size:12px;min-height:58px;justify-content:center}
+  .tab[aria-selected="true"]{border-top-color:var(--accent)}
+  .tab .k{width:24px;height:24px;font-size:12.5px}
+  .tab .full{display:none}
+  .tab .short,.seg .short{display:inline}
+  .seg .full{display:none}
+  .agroup .player{top:calc(env(safe-area-inset-top,0px) + 6px);padding:8px 10px;gap:6px}
+  .player audio{height:36px}
+  .player .seg button{padding:6px 9px}
+  .btn{min-height:40px;padding:8px 12px}
+  .icon-btn{width:40px;height:40px}
+  .audio-h{align-items:flex-start;flex-direction:column;gap:6px}
+  .audio-h .row{gap:6px}
+  .gline{padding:12px 14px;font-size:16px}
+  .gin,.gtr,.tcard textarea,.search,.field{font-size:16px}
+  .gin{width:8.5em}
+  .tcard{padding:14px}
+  .vcard{padding:12px 14px 12px 22px}
+  .qprompt{font-size:22px}
+  .opt{padding:12px 14px;min-height:48px}
+  .card{padding:16px}
+  .vgrid{gap:10px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -195,8 +248,10 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   <main class="main">
     <div class="wrap">
       <div class="mobile-pick">
-        <label class="eyebrow" for="tselect">Chủ đề</label>
+        <button class="icon-btn nav-btn" id="tprev" aria-label="Chủ đề trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <label class="sr" for="tselect">Chủ đề</label>
         <select id="tselect"></select>
+        <button class="icon-btn nav-btn" id="tnext" aria-label="Chủ đề sau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
       </div>
       <header class="thead" id="thead"></header>
       <nav class="tabs" role="tablist" id="tabs"></nav>
@@ -271,10 +326,10 @@ function srcLabel(src){
 
 // ---------- state & routing ----------
 const PARTS = [
-  { k:1, name:'Từ vựng' },
-  { k:2, name:'Họ từ & đồng nghĩa' },
-  { k:3, name:'Dịch câu' },
-  { k:4, name:'Nghe & điền từ' }
+  { k:1, name:'Từ vựng', short:'Từ vựng' },
+  { k:2, name:'Họ từ & đồng nghĩa', short:'Họ từ' },
+  { k:3, name:'Dịch câu', short:'Dịch' },
+  { k:4, name:'Nghe & điền từ', short:'Nghe' }
 ];
 let S = { t:1, p:1, sub:'list' };
 function readHash(){
@@ -283,10 +338,12 @@ function readHash(){
   return false;
 }
 function go(t, p){
+  const moved = t !== S.t || p !== S.p;
   S.t = t; S.p = p; if (p === 1) S.sub = 'list';
   const h = `#t${t}-p${p}`;
   if (location.hash !== h) { try { history.replaceState(null,'',h); } catch(e){ location.hash = h; } }
   render();
+  if (moved) { try { window.scrollTo({ top: 0 }); } catch(e){ window.scrollTo(0,0); } }
 }
 window.addEventListener('hashchange', () => { if (readHash()) render(); });
 
@@ -314,6 +371,8 @@ function renderSide(){
 }
 $('#search').addEventListener('input', renderSide);
 $('#tselect').addEventListener('change', e => go(+e.target.value, 1));
+$('#tprev').addEventListener('click', () => { if (S.t > 1) go(S.t - 1, S.p); });
+$('#tnext').addEventListener('click', () => { if (S.t < TOPICS.length) go(S.t + 1, S.p); });
 
 // ---------- header & tabs ----------
 function renderHead(t){
@@ -328,7 +387,7 @@ function renderHead(t){
   PARTS.forEach(p => {
     const b = document.createElement('button');
     b.className = 'tab'; b.setAttribute('role','tab'); b.setAttribute('aria-selected', String(p.k===S.p));
-    b.innerHTML = `<span class="k">${p.k}</span>${p.name}`;
+    b.innerHTML = `<span class="k">${p.k}</span><span class="full">${p.name}</span><span class="short">${p.short}</span>`;
     b.addEventListener('click', () => go(S.t, p.k));
     tabs.appendChild(b);
   });
@@ -338,7 +397,7 @@ function renderHead(t){
 function part1(t, el){
   const e = enr(t.id);
   el.innerHTML = `<div class="row between"><div class="seg" id="sub">
-      <button data-s="list">Danh sách từ</button><button data-s="quiz">Trắc nghiệm</button><button data-s="write">Nhìn nghĩa, viết từ</button></div>
+      <button data-s="list">Danh sách từ</button><button data-s="quiz">Trắc nghiệm</button><button data-s="write"><span class="full">Nhìn nghĩa, viết từ</span><span class="short">Viết từ</span></button></div>
       ${!e?'<span class="hint">Câu ví dụ cho chủ đề này đang được bổ sung.</span>':''}</div><div id="subp" class="panel"></div>`;
   el.querySelectorAll('#sub button').forEach(b => {
     b.setAttribute('aria-pressed', String(b.dataset.s===S.sub));
@@ -573,11 +632,11 @@ function part4(t, el){
     });
     groups.forEach((g,gi) => {
       const has = e && e.gap && e.gap[si] && g.lines.some(l => e.gap[si][l.bi]);
-      h += `<div class="audio-h"><h3>${g.head?esc(g.head.label):'Bài nghe'} <span>${g.head?srcLabel(g.head.src):''}</span></h3>
+      h += `<section class="agroup"><div class="audio-h"><h3>${g.head?esc(g.head.label):'Bài nghe'} <span>${g.head?srcLabel(g.head.src):''}</span></h3>
         <div class="row">${has?`<button class="btn" data-chk="${si}-${gi}">Đối chiếu gợi ý</button><button class="btn" data-vi="${si}-${gi}">Hiện bản dịch</button>`:''}<button class="btn" data-trt="${si}-${gi}">${store.get('trhide:'+t.id+'-'+si+'-'+gi,false)?'Hiện ô tự dịch':'Ẩn ô tự dịch'}</button><button class="btn ghost" data-clr="${si}-${gi}">Xóa bài điền</button></div></div>`;
       const an = g.head ? (g.head.label.match(/\d+/)||[])[0] : null, file = an && AUD[t.id] && AUD[t.id][an];
       if (file){ const aid = `au-${t.id}-${si}-${gi}`, rate = store.get('rate', 1);
-        h += `<div class="player"><audio id="${aid}" src="${file}" preload="metadata" controls></audio><div class="row between"><div class="seg" data-speed="${aid}">${[0.75,0.9,1,1.25].map(r=>`<button data-r="${r}" aria-pressed="${r===rate}">${r}×</button>`).join('')}</div><button class="btn" data-back="${aid}">Tua lại 3 giây</button></div></div>`; }
+        h += `<div class="player"><audio id="${aid}" src="${file}" preload="metadata" controls></audio><div class="row between"><div class="seg" data-speed="${aid}">${[0.75,0.9,1,1.25].map(r=>`<button data-r="${r}" aria-pressed="${r===rate}">${r}×</button>`).join('')}</div><button class="btn" data-back="${aid}" aria-label="Tua lại 3 giây">↺ 3 giây</button></div></div>`; }
       g.lines.forEach(({b,bi}) => {
         let gIdx = 0;
         const html = esc(b.text).replace(BLANK, () => { const id = `g-${t.id}-${si}-${bi}-${gIdx++}`; return `<input class="gin" id="${id}" data-key="${id}" data-grp="${si}-${gi}" data-bi="${bi}" data-gi="${gIdx-1}" value="${esc(store.get(id,''))}" aria-label="Chỗ trống ${gIdx}" autocapitalize="off" spellcheck="false">`; });
@@ -587,6 +646,7 @@ function part4(t, el){
           <div class="gtr-wrap" data-trgrp="${si}-${gi}"${store.get('trhide:'+t.id+'-'+si+'-'+gi,false)?' hidden':''}><textarea class="gtr" id="${tk}" data-key="${tk}" rows="1" placeholder="Bạn tự dịch câu này…">${esc(store.get(tk,''))}</textarea></div>
           ${ref?`<div class="gvi" data-vigrp="${si}-${gi}" hidden><small>Bản dịch mẫu</small>${esc(ref[1])}</div>`:''}</div>`;
       });
+      h += `</section>`;
     });
   });
   el.innerHTML = h;
@@ -645,4 +705,12 @@ const _render = render;
 render = function(){ _render(); store.set('last', { t:S.t, p:S.p }); };
 try { window.speechSynthesis && window.speechSynthesis.getVoices(); } catch(e){}
 render();
+// Chỉ bản web riêng (có manifest) mới đăng ký service worker để mở được khi mất mạng.
+try {
+  if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && location.protocol === 'https:')
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+} catch(e){}
 </script>
+
+</body>
+</html>

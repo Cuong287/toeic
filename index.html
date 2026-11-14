@@ -3092,6 +3092,109 @@ const RecorderManager = (function() {
     `;
   }
 
+  
+  // ---------- IndexedDB Persistence & Export for Voice Recordings ----------
+  function openDB() {
+    return new Promise((resolve) => {
+      if (!window.indexedDB) return resolve(null);
+      const req = indexedDB.open('toeic_voice_db', 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('recordings')) {
+          db.createObjectStore('recordings', { keyPath: 'recId' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function saveToIndexedDB(item) {
+    try {
+      const db = await openDB();
+      if (!db) return;
+      const tx = db.transaction('recordings', 'readwrite');
+      tx.objectStore('recordings').put({
+        recId: item.recId,
+        fileName: item.fileName,
+        targetText: item.targetText,
+        duration: item.duration,
+        blob: item.blob,
+        assessment: item.assessment,
+        createdAt: item.createdAt
+      });
+    } catch(e) { console.warn('Lỗi lưu IndexedDB:', e); }
+  }
+
+  async function getAllRecordings() {
+    try {
+      const db = await openDB();
+      if (!db) return [];
+      return new Promise((resolve) => {
+        const tx = db.transaction('recordings', 'readonly');
+        const req = tx.objectStore('recordings').getAll();
+        req.onsuccess = () => {
+          const list = req.result || [];
+          list.sort((a, b) => b.createdAt - a.createdAt);
+          resolve(list);
+        };
+        req.onerror = () => resolve([]);
+      });
+    } catch(e) { return []; }
+  }
+
+  async function deleteRecording(recId) {
+    try {
+      const db = await openDB();
+      if (!db) return;
+      const tx = db.transaction('recordings', 'readwrite');
+      tx.objectStore('recordings').delete(recId);
+      cache.delete(recId);
+    } catch(e) {}
+  }
+
+  async function downloadAllRecordings() {
+    const list = await getAllRecordings();
+    if (!list.length) {
+      alert('Bạn chưa có bản ghi âm nào để tải về!');
+      return;
+    }
+    let count = 0;
+    for (const item of list) {
+      if (item.blob) {
+        const url = URL.createObjectURL(item.blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = item.fileName || ('TOEIC_' + item.recId + '.webm');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        count++;
+        await new Promise(r => setTimeout(r, 250));
+      }
+    }
+    alert(`Đã kích hoạt tải về ${count} file ghi âm vào thư mục Downloads của bạn!`);
+  }
+
+  // Khôi phục cache khi khởi động
+  (async function restoreCachedRecordings() {
+    const list = await getAllRecordings();
+    list.forEach(item => {
+      if (item.blob && !cache.has(item.recId)) {
+        cache.set(item.recId, {
+          recId: item.recId,
+          audioUrl: URL.createObjectURL(item.blob),
+          duration: item.duration,
+          assessment: item.assessment,
+          fileName: item.fileName,
+          targetText: item.targetText,
+          blob: item.blob,
+          createdAt: item.createdAt
+        });
+      }
+    });
+  })();
+
   function playAudio(recId, playBtn) {
     const data = cache.get(recId);
     if (!data || !data.audioUrl) return;
@@ -3369,6 +3472,10 @@ const RecorderManager = (function() {
   });
 })();
 
+</script>
+
+
+<script>
 // ---------- Theme Toggle (Light / Dark Mode) ----------
 (function initThemeToggle() {
   const savedTheme = localStorage.getItem('toeic45_theme');
@@ -3408,7 +3515,6 @@ const RecorderManager = (function() {
     }
   });
 })();
-
 </script>
 
 </body>

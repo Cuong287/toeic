@@ -5,131 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1D5BBF">
 <style>body{margin:0}[hidden]{display:none!important}
-/* Quick selection popover for Speak & Translate - Siêu nét, nổi bật */
+/* Quick selection popover for Speak & Translate - Siêu nét, nổi bật trên mọi nền */
 .sel-popover {
   position: absolute;
   z-index: 999999;
-  background: #FFFFFF !important;
-  color: #0F172A !important;
-  border: 2px solid #1D5BBF !important;
-  border-radius: 12px;
-  padding: 8px 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-family: var(--f-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 13.5px;
-  line-height: 1.4;
-  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  transform: translate(-50%, -100%);
-  margin-top: -12px;
-  max-width: 340px;
-  min-width: 190px;
-  pointer-events: auto;
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+  border: 1.5px solid #38BDF8 !important;
+  border-radius: 12px !important;
+  padding: 8px 10px !important;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.55), 0 3px 10px rgba(0, 0, 0, 0.3) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  font-family: var(--f-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13.5px !important;
+  line-height: 1.4 !important;
+  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform: translate(-50%, -100%) !important;
+  margin-top: -10px !important;
+  max-width: 320px !important;
+  min-width: 190px !important;
+  pointer-events: auto !important;
 }
 .sel-popover::after {
   content: '';
   position: absolute;
-  bottom: -8px;
+  bottom: -7px;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 8px 8px 0;
+  border-width: 7px 7px 0;
   border-style: solid;
-  border-color: #1D5BBF transparent transparent;
+  border-color: #38BDF8 transparent transparent;
   display: block;
   width: 0;
 }
 .sel-popover.below {
-  transform: translate(-50%, 0);
-  margin-top: 12px;
+  transform: translate(-50%, 0) !important;
+  margin-top: 10px !important;
 }
 .sel-popover.below::after {
   bottom: auto;
-  top: -8px;
-  border-width: 0 8px 8px;
-  border-color: transparent transparent #1D5BBF;
+  top: -7px;
+  border-width: 0 7px 7px;
+  border-color: transparent transparent #38BDF8;
 }
 .sel-btn-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
 .sel-btn {
-  border: none;
-  border-radius: 8px;
-  padding: 7px 14px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  font-weight: 700;
-  transition: all 0.15s;
-  white-space: nowrap;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 7px 14px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  transition: all 0.15s !important;
+  white-space: nowrap !important;
 }
 .sel-btn.btn-speak {
-  background: #1D5BBF !important;
+  background: #2563EB !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 6px rgba(29, 91, 191, 0.35);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45) !important;
 }
 .sel-btn.btn-speak:hover {
-  background: #144491 !important;
-  transform: translateY(-1px);
+  background: #1D4ED8 !important;
+  transform: translateY(-1px) !important;
 }
 .sel-btn.btn-trans {
   background: #16A34A !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.45) !important;
 }
 .sel-btn.btn-trans:hover {
   background: #15803D !important;
-  transform: translateY(-1px);
+  transform: translateY(-1px) !important;
 }
 .sel-btn.btn-close {
-  background: #F1F5F9;
-  color: #64748B;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 800;
-  border-radius: 50%;
-  margin-left: auto;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #CBD5E1 !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  border-radius: 50% !important;
+  margin-left: auto !important;
 }
 .sel-btn.btn-close:hover {
-  background: #FEE2E2;
-  color: #DC2626;
+  background: rgba(239, 68, 68, 0.35) !important;
+  color: #F87171 !important;
 }
 .sel-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.96) !important;
 }
 .sel-btn svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
 }
 .sel-result {
-  margin-top: 2px;
-  padding: 8px 12px;
-  background: #F8FAFC;
-  border-radius: 8px;
-  border: 1px solid #CBD5E1;
-  font-size: 13.5px;
-  color: #0F172A;
-  word-break: break-word;
-  max-height: 150px;
-  overflow-y: auto;
-  line-height: 1.5;
+  margin-top: 2px !important;
+  padding: 8px 12px !important;
+  background: #0F172A !important;
+  border-radius: 8px !important;
+  border: 1px solid #334155 !important;
+  font-size: 13.5px !important;
+  color: #F1F5F9 !important;
+  word-break: break-word !important;
+  max-height: 150px !important;
+  overflow-y: auto !important;
+  line-height: 1.5 !important;
 }
 @keyframes popIn {
   from { opacity: 0; transform: translate(-50%, -90%) scale(0.92); }
   to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
-}
-}
 }
 </style>
 <link rel="manifest" href="manifest.webmanifest">
@@ -1972,12 +1970,8 @@ async function renderLeaderboard(box) {
 
   try {
     const lbRef = firestoreModules.collection(fbDb, 'leaderboard');
-    const q = firestoreModules.query(
-      lbRef,
-      firestoreModules.orderBy('totalBest', 'desc'),
-      firestoreModules.limit(50)
-    );
-    const snap = await firestoreModules.getDocs(q);
+    // Truy vấn trực tiếp leaderboard, không cần Firestore Index
+    const snap = await firestoreModules.getDocs(lbRef);
 
     if (snap.empty) {
       cBox.innerHTML = `
@@ -2491,54 +2485,53 @@ render();
 
 try {
   if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && location.protocol === 'https:')
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').then(reg => { reg.update(); }).catch(()=>{}));
 } catch(e){}
 
 // ---------- Quick Selection Tooltip (Speak & Translate) ----------
 (function initSelectionTooltip() {
   let popover = null;
-  let activeText = '';
+  let activeTarget = '';
 
   function removePopover() {
     if (popover && popover.parentNode) {
       popover.parentNode.removeChild(popover);
     }
     popover = null;
-    activeText = '';
+    activeTarget = '';
   }
 
   function handleSelection() {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) {
-      return;
-    }
-    const text = sel.toString().trim();
-    if (!text || text.length > 150) {
+    if (!sel || sel.isCollapsed) return;
+
+    const rawText = sel.toString().trim();
+    if (!rawText || rawText.length > 150) {
       removePopover();
       return;
     }
 
-    if (popover && popover.contains(sel.anchorNode)) {
-      return;
-    }
+    if (popover && popover.contains(sel.anchorNode)) return;
 
-    activeText = text;
     let range;
     try {
       range = sel.getRangeAt(0);
     } catch(e) { return; }
 
     const rect = range.getBoundingClientRect();
-    if (!rect || (rect.width === 0 && rect.height === 0)) {
-      return;
-    }
+    if (!rect || (rect.width === 0 && rect.height === 0)) return;
 
+    const targetWord = cleanWord(rawText);
+    if (!targetWord) return;
+
+    // Đóng popover cũ
     removePopover();
+    activeTarget = targetWord;
 
     popover = document.createElement('div');
     popover.className = 'sel-popover';
+    popover.dataset.word = targetWord;
 
-    const cleanT = cleanWord(activeText);
     popover.innerHTML = `
       <div class="sel-btn-bar">
         <button class="sel-btn btn-speak" id="sel-speak" title="Nghe phát âm">
@@ -2579,7 +2572,7 @@ try {
       e.stopPropagation();
       const txtSpan = speakBtn.querySelector('span');
       if (txtSpan) txtSpan.textContent = 'Đang đọc...';
-      speak(cleanT, () => {
+      speak(targetWord, () => {
         if (txtSpan) txtSpan.textContent = 'Nghe';
       });
       setTimeout(() => {
@@ -2591,40 +2584,63 @@ try {
       e.stopPropagation();
       const resEl = popover.querySelector('#sel-res');
       resEl.style.display = 'block';
-      resEl.innerHTML = '<span style="color:#64748B">Đang dịch...</span>';
+      resEl.innerHTML = '<span style="color:#94A3B8">Đang dịch...</span>';
 
-      const normT = norm(cleanT);
+      const normT = norm(targetWord);
       const allVocab = vocabPool();
 
       // 1. Khớp từ điển bài học nếu đúng chính xác từ đó
       const exactHit = allVocab.find(v => norm(cleanWord(v.w)) === normT);
       if (exactHit) {
-        resEl.innerHTML = `<div><b>${esc(exactHit.w)}</b> ${exactHit.pos ? `<span style="color:#64748B">(${esc(exactHit.pos)})</span>` : ''}: <b style="color:#16A34A">${esc(exactHit.vi)}</b></div>`;
+        resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(exactHit.w)}</b> ${exactHit.pos ? `<span style="color:#94A3B8">(${esc(exactHit.pos)})</span>` : ''}: <b style="color:#4ADE80">${esc(exactHit.vi)}</b></div>`;
         return;
       }
 
-      // 2. Tra qua MyMemory Translation API (ổn định, không bị chặn CAPTCHA)
+      // 2. Tra qua Google Translate public API (nhanh <100ms, rất chính xác cho từ & cụm từ)
       try {
-        const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(cleanT) + '&langpair=en|vi';
-        const r = await fetch(url);
-        if (r.ok) {
-          const data = await r.json();
-          if (data && data.responseData && data.responseData.translatedText) {
-            const translated = data.responseData.translatedText.trim();
-            resEl.innerHTML = `<div><b>${esc(cleanT)}</b>: <b style="color:#16A34A">${esc(translated)}</b></div>`;
-            return;
+        const gUrl = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(targetWord);
+        const gr = await fetch(gUrl);
+        if (gr.ok) {
+          const gd = await gr.json();
+          if (gd && gd[0] && gd[0][0] && gd[0][0][0]) {
+            const trans = gd[0].map(x => x[0]).join('').trim();
+            if (trans) {
+              resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b>: <b style="color:#4ADE80">${esc(trans)}</b></div>`;
+              return;
+            }
+          }
+        }
+      } catch(e) {}
+
+      // 3. Fallback: Tra qua MyMemory Translation API
+      try {
+        const mUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(targetWord) + '&langpair=en|vi';
+        const mr = await fetch(mUrl);
+        if (mr.ok) {
+          const md = await mr.json();
+          if (md && md.responseData && md.responseData.translatedText) {
+            const translated = md.responseData.translatedText.trim();
+            if (translated && !translated.includes('NO QUERY SPECIFIED')) {
+              resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b>: <b style="color:#4ADE80">${esc(translated)}</b></div>`;
+              return;
+            }
           }
         }
       } catch (err) {}
 
-      // 3. Fallback: Tra từ gốc trong bài học
-      const prefixHit = allVocab.find(v => normT.length >= 4 && normT.startsWith(norm(cleanWord(v.w))));
-      if (prefixHit) {
-        resEl.innerHTML = `<div><b>${esc(cleanT)}</b> (từ gốc <i>${esc(prefixHit.w)}</i>): <b style="color:#16A34A">${esc(prefixHit.vi)}</b></div>`;
-        return;
+      // 4. Fallback: Tra từ gốc trong bài học
+      if (normT.length >= 4) {
+        const prefixHit = allVocab.find(v => {
+          const cw = norm(cleanWord(v.w));
+          return cw.length >= 4 && (normT.startsWith(cw) || cw.startsWith(normT));
+        });
+        if (prefixHit) {
+          resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b> (gốc <i>${esc(prefixHit.w)}</i>): <b style="color:#4ADE80">${esc(prefixHit.vi)}</b></div>`;
+          return;
+        }
       }
 
-      resEl.innerHTML = `<div>Không tìm thấy bản dịch cho "${esc(cleanT)}".</div>`;
+      resEl.innerHTML = `<div>Không tìm thấy bản dịch cho "${esc(targetWord)}".</div>`;
     };
 
     popover.querySelector('#sel-close').onclick = (e) => {
@@ -2649,7 +2665,6 @@ try {
     }
   });
 })();
-
 </script>
 
 </body>

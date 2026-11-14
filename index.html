@@ -635,46 +635,53 @@ function highlighter(t){
   const re = new RegExp('\\b(' + parts.join('|') + ')\\b', 'gi');
   return s => esc(s).replace(re, m => '<mark>' + m + '</mark>');
 }
+let ttsAudioPlayer = null;
 window._curUtterance = null;
 
 function speak(text, onDone){
   if (!text || !String(text).trim()) { if (onDone) onDone(); return; }
   const clean = cleanWord(text);
 
+  // 1. Ưu tiên phát bằng Audio MP3 chuẩn US bản ngữ (Youdao Voice - không bị chặn Referer, không cần cài giọng máy tính)
+  try {
+    if (!ttsAudioPlayer) {
+      ttsAudioPlayer = new Audio();
+    }
+    ttsAudioPlayer.pause();
+    ttsAudioPlayer.src = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(clean) + '&type=2';
+
+    ttsAudioPlayer.onended = () => { if (onDone) onDone(); };
+    ttsAudioPlayer.onerror = (e) => {
+      console.warn('Audio MP3 error, fallback to SpeechSynthesis:', e);
+      fallbackBrowserSpeech(clean, onDone);
+    };
+
+    const p = ttsAudioPlayer.play();
+    if (p !== undefined) {
+      p.catch(() => {
+        fallbackBrowserSpeech(clean, onDone);
+      });
+      return;
+    }
+  } catch(e) {
+    fallbackBrowserSpeech(clean, onDone);
+  }
+}
+
+function fallbackBrowserSpeech(clean, onDone) {
   try {
     const s = window.speechSynthesis;
     if (!s) { if (onDone) onDone(); return; }
-
     s.cancel();
     if (s.paused) s.resume();
-
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = 'en-US';
     u.rate = 0.95;
-    u.volume = 1;
     window._curUtterance = u;
-
-    const voices = s.getVoices();
-    if (voices && voices.length) {
-      const best = voices.find(v => /Google US English|Microsoft Jenny|Microsoft Guy|Microsoft Zira|en-US/i.test(v.name || v.lang))
-                || voices.find(v => /en[-_]US/i.test(v.lang))
-                || voices.find(v => /^en/i.test(v.lang));
-      if (best) u.voice = best;
-    }
-
-    u.onend = () => {
-      window._curUtterance = null;
-      if (onDone) onDone();
-    };
-    u.onerror = (e) => {
-      console.warn('SpeechSynthesis error:', e);
-      window._curUtterance = null;
-      if (onDone) onDone();
-    };
-
+    u.onend = () => { window._curUtterance = null; if (onDone) onDone(); };
+    u.onerror = () => { window._curUtterance = null; if (onDone) onDone(); };
     s.speak(u);
-  } catch(e) {
-    console.warn('Speech exception:', e);
+  } catch(err) {
     if (onDone) onDone();
   }
 }
@@ -2589,31 +2596,31 @@ try {
       const normT = norm(cleanT);
       const allVocab = vocabPool();
 
-      // 1. Chỉ nhận từ điển nội bộ nếu KHỚP CHÍNH XÁC 100% từ đó
+      // 1. Khớp từ điển bài học nếu đúng chính xác từ đó
       const exactHit = allVocab.find(v => norm(cleanWord(v.w)) === normT);
       if (exactHit) {
         resEl.innerHTML = `<div><b>${esc(exactHit.w)}</b> ${exactHit.pos ? `<span style="color:#64748B">(${esc(exactHit.pos)})</span>` : ''}: <b style="color:#16A34A">${esc(exactHit.vi)}</b></div>`;
         return;
       }
 
-      // 2. Tra qua Google Translate API (dịch chuẩn xác Cancellation -> sự hủy bỏ)
+      // 2. Tra qua MyMemory Translation API (ổn định, không bị chặn CAPTCHA)
       try {
-        const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(cleanT);
+        const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(cleanT) + '&langpair=en|vi';
         const r = await fetch(url);
         if (r.ok) {
           const data = await r.json();
-          if (data && data[0]) {
-            const translated = data[0].map(x => x[0]).filter(Boolean).join('');
+          if (data && data.responseData && data.responseData.translatedText) {
+            const translated = data.responseData.translatedText.trim();
             resEl.innerHTML = `<div><b>${esc(cleanT)}</b>: <b style="color:#16A34A">${esc(translated)}</b></div>`;
             return;
           }
         }
       } catch (err) {}
 
-      // 3. Fallback: Nếu không có mạng, tìm từ gốc (ví dụ Cancellation có gốc Cancel)
+      // 3. Fallback: Tra từ gốc trong bài học
       const prefixHit = allVocab.find(v => normT.length >= 4 && normT.startsWith(norm(cleanWord(v.w))));
       if (prefixHit) {
-        resEl.innerHTML = `<div><b>${esc(cleanT)}</b> (gốc từ <i>${esc(prefixHit.w)}</i>): <b style="color:#16A34A">${esc(prefixHit.vi)}</b></div>`;
+        resEl.innerHTML = `<div><b>${esc(cleanT)}</b> (từ gốc <i>${esc(prefixHit.w)}</i>): <b style="color:#16A34A">${esc(prefixHit.vi)}</b></div>`;
         return;
       }
 

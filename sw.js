@@ -1,5 +1,5 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v4';
+const V = 'so-tu-toeic-v5';
 const CORE = [
   './',
   './index.html',
@@ -31,8 +31,15 @@ self.addEventListener('fetch', e => {
   if (r.method !== 'GET') return;
   const url = new URL(r.url);
 
-  // 1. Audio & TTS: để trình duyệt tự xử lý (tua, tải từng phần)
-  if (url.pathname.endsWith('.mp3') || url.pathname.includes('translate_tts')) return;
+  // 1. Audio & TTS & API dịch: để trình duyệt tự xử lý trực tiếp từ mạng
+  if (
+    url.pathname.endsWith('.mp3') ||
+    url.hostname.includes('dict.youdao.com') ||
+    url.hostname.includes('mymemory.translated.net') ||
+    url.pathname.includes('translate_tts')
+  ) {
+    return;
+  }
 
   // 2. Network-only cho các API của Firebase Auth, Firestore và Cloud Functions
   if (

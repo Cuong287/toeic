@@ -464,6 +464,23 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .qprog{height:4px;background:var(--sunk);border-radius:4px;overflow:hidden}
 .qprog i{display:block;height:100%;background:var(--accent);transition:width .25s}
+
+.qdesc-vi {
+  margin-top: 10px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: var(--sunk);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  display: block;
+}
+.qdesc-vi i {
+  font-style: italic;
+}
+
 .qprompt{font-size:24px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 .qprompt small{display:block;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
 .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px}
@@ -1662,6 +1679,16 @@ function highlightOne(s, w){
 }
 
 // ---------- Quiz: Trắc nghiệm ----------
+
+function getWordDescVi(t, v) {
+  if (!t || !v) return '';
+  const e = enr(t.id);
+  if (e && e.vocab && e.vocab[v.w] && e.vocab[v.w][2]) {
+    return e.vocab[v.w][2];
+  }
+  return 'Từ vựng chủ đề "' + t.title.split(' - ')[0] + '" - dùng với nghĩa: ' + v.vi + '.';
+}
+
 function quiz(t, box){
   const pool = t.vocab.filter(v => v.vi);
   if (pool.length < 2) { box.innerHTML = '<div class="empty">Chủ đề này chưa đủ từ có nghĩa để làm trắc nghiệm.</div>'; return; }
@@ -1708,10 +1735,11 @@ function quiz(t, box){
       renderSide(); return;
     }
     const q = qs[i];
+    const viDesc = getWordDescVi(t, q.v);
     const prompt = dir === 'en' ? `${esc(q.v.w)}<small>${q.v.pos?esc(q.v.pos)+' · ':''}chọn nghĩa tiếng Việt đúng</small>` : `${esc(shortVi(q.v.vi))}<small>${q.v.pos?esc(q.v.pos)+' · ':''}chọn từ tiếng Anh đúng</small>`;
     box.innerHTML = `<div class="row between"><div class="seg" id="dir"><button data-d="en">Anh → Việt</button><button data-d="vi">Việt → Anh</button></div><span class="hint">Câu ${i+1}/${qs.length} · đúng ${score}</span></div>
       <div class="card"><div class="qprog"><i style="width:${i/qs.length*100}%"></i></div>
-      <div class="qprompt">${prompt}</div>
+      <div class="qprompt">${prompt}${viDesc ? `<div class="qdesc-vi">💡 <i>${esc(viDesc)}</i></div>` : ''}</div>
       <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="l">${'ABCD'[k]}</span><span>${esc(dir==='en'?shortVi(o.vi):cleanWord(o.w))}</span></button>`).join('')}</div>
       <div class="row between"><span class="fb" id="fb"></span><button class="btn primary" id="next" hidden>Câu tiếp</button></div></div>`;
     box.querySelectorAll('#dir button').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.d===dir)); b.onclick = () => { if (b.dataset.d!==dir){ store.set('qdir', b.dataset.d); quiz(t, box);} }; });

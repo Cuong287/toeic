@@ -598,14 +598,53 @@ function highlighter(t){
   const re = new RegExp('\\b(' + parts.join('|') + ')\\b', 'gi');
   return s => esc(s).replace(re, m => '<mark>' + m + '</mark>');
 }
-function speak(text){
+let currentTTSAudio = null;
+window._activeUtterance = null;
+
+function speak(text, onDone){
+  if (!text || !String(text).trim()) { if (onDone) onDone(); return; }
+  const clean = cleanWord(text);
+
+  // 1. Thử phát bằng Google TTS chuẩn giọng bản ngữ en-US
   try {
-    const s = window.speechSynthesis; if (!s) return;
+    if (currentTTSAudio) {
+      currentTTSAudio.pause();
+      currentTTSAudio.currentTime = 0;
+    }
+    const ttsUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(clean);
+    currentTTSAudio = new Audio(ttsUrl);
+
+    currentTTSAudio.onended = () => { if (onDone) onDone(); };
+    currentTTSAudio.onerror = () => { fallbackBrowserSpeak(clean, onDone); };
+
+    const p = currentTTSAudio.play();
+    if (p !== undefined) {
+      p.catch(() => { fallbackBrowserSpeak(clean, onDone); });
+      return;
+    }
+  } catch(err) {
+    fallbackBrowserSpeak(clean, onDone);
+  }
+}
+
+function fallbackBrowserSpeak(text, onDone) {
+  try {
+    const s = window.speechSynthesis;
+    if (!s) { if (onDone) onDone(); return; }
     s.cancel();
-    const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.92;
-    const v = s.getVoices().find(v => /en[-_]US/i.test(v.lang)); if (v) u.voice = v;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.92;
+    window._activeUtterance = u;
+    const voices = s.getVoices();
+    const v = voices.find(x => /en[-_]US/i.test(x.lang)) || voices.find(x => /^en/i.test(x.lang));
+    if (v) u.voice = v;
+    u.onend = () => { window._activeUtterance = null; if (onDone) onDone(); };
+    u.onerror = () => { window._activeUtterance = null; if (onDone) onDone(); };
     s.speak(u);
-  } catch(e){}
+  } catch(e) {
+    if (onDone) onDone();
+  }
 }
 function srcLabel(src){
   const m = String(src).match(/(\d+)\s*-\s*(\d+)\s*ETS\s*(\d{4})\.(\d+)/i);
@@ -2495,9 +2534,15 @@ try {
     popover.style.left = posX + 'px';
     popover.style.top = posY + 'px';
 
-    popover.querySelector('#sel-speak').onclick = (e) => {
+    const speakBtn = popover.querySelector('#sel-speak');
+    speakBtn.onclick = (e) => {
       e.stopPropagation();
-      speak(cleanT);
+      const origHtml = speakBtn.innerHTML;
+      speakBtn.innerHTML = '<span style="color:var(--mark)">🔊 Đang đọc...</span>';
+      speak(cleanT, () => {
+        speakBtn.innerHTML = origHtml;
+      });
+      setTimeout(() => { speakBtn.innerHTML = origHtml; }, 2000);
     };
 
     popover.querySelector('#sel-trans').onclick = async (e) => {

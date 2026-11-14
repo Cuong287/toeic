@@ -362,6 +362,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sổ từ TOEIC">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<script>
+(function() {
+  try {
+    const saved = localStorage.getItem('toeic45_theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  } catch(e) {}
+})();
+</script>
+
 </head>
 <body>
 <title>Sổ từ TOEIC 45 chủ đề</title>
@@ -371,6 +383,54 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Lora:ital,wght@1,400;1,500&display=swap">
 <style>
 /* Layout: sổ tay học từ — cột mục lục 45 chủ đề bên trái, trang học bên phải chia 4 phần theo bài */
+
+:root[data-theme="light"] {
+  --bg:#F3F5F8 !important;
+  --surface:#FFFFFF !important;
+  --sunk:#E9EDF3 !important;
+  --ink:#15213A !important;
+  --muted:#5B677A !important;
+  --line:#D8DFE8 !important;
+  --accent:#1D5BBF !important;
+  --accent-ink:#FFFFFF !important;
+  --accent-soft:#E2EBFA !important;
+  --mark:#FFEE9E !important;
+  --mark-ink:#4A3B00 !important;
+  --margin:#E46C6C !important;
+  --good:#1C7A4D !important;
+  --good-soft:#DFF2E8 !important;
+  --bad:#B23A30 !important;
+  --bad-soft:#FAE3E0 !important;
+  --warn:#946000 !important;
+  --warn-soft:#FBF0D6 !important;
+  color-scheme: light !important;
+}
+
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.theme-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+.theme-btn svg {
+  flex-shrink: 0;
+}
+
 :root{
   --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF3; --ink:#15213A; --muted:#5B677A; --line:#D8DFE8;
   --accent:#1D5BBF; --accent-ink:#FFFFFF; --accent-soft:#E2EBFA;
@@ -678,7 +738,16 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 
 <div class="app">
   <aside class="side" aria-label="Danh sách chủ đề">
-    <div class="brand"><b>Sổ từ TOEIC</b><span>45 chủ đề · từ vựng, dịch, nghe điền từ</span></div>
+    <div class="brand">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <b>Sổ từ TOEIC</b>
+        <button class="theme-btn" id="theme-btn-side" title="Chuyển sang chế độ sáng">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <span>Chế độ sáng</span>
+        </button>
+      </div>
+      <span>45 chủ đề · từ vựng, dịch, nghe điền từ</span>
+    </div>
     
     <!-- Khung thông tin tài khoản (ẩn nếu chưa cấu hình Firebase) -->
     <div id="auth-box" class="auth-box" hidden></div>
@@ -712,6 +781,10 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
         <label class="sr" for="tselect">Chủ đề</label>
         <select id="tselect"></select>
         <button class="icon-btn nav-btn" id="tnext" aria-label="Chủ đề sau"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button class="theme-btn" id="theme-btn-mob" style="margin-left:auto;padding:5px 8px" title="Chuyển chế độ sáng/tối">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <span>Sáng</span>
+        </button>
       </div>
       <header class="thead" id="thead"></header>
       <nav class="tabs" role="tablist" id="tabs"></nav>
@@ -3295,6 +3368,47 @@ const RecorderManager = (function() {
     }
   });
 })();
+
+// ---------- Theme Toggle (Light / Dark Mode) ----------
+(function initThemeToggle() {
+  const savedTheme = localStorage.getItem('toeic45_theme');
+  const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  let currentTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+
+  function updateThemeUI(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('toeic45_theme', theme);
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      const isMob = btn.id === 'theme-btn-mob';
+      if (theme === 'dark') {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><span>' + (isMob ? 'Sáng' : 'Chế độ sáng') + '</span>';
+        btn.setAttribute('title', 'Bấm để chuyển sang chế độ sáng');
+      } else {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>' + (isMob ? 'Tối' : 'Chế độ tối') + '</span>';
+        btn.setAttribute('title', 'Bấm để chuyển sang chế độ tối');
+      }
+    });
+
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.content = theme === 'dark' ? '#0E141E' : '#1D5BBF';
+    }
+  }
+
+  updateThemeUI(currentTheme);
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.theme-btn');
+    if (btn) {
+      e.preventDefault();
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      updateThemeUI(nextTheme);
+    }
+  });
+})();
+
 </script>
 
 </body>

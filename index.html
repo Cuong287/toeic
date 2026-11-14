@@ -4,7 +4,97 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1D5BBF">
-<style>body{margin:0}[hidden]{display:none!important}</style>
+<style>body{margin:0}[hidden]{display:none!important}
+/* Quick selection popover for Speak & Translate */
+.sel-popover {
+  position: absolute;
+  z-index: 9999;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--f-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate(-50%, -100%);
+  margin-top: -10px;
+  max-width: 320px;
+  min-width: 140px;
+  pointer-events: auto;
+}
+.sel-popover::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: var(--ink) transparent transparent;
+  display: block;
+  width: 0;
+}
+.sel-popover.below {
+  transform: translate(-50%, 0);
+  margin-top: 10px;
+}
+.sel-popover.below::after {
+  bottom: auto;
+  top: -6px;
+  border-width: 0 6px 6px;
+  border-color: transparent transparent var(--ink);
+}
+.sel-btn-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sel-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 4px 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.sel-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.sel-btn:active {
+  transform: scale(0.96);
+}
+.sel-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.sel-result {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 12.5px;
+  color: #E2EBFA;
+  word-break: break-word;
+  max-height: 140px;
+  overflow-y: auto;
+  line-height: 1.45;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translate(-50%, -90%) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+}
+</style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1806,7 +1896,6 @@ async function renderLeaderboard(box) {
     const q = firestoreModules.query(
       lbRef,
       firestoreModules.orderBy('totalBest', 'desc'),
-      firestoreModules.orderBy('completedCount', 'desc'),
       firestoreModules.limit(50)
     );
     const snap = await firestoreModules.getDocs(q);
@@ -1821,10 +1910,12 @@ async function renderLeaderboard(box) {
       return;
     }
 
+    const items = snap.docs.map(doc => doc.data());
+    items.sort((a, b) => (b.totalBest - a.totalBest) || ((b.completedCount || 0) - (a.completedCount || 0)));
+
     const rows = [];
     let rank = 1;
-    snap.forEach(doc => {
-      const d = doc.data();
+    items.forEach(d => {
       const isMe = currentUser && currentUser.uid === d.uid;
       let rankHtml = String(rank);
       if (rank === 1) rankHtml = '<span class="lb-rank lb-gold">🥇</span>';
@@ -2323,6 +2414,145 @@ try {
   if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && location.protocol === 'https:')
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
 } catch(e){}
+
+// ---------- Quick Selection Tooltip (Speak & Translate) ----------
+(function initSelectionTooltip() {
+  let popover = null;
+  let activeText = '';
+
+  function removePopover() {
+    if (popover && popover.parentNode) {
+      popover.parentNode.removeChild(popover);
+    }
+    popover = null;
+    activeText = '';
+  }
+
+  function handleSelection() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) {
+      return;
+    }
+    const text = sel.toString().trim();
+    if (!text || text.length > 150) {
+      removePopover();
+      return;
+    }
+
+    if (popover && popover.contains(sel.anchorNode)) {
+      return;
+    }
+
+    activeText = text;
+    let range;
+    try {
+      range = sel.getRangeAt(0);
+    } catch(e) { return; }
+
+    const rect = range.getBoundingClientRect();
+    if (!rect || (rect.width === 0 && rect.height === 0)) {
+      return;
+    }
+
+    removePopover();
+
+    popover = document.createElement('div');
+    popover.className = 'sel-popover';
+
+    const cleanT = cleanWord(activeText);
+    popover.innerHTML = `
+      <div class="sel-btn-bar">
+        <button class="sel-btn" id="sel-speak" title="Nghe phát âm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+          Nghe
+        </button>
+        <button class="sel-btn" id="sel-trans" title="Dịch nghĩa tiếng Việt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Dịch
+        </button>
+        <button class="sel-btn" id="sel-close" title="Đóng" style="padding:4px 6px;opacity:.7">✕</button>
+      </div>
+      <div id="sel-res" class="sel-result" style="display:none"></div>
+    `;
+
+    document.body.appendChild(popover);
+
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    let posX = rect.left + rect.width / 2 + scrollX;
+    let posY = rect.top + scrollY;
+
+    const popWidth = 240;
+    if (posX - popWidth / 2 < 12) posX = popWidth / 2 + 12;
+    if (posX + popWidth / 2 > window.innerWidth - 12) posX = window.innerWidth - popWidth / 2 - 12;
+
+    if (rect.top < 70) {
+      popover.classList.add('below');
+      posY = rect.bottom + scrollY;
+    }
+
+    popover.style.left = posX + 'px';
+    popover.style.top = posY + 'px';
+
+    popover.querySelector('#sel-speak').onclick = (e) => {
+      e.stopPropagation();
+      speak(cleanT);
+    };
+
+    popover.querySelector('#sel-trans').onclick = async (e) => {
+      e.stopPropagation();
+      const resEl = popover.querySelector('#sel-res');
+      resEl.style.display = 'block';
+      resEl.innerHTML = '<span style="opacity:.8">Đang dịch...</span>';
+
+      const normT = norm(cleanT);
+      const allVocab = vocabPool();
+      const hit = allVocab.find(v => norm(cleanWord(v.w)) === normT || norm(cleanWord(v.w)).startsWith(normT));
+      if (hit) {
+        resEl.innerHTML = `<div><b>${esc(hit.w)}</b> ${hit.pos ? `<span style="opacity:.8">(${esc(hit.pos)})</span>` : ''}: <b>${esc(hit.vi)}</b></div>`;
+        return;
+      }
+
+      try {
+        const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(cleanT);
+        const r = await fetch(url);
+        if (r.ok) {
+          const data = await r.json();
+          if (data && data[0]) {
+            const translated = data[0].map(x => x[0]).filter(Boolean).join('');
+            resEl.innerHTML = `<div>${esc(translated)}</div>`;
+            return;
+          }
+        }
+      } catch (err) {}
+
+      resEl.innerHTML = `<div>Không tìm thấy bản dịch cho "${esc(cleanT)}".</div>`;
+    };
+
+    popover.querySelector('#sel-close').onclick = (e) => {
+      e.stopPropagation();
+      removePopover();
+    };
+  }
+
+  document.addEventListener('mouseup', (e) => {
+    if (popover && popover.contains(e.target)) return;
+    setTimeout(handleSelection, 20);
+  });
+
+  document.addEventListener('touchend', (e) => {
+    if (popover && popover.contains(e.target)) return;
+    setTimeout(handleSelection, 250);
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (popover && !popover.contains(e.target)) {
+      removePopover();
+    }
+  });
+})();
+
 </script>
 
 </body>

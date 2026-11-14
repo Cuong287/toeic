@@ -5,94 +5,127 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1D5BBF">
 <style>body{margin:0}[hidden]{display:none!important}
-/* Quick selection popover for Speak & Translate */
+/* Quick selection popover for Speak & Translate - Nổi bật, sắc nét */
 .sel-popover {
   position: absolute;
-  z-index: 9999;
-  background: var(--ink);
-  color: #fff;
-  border-radius: 10px;
-  padding: 6px 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.16);
+  z-index: 99999;
+  background: #FFFFFF !important;
+  color: #15213A !important;
+  border: 1.5px solid #1D5BBF;
+  border-radius: 12px;
+  padding: 8px 10px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.35), 0 2px 8px rgba(15, 23, 42, 0.15);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-family: var(--f-ui);
-  font-size: 13px;
+  gap: 6px;
+  font-family: var(--f-ui), sans-serif;
+  font-size: 13.5px;
   line-height: 1.4;
   animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translate(-50%, -100%);
-  margin-top: -10px;
-  max-width: 320px;
-  min-width: 140px;
+  margin-top: -12px;
+  max-width: 340px;
+  min-width: 170px;
   pointer-events: auto;
 }
 .sel-popover::after {
   content: '';
   position: absolute;
-  bottom: -6px;
+  bottom: -7px;
   left: 50%;
   transform: translateX(-50%);
-  border-width: 6px 6px 0;
+  border-width: 7px 7px 0;
   border-style: solid;
-  border-color: var(--ink) transparent transparent;
+  border-color: #1D5BBF transparent transparent;
   display: block;
   width: 0;
 }
 .sel-popover.below {
   transform: translate(-50%, 0);
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .sel-popover.below::after {
   bottom: auto;
-  top: -6px;
-  border-width: 0 6px 6px;
-  border-color: transparent transparent var(--ink);
+  top: -7px;
+  border-width: 0 7px 7px;
+  border-color: transparent transparent #1D5BBF;
 }
 .sel-btn-bar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .sel-btn {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  padding: 4px 9px;
+  background: #F0F4FA;
+  color: #15213A;
+  border: 1px solid #C7D7F0;
+  border-radius: 8px;
+  padding: 6px 12px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  font-weight: 600;
-  transition: background 0.15s, transform 0.1s;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.15s;
   white-space: nowrap;
 }
-.sel-btn:hover {
-  background: rgba(255, 255, 255, 0.24);
+.sel-btn.btn-speak {
+  background: #EBF3FF;
+  color: #1D5BBF;
+  border-color: #99C0FF;
+}
+.sel-btn.btn-speak:hover {
+  background: #1D5BBF;
+  color: #FFFFFF;
+}
+.sel-btn.btn-trans {
+  background: #EBFBF3;
+  color: #1C7A4D;
+  border-color: #A3E6C3;
+}
+.sel-btn.btn-trans:hover {
+  background: #1C7A4D;
+  color: #FFFFFF;
+}
+.sel-btn.btn-close {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  padding: 4px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 6px;
+}
+.sel-btn.btn-close:hover {
+  background: #F1F5F9;
+  color: #B23A30;
 }
 .sel-btn:active {
   transform: scale(0.96);
 }
 .sel-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 .sel-result {
   margin-top: 4px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 12.5px;
-  color: #E2EBFA;
+  padding: 8px 10px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  font-size: 13px;
+  color: #0F172A;
   word-break: break-word;
-  max-height: 140px;
+  max-height: 150px;
   overflow-y: auto;
   line-height: 1.45;
 }
 @keyframes popIn {
   from { opacity: 0; transform: translate(-50%, -90%) scale(0.92); }
   to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+}
 }
 </style>
 <link rel="manifest" href="manifest.webmanifest">
@@ -598,54 +631,63 @@ function highlighter(t){
   const re = new RegExp('\\b(' + parts.join('|') + ')\\b', 'gi');
   return s => esc(s).replace(re, m => '<mark>' + m + '</mark>');
 }
-let currentTTSAudio = null;
 window._activeUtterance = null;
+let currentTTSAudio = null;
 
 function speak(text, onDone){
   if (!text || !String(text).trim()) { if (onDone) onDone(); return; }
   const clean = cleanWord(text);
 
-  // 1. Thử phát bằng Google TTS chuẩn giọng bản ngữ en-US
-  try {
-    if (currentTTSAudio) {
-      currentTTSAudio.pause();
-      currentTTSAudio.currentTime = 0;
-    }
-    const ttsUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=' + encodeURIComponent(clean);
-    currentTTSAudio = new Audio(ttsUrl);
-
-    currentTTSAudio.onended = () => { if (onDone) onDone(); };
-    currentTTSAudio.onerror = () => { fallbackBrowserSpeak(clean, onDone); };
-
-    const p = currentTTSAudio.play();
-    if (p !== undefined) {
-      p.catch(() => { fallbackBrowserSpeak(clean, onDone); });
-      return;
-    }
-  } catch(err) {
-    fallbackBrowserSpeak(clean, onDone);
-  }
-}
-
-function fallbackBrowserSpeak(text, onDone) {
+  // 1. Kích hoạt Web Speech API đồng bộ ngay lập tức để không bị Autoplay Policy chặn
+  let spokenWithBrowser = false;
   try {
     const s = window.speechSynthesis;
-    if (!s) { if (onDone) onDone(); return; }
-    s.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    u.rate = 0.92;
-    window._activeUtterance = u;
-    const voices = s.getVoices();
-    const v = voices.find(x => /en[-_]US/i.test(x.lang)) || voices.find(x => /^en/i.test(x.lang));
-    if (v) u.voice = v;
-    u.onend = () => { window._activeUtterance = null; if (onDone) onDone(); };
-    u.onerror = () => { window._activeUtterance = null; if (onDone) onDone(); };
-    s.speak(u);
-  } catch(e) {
-    if (onDone) onDone();
+    if (s) {
+      s.cancel();
+      if (s.paused) s.resume();
+      const u = new SpeechSynthesisUtterance(clean);
+      u.lang = 'en-US';
+      u.rate = 0.95;
+      u.volume = 1;
+      window._activeUtterance = u;
+      const voices = s.getVoices() || [];
+      const v = voices.find(x => /en[-_]US/i.test(x.lang)) || voices.find(x => /^en/i.test(x.lang));
+      if (v) u.voice = v;
+      u.onend = () => { window._activeUtterance = null; if (onDone) onDone(); };
+      u.onerror = (e) => { window._activeUtterance = null; if (onDone) onDone(); };
+      s.speak(u);
+      spokenWithBrowser = true;
+    }
+  } catch(e){}
+
+  // 2. Nếu là từ đơn, lấy file phát âm người thật chuẩn MP3 từ Free Dictionary API (không bị chặn referer)
+  const words = clean.split(/\s+/);
+  if (words.length <= 2) {
+    const w = words[0].toLowerCase().replace(/[^a-z]/g, '');
+    if (w) {
+      fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(w))
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data[0] && Array.isArray(data[0].phonetics)) {
+            const p = data[0].phonetics.find(x => x.audio && x.audio.trim().length > 0);
+            if (p && p.audio) {
+              if (currentTTSAudio) { currentTTSAudio.pause(); }
+              currentTTSAudio = new Audio(p.audio);
+              currentTTSAudio.play().then(() => {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                if (onDone) onDone();
+              }).catch(() => {});
+            }
+          }
+        }).catch(() => {});
+    }
+  }
+
+  if (!spokenWithBrowser && onDone) {
+    setTimeout(onDone, 800);
   }
 }
+
 function srcLabel(src){
   const m = String(src).match(/(\d+)\s*-\s*(\d+)\s*ETS\s*(\d{4})\.(\d+)/i);
   return m ? `ETS ${m[3]} · Test ${m[4]} · câu ${m[1]}–${m[2]}` : esc(src);
@@ -2501,15 +2543,15 @@ try {
     const cleanT = cleanWord(activeText);
     popover.innerHTML = `
       <div class="sel-btn-bar">
-        <button class="sel-btn" id="sel-speak" title="Nghe phát âm">
+        <button class="sel-btn btn-speak" id="sel-speak" title="Nghe phát âm">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
           Nghe
         </button>
-        <button class="sel-btn" id="sel-trans" title="Dịch nghĩa tiếng Việt">
+        <button class="sel-btn btn-trans" id="sel-trans" title="Dịch nghĩa tiếng Việt">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           Dịch
         </button>
-        <button class="sel-btn" id="sel-close" title="Đóng" style="padding:4px 6px;opacity:.7">✕</button>
+        <button class="sel-btn btn-close" id="sel-close" title="Đóng">✕</button>
       </div>
       <div id="sel-res" class="sel-result" style="display:none"></div>
     `;

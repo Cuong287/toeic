@@ -5,6 +5,185 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1D5BBF">
 <style>body{margin:0}[hidden]{display:none!important}
+
+/* Voice Recording & Speaking Practice Styles */
+.mini-rec-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 3px 5px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  vertical-align: middle;
+}
+.mini-rec-btn svg { width: 14px; height: 14px; }
+.mini-rec-btn:hover {
+  color: #DC2626 !important;
+  background: var(--surface);
+}
+.chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--sunk);
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.chip-item .chip {
+  background: none !important;
+  padding: 0 !important;
+  cursor: pointer;
+}
+.chip-item .chip:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.icon-btn.rec-btn {
+  color: var(--muted);
+}
+.icon-btn.rec-btn:hover {
+  color: #DC2626;
+  border-color: #DC2626;
+}
+.btn.rec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.btn.rec-btn svg { width: 15px; height: 15px; }
+.btn.rec-btn:hover {
+  border-color: #DC2626;
+  color: #DC2626;
+}
+.rec-btn.recording {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border-color: #DC2626 !important;
+  animation: recPulse 1.2s infinite ease-in-out !important;
+}
+.sel-btn.btn-rec {
+  background: #D97706 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.45) !important;
+}
+.sel-btn.btn-rec:hover {
+  background: #B45309 !important;
+  transform: translateY(-1px) !important;
+}
+.sel-btn.btn-rec.recording {
+  background: #DC2626 !important;
+  animation: recPulse 1.2s infinite ease-in-out !important;
+}
+@keyframes recPulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+.rec-slot, .rec-slot-row {
+  margin-top: 8px;
+  width: 100%;
+}
+.rec-result-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid #2563EB;
+  border-radius: 8px;
+  padding: 9px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.rec-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rec-play-btn {
+  background: #2563EB;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rec-play-btn:hover { background: #1D4ED8; }
+.rec-play-btn.playing { background: #059669; }
+.rec-retry-btn {
+  background: var(--sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.rec-retry-btn:hover { background: var(--surface); color: var(--accent); }
+.rec-speech-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--line);
+}
+.rec-score-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.rec-score-badge.good { background: #DCFCE7; color: #15803D; }
+.rec-score-badge.warn { background: #FEF3C7; color: #B45309; }
+.rec-score-badge.bad { background: #FEE2E2; color: #B91C1C; }
+.rec-transcript { color: var(--muted); }
+.user-spoken { color: var(--ink); font-style: italic; }
+.agroup-rec-bar {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--sunk);
+  border: 1px dashed var(--line);
+  border-radius: var(--r);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agroup-rec-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* Quick selection popover for Speak & Translate - Siêu nét, nổi bật trên mọi nền */
 .sel-popover {
   position: absolute;
@@ -599,6 +778,7 @@ const norm = s => String(s).toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0
 const VN = /[À-ỹđĐ]/;
 const POS_OK = /^(n|v|a|adj|adv|prep)(,(n|v|a|adj|adv|prep))*$/;
 const SPEAK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>';
+const MIC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
 
 TOPICS.forEach(t => t.vocab.forEach(v => {
   if (v.pos && !POS_OK.test(v.pos.replace(/\s/g,''))) { v.w = v.w + ' (' + v.pos + ')'; v.pos = ''; }
@@ -1405,15 +1585,17 @@ function part1(t, el){
     const x = ev[v.w];
     const starred = store.isStarred(v.w);
     return `<article class="vcard"><div class="vtop"><span class="vnum">${i+1}</span><span class="vw">${esc(v.w)}</span>${v.pos?`<span class="pos">${esc(v.pos)}</span>`:''}${x?`<span class="ipa">${esc(x[0])}</span>`:''}
-      <div style="margin-left:auto;display:flex;gap:6px">
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
         <button class="icon-btn star-btn ${starred ? 'starred' : ''}" data-star="${esc(v.w)}" aria-label="${starred ? 'Bỏ khỏi từ khó' : 'Thêm vào từ khó'}" title="${starred ? 'Bỏ khỏi từ khó' : 'Thêm vào danh sách từ khó'}">
           <svg viewBox="0 0 24 24" fill="${starred ? '#F59E0B' : 'none'}" stroke="${starred ? '#F59E0B' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </button>
-        <button class="icon-btn" data-say="${esc(cleanWord(v.w))}" aria-label="Nghe phát âm ${esc(v.w)}" title="Nghe phát âm">${SPEAK}</button>
+        <button class="icon-btn" data-say="${esc(cleanWord(v.w))}" aria-label="Nghe phát âm ${esc(v.w)}" title="Nghe phát âm mẫu">${SPEAK}</button>
+        <button class="icon-btn rec-btn" data-rec-text="${esc(cleanWord(v.w))}" data-rec-id="v-${t.id}-${i}" aria-label="Ghi âm giọng nói ${esc(v.w)}" title="Ghi âm giọng nói phát âm từ này">${MIC_ICON}</button>
       </div>
     </div>
       <div class="vvi">${esc(v.vi) || '<span class="hint">Tài liệu không ghi nghĩa</span>'}</div>
-      ${x?`<div class="ex">${highlightOne(x[1], v.w)}<span class="vi">${esc(x[2])}</span></div>`:''}</article>`;
+      ${x?`<div class="ex">${highlightOne(x[1], v.w)}<span class="vi">${esc(x[2])}</span></div>`:''}
+      <div class="rec-slot" id="slot-v-${t.id}-${i}"></div></article>`;
   }).join('')}</div>`;
   box.querySelectorAll('[data-say]').forEach(b => b.addEventListener('click', () => speak(b.dataset.say)));
   box.querySelectorAll('[data-star]').forEach(b => b.addEventListener('click', () => {
@@ -1560,9 +1742,18 @@ function writeDrill(t, box){
 
 // ---------- PART 2 ----------
 const OPS = { '=':['eq','='], '->':['to','→'], '→':['to','→'], '~':['sim','≈'], '><':['vs','≠'] };
-function relLine(line){
+function relLine(line, lIdx = 0){
   const toks = line.split(/\s*(=|->|→|~|><)\s*/).filter(s => s !== '');
-  return '<div class="rel">' + toks.map(tk => OPS[tk] ? `<span class="op ${OPS[tk][0]}">${OPS[tk][1]}</span>` : `<span class="chip">${esc(tk)}</span>`).join('') + '</div>';
+  let wIdx = 0;
+  return '<div class="rel">' + toks.map(tk => {
+    if (OPS[tk]) return `<span class="op ${OPS[tk][0]}">${OPS[tk][1]}</span>`;
+    const clean = cleanWord(tk);
+    const rid = `p2-${lIdx}-${wIdx++}`;
+    return `<span class="chip-item">
+      <span class="chip" data-say="${esc(clean)}" title="Bấm để nghe phát âm mẫu">${esc(tk)}</span>
+      <button class="mini-rec-btn rec-btn" data-rec-text="${esc(clean)}" data-rec-id="${rid}" title="Ghi âm giọng nói đọc từ '${esc(clean)}'">${MIC_ICON}</button>
+    </span>`;
+  }).join('') + `<div class="rec-slot-row" id="slot-p2-row-${lIdx}"></div></div>`;
 }
 function synPairs(t){
   const pairs = [], seen = new Set();
@@ -1582,7 +1773,7 @@ function part2(t, el){
   if (t.notes.length){
     h += `<h2 class="sec">Ghi chú trong tài liệu</h2>
       <div class="legend"><span class="op eq">=</span>đồng nghĩa <span class="op sim">≈</span>gần nghĩa <span class="op to">→</span>chuyển loại từ, cụm hay dùng <span class="op vs">≠</span>dễ nhầm</div>
-      <div class="panel" style="gap:8px">${t.notes.map(relLine).join('')}</div>`;
+      <div class="panel" style="gap:8px">${t.notes.map((l, li) => relLine(l, li)).join('')}</div>`;
   } else h += '<div class="empty">Tài liệu không có ghi chú họ từ, đồng nghĩa cho chủ đề này.</div>';
   const pairs = synPairs(t);
   if (pairs.length >= 2) h += `<h2 class="sec">Ghép cặp đồng nghĩa</h2><p class="hint" style="margin:0">Chọn một từ bên trái rồi chọn từ cùng nghĩa bên phải.</p><div class="card" id="mg"></div>`;
@@ -1634,7 +1825,15 @@ function part3(t, el){
         if (ref) ref[1].forEach(w => allNw.push(w));
         h += `<article class="tcard"><div class="en"><span class="no">${n}</span><span>${hl(b.text)}</span></div>
           <textarea id="${key.replace(/:/g,'-')}" data-key="${key}" placeholder="Bản dịch của bạn…">${esc(store.get(key,''))}</textarea>
-          <div class="row"><button class="icon-btn" data-say="${esc(b.text)}" aria-label="Nghe câu" title="Nghe câu">${SPEAK}</button>${ref?`<button class="btn" data-ref="${si}-${bi}">Xem bản dịch mẫu</button>`:''}</div>
+          <div class="row" style="flex-wrap:wrap;gap:8px;align-items:center">
+            <button class="icon-btn" data-say="${esc(b.text)}" aria-label="Nghe câu" title="Nghe câu mẫu">${SPEAK}</button>
+            <button class="btn rec-btn" data-rec-text="${esc(b.text)}" data-rec-id="tr-${t.id}-${si}-${bi}" title="Ghi âm giọng đọc câu này">
+              ${MIC_ICON}
+              <span>Luyện đọc câu này</span>
+            </button>
+            ${ref?`<button class="btn" data-ref="${si}-${bi}">Xem bản dịch mẫu</button>`:''}
+          </div>
+          <div class="rec-slot" id="slot-tr-${t.id}-${si}-${bi}"></div>
           ${ref?`<div class="ref" id="ref-${si}-${bi}" hidden><small>Bản dịch mẫu</small>${esc(ref[0])}</div>
           ${ref[1].length?`<div class="nw" id="nw-${si}-${bi}" hidden>${ref[1].map(w=>`<span><b>${esc(w[0])}</b>${w[1]?` (${esc(w[1])})`:''}: ${esc(w[2])}</span>`).join('')}</div>`:''}`:''}
         </article>`;
@@ -1691,6 +1890,20 @@ function part4(t, el){
           <div class="gtr-wrap" data-trgrp="${si}-${gi}"${store.get('trhide:'+t.id+'-'+si+'-'+gi,false)?' hidden':''}><textarea class="gtr" id="${tk}" data-key="${tk}" rows="1" placeholder="Bạn tự dịch câu này…">${esc(store.get(tk,''))}</textarea></div>
           ${ref?`<div class="gvi" data-vigrp="${si}-${gi}" hidden><small>Bản dịch mẫu</small>${esc(ref[1])}</div>`:''}</div>`;
       });
+      const allGroupText = g.lines.map(l => l.b.text.replace(BLANK, ' ')).join(' ');
+      h += `<div class="agroup-rec-bar">
+        <div class="agroup-rec-info">
+          <b>🎙️ Luyện đọc đoạn hội thoại này (Shadowing)</b>
+          <span class="hint" style="font-size:12.5px">Nghe đoạn audio phía trên, bấm nút dưới để ghi âm đọc theo và nghe lại giọng mình để so sánh ngữ điệu.</span>
+        </div>
+        <div class="row" style="margin-top:4px">
+          <button class="btn rec-btn" data-rec-text="${esc(allGroupText)}" data-rec-id="gap-${t.id}-${si}-${gi}">
+            ${MIC_ICON}
+            <span>Ghi âm đọc cả đoạn</span>
+          </button>
+        </div>
+        <div class="rec-slot" id="slot-gap-${t.id}-${si}-${gi}"></div>
+      </div>`;
       h += `</section>`;
     });
   });
@@ -2488,6 +2701,292 @@ try {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').then(reg => { reg.update(); }).catch(()=>{}));
 } catch(e){}
 
+
+// ---------- Voice Recording & Speech Recognition Manager ----------
+const RecorderManager = (function() {
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let currentRecId = null;
+  let currentTargetText = '';
+  let currentTriggerBtn = null;
+  let currentSlotEl = null;
+  let currentStream = null;
+  let timerInterval = null;
+  let startTime = 0;
+  let recognitionInstance = null;
+  let recognizedTranscript = '';
+  let currentPlayingAudio = null;
+
+  // Cache lưu trữ kết quả ghi âm theo recId
+  const cache = new Map();
+
+  function isRecording() {
+    return mediaRecorder && mediaRecorder.state === 'recording';
+  }
+
+  function scorePronunciation(spoken, target) {
+    if (!spoken || !target) return { score: 0, text: spoken || '' };
+    const cleanSpoken = spoken.toLowerCase().replace(/[^\w\s]/g, '').trim().split(/\s+/);
+    const cleanTarget = target.toLowerCase().replace(/[^\w\s]/g, '').trim().split(/\s+/);
+    if (!cleanTarget.length) return { score: 100, text: spoken };
+
+    let matchCount = 0;
+    cleanTarget.forEach(tw => {
+      if (cleanSpoken.includes(tw)) matchCount++;
+    });
+
+    const percent = Math.min(100, Math.round((matchCount / cleanTarget.length) * 100));
+    return { score: percent, spoken };
+  }
+
+  async function start(recId, targetText, btn, slot) {
+    if (isRecording()) {
+      await stop();
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      currentStream = stream;
+      audioChunks = [];
+      currentRecId = recId;
+      currentTargetText = targetText || '';
+      currentTriggerBtn = btn;
+      currentSlotEl = slot;
+      recognizedTranscript = '';
+
+      let options = {};
+      if (typeof MediaRecorder.isTypeSupported === 'function') {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options = { mimeType: 'audio/webm;codecs=opus' };
+        else if (MediaRecorder.isTypeSupported('audio/webm')) options = { mimeType: 'audio/webm' };
+        else if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
+      }
+
+      mediaRecorder = new MediaRecorder(stream, options);
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(audioChunks, { type: mimeType });
+        const audioUrl = URL.createObjectURL(blob);
+        const durationSec = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+
+        if (currentStream) {
+          currentStream.getTracks().forEach(t => t.stop());
+          currentStream = null;
+        }
+
+        const assessment = scorePronunciation(recognizedTranscript, currentTargetText);
+
+        cache.set(currentRecId, {
+          audioUrl,
+          duration: durationSec,
+          assessment
+        });
+
+        renderPlayer(currentRecId, currentTriggerBtn, currentSlotEl);
+        resetTriggerUI(currentTriggerBtn);
+      };
+
+      // Nhận diện giọng nói Web Speech API (Edge/Chrome)
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          recognitionInstance = new SpeechRecognition();
+          recognitionInstance.lang = 'en-US';
+          recognitionInstance.interimResults = false;
+          recognitionInstance.maxAlternatives = 1;
+          recognitionInstance.onresult = (ev) => {
+            if (ev.results && ev.results[0] && ev.results[0][0]) {
+              recognizedTranscript = ev.results[0][0].transcript;
+            }
+          };
+          recognitionInstance.onerror = () => {};
+          recognitionInstance.start();
+        } catch(e) {}
+      }
+
+      mediaRecorder.start();
+      startTime = Date.now();
+
+      btn.classList.add('recording');
+      setBtnLabel(btn, '00:00 ⏹');
+
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        setBtnLabel(btn, `${m}:${s} ⏹`);
+        if (elapsed >= 90) stop();
+      }, 1000);
+
+    } catch(err) {
+      console.error('Lỗi truy cập Microphone:', err);
+      alert('Không thể truy cập Microphone! Vui lòng kiểm tra quyền cho phép Micro của trình duyệt để sử dụng tính năng ghi âm.');
+      resetTriggerUI(btn);
+    }
+  }
+
+  function stop() {
+    if (!isRecording()) return;
+    clearInterval(timerInterval);
+    if (recognitionInstance) {
+      try { recognitionInstance.stop(); } catch(e) {}
+      recognitionInstance = null;
+    }
+    mediaRecorder.stop();
+  }
+
+  function setBtnLabel(btn, text) {
+    const span = btn.querySelector('span');
+    if (span) span.textContent = text;
+    else btn.setAttribute('title', text);
+  }
+
+  function resetTriggerUI(btn) {
+    if (!btn) return;
+    btn.classList.remove('recording');
+    const span = btn.querySelector('span');
+    if (span) {
+      if (btn.id === 'sel-rec') span.textContent = 'Nói';
+      else if (btn.dataset.recId && btn.dataset.recId.startsWith('gap-')) span.textContent = 'Ghi âm đọc cả đoạn';
+      else if (btn.dataset.recId && btn.dataset.recId.startsWith('tr-')) span.textContent = 'Luyện đọc câu này';
+      else span.textContent = '';
+    }
+  }
+
+  function renderPlayer(recId, btn, slot) {
+    if (!slot) return;
+    const data = cache.get(recId);
+    if (!data) return;
+
+    slot.style.display = 'block';
+    const assessment = data.assessment || {};
+    let feedbackHtml = '';
+
+    if (assessment.spoken) {
+      let badgeClass = 'bad', badgeIcon = '⚠️';
+      if (assessment.score >= 80) { badgeClass = 'good'; badgeIcon = '✅'; }
+      else if (assessment.score >= 50) { badgeClass = 'warn'; badgeIcon = '👍'; }
+
+      feedbackHtml = `
+        <div class="rec-speech-feedback">
+          <div class="rec-score-badge ${badgeClass}">${badgeIcon} Khớp ${assessment.score}%</div>
+          <div class="rec-transcript">Bạn vừa nói: <b class="user-spoken">"${esc(assessment.spoken)}"</b></div>
+        </div>
+      `;
+    }
+
+    slot.innerHTML = `
+      <div class="rec-result-card">
+        <div class="rec-player-bar">
+          <button class="rec-play-btn" data-play-id="${recId}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Nghe lại giọng bạn (${data.duration}s)</span>
+          </button>
+          <button class="rec-retry-btn" data-retry-id="${recId}" title="Thu âm lại">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+            <span>Thu lại</span>
+          </button>
+        </div>
+        ${feedbackHtml}
+      </div>
+    `;
+  }
+
+  function playAudio(recId, playBtn) {
+    const data = cache.get(recId);
+    if (!data || !data.audioUrl) return;
+
+    if (currentPlayingAudio) {
+      currentPlayingAudio.pause();
+      currentPlayingAudio = null;
+      document.querySelectorAll('.rec-play-btn').forEach(b => {
+        b.classList.remove('playing');
+        const s = b.querySelector('span');
+        if (s) s.textContent = s.textContent.replace('Đang phát...', 'Nghe lại giọng bạn');
+      });
+    }
+
+    const audio = new Audio(data.audioUrl);
+    currentPlayingAudio = audio;
+    playBtn.classList.add('playing');
+    const span = playBtn.querySelector('span');
+    const oldText = span ? span.textContent : '';
+    if (span) span.textContent = 'Đang phát...';
+
+    audio.onended = () => {
+      playBtn.classList.remove('playing');
+      if (span) span.textContent = oldText.replace('Đang phát...', 'Nghe lại giọng bạn');
+      currentPlayingAudio = null;
+    };
+    audio.onerror = () => {
+      playBtn.classList.remove('playing');
+      if (span) span.textContent = oldText.replace('Đang phát...', 'Nghe lại giọng bạn');
+      currentPlayingAudio = null;
+    };
+    audio.play().catch(e => console.warn('Play error:', e));
+  }
+
+  function toggleRecord(recId, targetText, btn, slot) {
+    if (isRecording() && currentRecId === recId) {
+      stop();
+    } else {
+      start(recId, targetText, btn, slot);
+    }
+  }
+
+  // Khởi tạo Event Delegation toàn cục cho mọi nút ghi âm
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.rec-btn');
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const recId = btn.dataset.recId || (btn.id === 'sel-rec' ? 'sel-target' : null);
+      const recText = btn.dataset.recText || '';
+      let slotEl = null;
+      if (btn.id === 'sel-rec') {
+        slotEl = document.querySelector('#sel-rec-slot');
+      } else if (recId) {
+        if (recId.startsWith('p2-')) {
+          const lIdx = recId.split('-')[1];
+          slotEl = document.querySelector('#slot-p2-row-' + lIdx);
+        } else {
+          slotEl = document.querySelector('#slot-' + recId);
+        }
+      }
+      toggleRecord(recId, recText, btn, slotEl);
+      return;
+    }
+
+    const playBtn = e.target.closest('.rec-play-btn');
+    if (playBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      playAudio(playBtn.dataset.playId, playBtn);
+      return;
+    }
+
+    const retryBtn = e.target.closest('.rec-retry-btn');
+    if (retryBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const recId = retryBtn.dataset.retryId;
+      const targetBtn = document.querySelector(`.rec-btn[data-rec-id="${recId}"]`) || (recId === 'sel-target' ? document.querySelector('#sel-rec') : null);
+      if (targetBtn) targetBtn.click();
+      return;
+    }
+  });
+
+  return {
+    toggleRecord,
+    playAudio,
+    cache
+  };
+})();
+
 // ---------- Quick Selection Tooltip (Speak & Translate) ----------
 (function initSelectionTooltip() {
   let popover = null;
@@ -2538,12 +3037,17 @@ try {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
           <span>Nghe</span>
         </button>
+        <button class="sel-btn btn-rec rec-btn" id="sel-rec" data-rec-text="${esc(targetWord)}" data-rec-id="sel-target" title="Ghi âm đọc thử từ này">
+          ${MIC_ICON}
+          <span>Nói</span>
+        </button>
         <button class="sel-btn btn-trans" id="sel-trans" title="Dịch nghĩa tiếng Việt">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           <span>Dịch</span>
         </button>
         <button class="sel-btn btn-close" id="sel-close" title="Đóng">✕</button>
       </div>
+      <div id="sel-rec-slot" class="rec-slot" style="display:none"></div>
       <div id="sel-res" class="sel-result" style="display:none"></div>
     `;
 

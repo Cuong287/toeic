@@ -1207,6 +1207,7 @@ function srcLabel(src){
 
 // ---------- State & Routing ----------
 const PARTS = [
+  { k:0, name:'Tổng hợp từ', short:'Tổng hợp' },
   { k:1, name:'Từ vựng', short:'Từ vựng' },
   { k:2, name:'Họ từ & đồng nghĩa', short:'Họ từ' },
   { k:3, name:'Dịch câu', short:'Dịch' },
@@ -1222,7 +1223,7 @@ function readHash(){
   if (h === '#leaderboard') { currentRoute = 'leaderboard'; return true; }
   if (h === '#profile') { currentRoute = 'profile'; return true; }
   if (h === '#admin') { currentRoute = 'admin'; return true; }
-  const m = h.match(/^#t(\d+)-p([1-4])$/);
+  const m = h.match(/^#t(\d+)-p([0-4])$/);
   if (m && TOPICS[+m[1]-1]) {
     currentRoute = 'topic';
     S.t = +m[1]; S.p = +m[2];
@@ -1825,17 +1826,7 @@ function renderSide(){
   const q = norm($('#search').value || '');
   const list = $('#tlist'); list.innerHTML = '';
 
-  // Mục 00: Tổng hợp từ vựng
-  if (!q) {
-    const isT0 = currentRoute === 'topic0';
-    const li0 = document.createElement('li');
-    li0.innerHTML = `<a href="#topic-0" ${isT0 ? 'aria-current="true"' : ''} style="font-weight:700"><span class="n" style="color:var(--accent);font-weight:800">00</span><span class="nm">Tổng hợp từ vựng</span><span class="badge" style="font-size:11px;background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:10px">Kho từ</span></a>`;
-    const a0 = li0.querySelector('a');
-    if (a0) {
-      a0.onclick = (e) => { e.preventDefault(); goTo('topic-0'); };
-    }
-    list.appendChild(li0);
-  }
+  
 
   TOPICS.forEach(t => {
     const st = splitTitle(t);
@@ -1918,6 +1909,46 @@ function renderHead(t){
 }
 
 // ---------- PART 1 ----------
+
+// ---------- PART 0: TỔNG HỢP TỪ VỰNG CỦA MỖI CHƯƠNG ----------
+function part0(t, el){
+  let sub = store.get('p0_sub_' + t.id, 'quiz'); // 'quiz' | 'flashcard' | 'write'
+  const pool = t.vocab.filter(v => v.vi).map(v => ({
+    ...v,
+    topicId: t.id,
+    topicTitle: splitTitle(t).main
+  }));
+
+  el.innerHTML = `
+    <div class="row between" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div class="seg" id="p0-sub">
+        <button data-s="quiz" ${sub === 'quiz' ? 'aria-pressed="true"' : ''}>🎯 Trắc nghiệm</button>
+        <button data-s="flashcard" ${sub === 'flashcard' ? 'aria-pressed="true"' : ''}>🃏 Lật hình (Flashcards)</button>
+        <button data-s="write" ${sub === 'write' ? 'aria-pressed="true"' : ''}>✍️ Viết từ (Việt → Anh)</button>
+      </div>
+      <span class="hint" style="font-weight:600;font-size:13px">${pool.length} từ vựng của chương này</span>
+    </div>
+    <div id="p0-box" class="panel"></div>
+  `;
+
+  el.querySelectorAll('#p0-sub button').forEach(b => {
+    b.onclick = () => {
+      sub = b.dataset.s;
+      store.set('p0_sub_' + t.id, sub);
+      part0(t, el);
+    };
+  });
+
+  const box = el.querySelector('#p0-box');
+  if (sub === 'flashcard') {
+    renderT0Flashcards(box, pool);
+  } else if (sub === 'write') {
+    renderT0WriteDrill(box, pool);
+  } else {
+    renderT0Quiz(box, pool);
+  }
+}
+
 function part1(t, el){
   const e = enr(t.id);
   el.innerHTML = `<div class="row between"><div class="seg" id="sub">
@@ -3520,7 +3551,7 @@ function render(){
     if (mobPick) mobPick.hidden = false;
     if (t) {
       renderHead(t);
-      [null, part1, part2, part3, part4][S.p](t, panel);
+      [part0, part1, part2, part3, part4][S.p](t, panel);
       store.set('last', { t: S.t, p: S.p });
     }
   } else {

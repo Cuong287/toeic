@@ -431,6 +431,206 @@
   flex-shrink: 0;
 }
 
+
+/* ---------- MỤC 0: TỔNG HỢP TỪ VỰNG ---------- */
+.t0-header {
+  margin-bottom: 20px;
+}
+.t0-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+.t0-scope-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.t0-scope-wrap label {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.t0-scope-select {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  max-width: 320px;
+}
+.t0-scope-select:focus {
+  outline: 2px solid var(--accent);
+}
+
+/* Flashcard 3D Flip */
+.fc-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.fc-scene {
+  perspective: 1200px;
+  width: 100%;
+  min-height: 320px;
+}
+.fc-card {
+  width: 100%;
+  min-height: 320px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.fc-card.flipped {
+  transform: rotateY(180deg);
+}
+.fc-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  user-select: none;
+}
+.fc-face.front {
+  border-color: var(--line);
+}
+.fc-face.back {
+  transform: rotateY(180deg);
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.fc-badge {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--sunk);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.fc-hint-flip {
+  position: absolute;
+  bottom: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fc-word {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 10px 0 6px;
+  line-height: 1.2;
+}
+.fc-ipa {
+  font-family: var(--f-ipa);
+  font-size: 16px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.fc-vi {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--good);
+  margin: 10px 0;
+}
+.fc-ex-box {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--sunk);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  text-align: left;
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.fc-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Write Drill (Việt sang Anh) */
+.write-drill-box {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.wd-prompt {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wd-vi {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--good);
+}
+.wd-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.wd-input {
+  flex: 1;
+  padding: 11px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.wd-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.wd-input.ok {
+  border-color: var(--good);
+  background: var(--good-soft);
+}
+.wd-input.no {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
 :root{
   --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF3; --ink:#15213A; --muted:#5B677A; --line:#D8DFE8;
   --accent:#1D5BBF; --accent-ink:#FFFFFF; --accent-soft:#E2EBFA;
@@ -1017,6 +1217,7 @@ let currentRoute = 'topic'; // 'topic' | 'review' | 'leaderboard' | 'profile' | 
 
 function readHash(){
   const h = location.hash || '';
+  if (h === '#topic-0' || h === '#t0' || h === '#t0-p1' || h === '#hub') { currentRoute = 'topic0'; return true; }
   if (h === '#review') { currentRoute = 'review'; return true; }
   if (h === '#leaderboard') { currentRoute = 'leaderboard'; return true; }
   if (h === '#profile') { currentRoute = 'profile'; return true; }
@@ -1623,6 +1824,19 @@ function openAuthModal(defaultTab = 'login') {
 function renderSide(){
   const q = norm($('#search').value || '');
   const list = $('#tlist'); list.innerHTML = '';
+
+  // Mục 00: Tổng hợp từ vựng
+  if (!q) {
+    const isT0 = currentRoute === 'topic0';
+    const li0 = document.createElement('li');
+    li0.innerHTML = `<a href="#topic-0" ${isT0 ? 'aria-current="true"' : ''} style="font-weight:700"><span class="n" style="color:var(--accent);font-weight:800">00</span><span class="nm">Tổng hợp từ vựng</span><span class="badge" style="font-size:11px;background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:10px">Kho từ</span></a>`;
+    const a0 = li0.querySelector('a');
+    if (a0) {
+      a0.onclick = (e) => { e.preventDefault(); goTo('topic-0'); };
+    }
+    list.appendChild(li0);
+  }
+
   TOPICS.forEach(t => {
     const st = splitTitle(t);
     let hits = 0;
@@ -2099,6 +2313,464 @@ function part4(t, el){
 }
 
 // ---------- NEW PAGE: REVIEW (Ôn từ khó) ----------
+
+// ---------- MỤC 0: TỔNG HỢP TỪ VỰNG TOÀN DIỆN ----------
+function renderTopic0(box) {
+  let scope = store.get('t0_scope', '1');
+  let mode = store.get('t0_mode', 'quiz'); // 'quiz' | 'flashcard' | 'write'
+
+  function getPool() {
+    if (scope === 'all') {
+      return TOPICS.flatMap(t => t.vocab.filter(v => v.vi).map(v => ({
+        ...v,
+        topicId: t.id,
+        topicTitle: splitTitle(t).main
+      })));
+    }
+    const t = TOPICS.find(x => String(x.id) === String(scope)) || TOPICS[0];
+    return t.vocab.filter(v => v.vi).map(v => ({
+      ...v,
+      topicId: t.id,
+      topicTitle: splitTitle(t).main
+    }));
+  }
+
+  function drawMain() {
+    const allCount = TOPICS.reduce((acc, t) => acc + t.vocab.length, 0);
+    const pool = getPool();
+    const currentTopicObj = TOPICS.find(x => String(x.id) === String(scope));
+
+    box.innerHTML = `
+      <div class="t0-header">
+        <div class="eyebrow">HỌC VÀ ÔN TẬP TOÀN DIỆN</div>
+        <h1 style="font-size:28px;margin:4px 0 8px">00 · Tổng hợp từ vựng TOEIC 📚</h1>
+        <div class="meta" style="color:var(--muted);font-size:14px">
+          Học trọn gói từ vựng theo từng chương hoặc toàn bộ kho 45 chủ đề với 3 phương pháp ghi nhớ sâu.
+        </div>
+      </div>
+
+      <div class="t0-nav-bar">
+        <div class="t0-scope-wrap">
+          <label for="t0-scope-sel">📖 Chọn chương học:</label>
+          <select id="t0-scope-sel" class="t0-scope-select">
+            <option value="all" ${scope === 'all' ? 'selected' : ''}>Tất cả 45 chương (${allCount} từ vựng)</option>
+            ${TOPICS.map(t => `<option value="${t.id}" ${String(t.id) === String(scope) ? 'selected' : ''}>${String(t.id).padStart(2,'0')}. ${esc(splitTitle(t).main)} (${t.vocab.length} từ)</option>`).join('')}
+          </select>
+          <span class="hint" style="font-size:13px;font-weight:600">(${pool.length} từ vựng)</span>
+        </div>
+
+        <div class="seg" id="t0-mode-tabs">
+          <button data-m="quiz" ${mode === 'quiz' ? 'aria-pressed="true"' : ''}>🎯 Trắc nghiệm</button>
+          <button data-m="flashcard" ${mode === 'flashcard' ? 'aria-pressed="true"' : ''}>🃏 Lật hình (Flashcards)</button>
+          <button data-m="write" ${mode === 'write' ? 'aria-pressed="true"' : ''}>✍️ Viết từ (Việt → Anh)</button>
+        </div>
+      </div>
+
+      <div id="t0-content"></div>
+    `;
+
+    // Bắt sự kiện đổi Scope (Chương)
+    const scopeSel = box.querySelector('#t0-scope-sel');
+    if (scopeSel) {
+      scopeSel.onchange = () => {
+        scope = scopeSel.value;
+        store.set('t0_scope', scope);
+        drawMain();
+      };
+    }
+
+    // Bắt sự kiện đổi Mode (Chế độ)
+    box.querySelectorAll('#t0-mode-tabs button').forEach(btn => {
+      btn.onclick = () => {
+        mode = btn.dataset.m;
+        store.set('t0_mode', mode);
+        drawMain();
+      };
+    });
+
+    const contentBox = box.querySelector('#t0-content');
+    if (mode === 'flashcard') {
+      renderT0Flashcards(contentBox, pool);
+    } else if (mode === 'write') {
+      renderT0WriteDrill(contentBox, pool);
+    } else {
+      renderT0Quiz(contentBox, pool);
+    }
+  }
+
+  drawMain();
+}
+
+// 1. Chế độ Flashcard (Lật hình 3D)
+function renderT0Flashcards(container, rawPool) {
+  if (!rawPool.length) {
+    container.innerHTML = '<div class="card" style="text-align:center;padding:32px">Chưa có từ vựng nào trong danh mục này.</div>';
+    return;
+  }
+
+  let pool = [...rawPool];
+  let curIdx = 0;
+  let isFlipped = false;
+
+  function drawCard() {
+    const v = pool[curIdx];
+    const topObj = TOPICS.find(t => t.id === v.topicId) || TOPICS[0];
+    const e = enr(v.topicId);
+    const x = e && e.vocab ? e.vocab[v.w] : null;
+    const ipa = x ? x[0] : '';
+    const exEn = x ? x[1] : '';
+    const exVi = getWordDescVi(topObj, v);
+
+    container.innerHTML = `
+      <div class="fc-container">
+        <div class="fc-scene">
+          <div class="fc-card ${isFlipped ? 'flipped' : ''}" id="fc-main-card">
+            <!-- Mặt trước (Front) -->
+            <div class="fc-face front">
+              <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}</span>
+              <div style="margin-top:20px">
+                <div class="fc-word">${esc(v.w)}</div>
+                ${v.pos ? `<span class="pos" style="font-size:14px;padding:3px 8px;border-radius:6px">${esc(v.pos)}</span>` : ''}
+                ${ipa ? `<div class="fc-ipa">${esc(ipa)}</div>` : ''}
+              </div>
+              <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+                <button class="icon-btn" id="fc-speak" title="Nghe phát âm" style="width:38px;height:38px">${SPEAK}</button>
+                <button class="icon-btn rec-btn" data-rec-text="${esc(cleanWord(v.w))}" data-rec-id="fc-${v.topicId}-${curIdx}" title="Luyện đọc từ này" style="width:38px;height:38px">${MIC_ICON}</button>
+              </div>
+              <div class="fc-hint-flip">
+                <span>🔄 Bấm vào thẻ để lật xem nghĩa (hoặc nhấn phím Space)</span>
+              </div>
+            </div>
+
+            <!-- Mặt sau (Back) -->
+            <div class="fc-face back">
+              <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}</span>
+              <div class="fc-vi">${esc(v.vi)}</div>
+              ${exEn ? `<div class="fc-ex-box">
+                <div style="font-weight:600;color:var(--accent);margin-bottom:4px">“${esc(exEn)}”</div>
+                <div style="color:var(--ink)">💡 ${esc(exVi)}</div>
+              </div>` : `<div class="fc-ex-box">💡 ${esc(exVi)}</div>`}
+              <div class="fc-hint-flip">
+                <span>🔄 Bấm vào thẻ để quay lại mặt trước</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fc-controls">
+          <button class="btn" id="fc-prev" ${curIdx === 0 ? 'disabled' : ''}>← Thẻ trước</button>
+          <button class="btn primary" id="fc-flip">🔄 Lật thẻ (Space)</button>
+          <button class="btn" id="fc-next" ${curIdx === pool.length - 1 ? 'disabled' : ''}>Thẻ tiếp →</button>
+          <button class="btn ghost" id="fc-shuffle" title="Xáo trộn danh sách thẻ">🔀 Xáo bài</button>
+        </div>
+      </div>
+    `;
+
+    const cardEl = container.querySelector('#fc-main-card');
+    const toggleFlip = () => {
+      isFlipped = !isFlipped;
+      cardEl.classList.toggle('flipped', isFlipped);
+    };
+
+    cardEl.onclick = (e) => {
+      if (e.target.closest('button')) return;
+      toggleFlip();
+    };
+
+    container.querySelector('#fc-flip').onclick = toggleFlip;
+
+    container.querySelector('#fc-prev').onclick = () => {
+      if (curIdx > 0) {
+        curIdx--;
+        isFlipped = false;
+        drawCard();
+      }
+    };
+
+    container.querySelector('#fc-next').onclick = () => {
+      if (curIdx < pool.length - 1) {
+        curIdx++;
+        isFlipped = false;
+        drawCard();
+      }
+    };
+
+    container.querySelector('#fc-shuffle').onclick = () => {
+      pool = shuffle(pool);
+      curIdx = 0;
+      isFlipped = false;
+      drawCard();
+    };
+
+    const spkBtn = container.querySelector('#fc-speak');
+    if (spkBtn) {
+      spkBtn.onclick = (e) => {
+        e.stopPropagation();
+        speak(v.w);
+      };
+    }
+  }
+
+  drawCard();
+}
+
+// 2. Chế độ Viết từ (Việt sang Anh)
+function renderT0WriteDrill(container, rawPool) {
+  if (!rawPool.length) {
+    container.innerHTML = '<div class="card" style="text-align:center;padding:32px">Chưa có từ vựng nào trong danh mục này.</div>';
+    return;
+  }
+
+  const pool = shuffle([...rawPool]);
+  let i = 0, score = 0, wrongList = [];
+
+  function draw() {
+    if (i >= pool.length) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:36px">
+          <div class="eyebrow">Hoàn thành luyện viết</div>
+          <div class="big" style="margin:8px 0">${score} / ${pool.length}</div>
+          <div class="hint">Độ chính xác: <b>${Math.round(score / pool.length * 100)}%</b></div>
+          ${wrongList.length ? `
+            <div style="text-align:left;margin-top:18px">
+              <b>Các từ cần luyện lại (${wrongList.length}):</b>
+              <ul class="wrong-list" style="margin-top:8px">
+                ${wrongList.map(v => `<li><b>${esc(cleanWord(v.w))}</b>: ${esc(v.vi)} <small>(${esc(v.topicTitle)})</small></li>`).join('')}
+              </ul>
+            </div>
+          ` : '<div class="fb ok" style="margin-top:14px">Xuất sắc! Bạn đã gõ đúng toàn bộ các từ.</div>'}
+          <div style="margin-top:20px">
+            <button class="btn primary" id="t0-write-again">Luyện viết lại lượt khác</button>
+          </div>
+        </div>
+      `;
+      container.querySelector('#t0-write-again').onclick = () => renderT0WriteDrill(container, rawPool);
+      return;
+    }
+
+    const v = pool[i];
+    const topObj = TOPICS.find(t => t.id === v.topicId) || TOPICS[0];
+    const viDesc = getWordDescVi(topObj, v);
+    const targetWord = cleanWord(v.w);
+
+    container.innerHTML = `
+      <div class="write-drill-box">
+        <div class="row between" style="margin-bottom:8px">
+          <span class="hint" style="font-weight:600">Câu ${i + 1} / ${pool.length} · ${esc(v.topicTitle)}</span>
+          <span class="hint" style="color:var(--good);font-weight:700">Đúng: ${score}</span>
+        </div>
+        <div class="card">
+          <div class="qprog"><i style="width:${(i / pool.length) * 100}%"></i></div>
+          <div class="wd-prompt">
+            <div style="font-size:13px;color:var(--muted);text-transform:uppercase;font-weight:700">Nghĩa tiếng Việt:</div>
+            <div class="wd-vi">${esc(v.vi)} ${v.pos ? `<small style="font-size:14px;color:var(--muted)">(${esc(v.pos)})</small>` : ''}</div>
+            <div class="qdesc-vi">💡 <i>${esc(viDesc)}</i></div>
+          </div>
+
+          <form id="t0-write-form" autocomplete="off">
+            <div class="wd-input-row">
+              <input class="wd-input" id="t0-w-inp" placeholder="Nhập từ tiếng Anh tương ứng…" autofocus spellcheck="false" autocapitalize="off">
+              <button class="btn primary" type="submit" id="t0-w-btn">Kiểm tra</button>
+              <button class="btn ghost" type="button" id="t0-w-hint" title="Gợi ý chữ cái đầu">Gợi ý</button>
+            </div>
+            <div id="t0-w-fb" style="margin-top:10px;font-size:14.5px;font-weight:600;min-height:22px"></div>
+            <div id="t0-w-next-bar" style="margin-top:12px;display:none">
+              <button class="btn primary" type="button" id="t0-w-next">Từ tiếp theo →</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = container.querySelector('#t0-write-form');
+    const inp = container.querySelector('#t0-w-inp');
+    const fb = container.querySelector('#t0-w-fb');
+    const nextBar = container.querySelector('#t0-w-next-bar');
+    const nextBtn = container.querySelector('#t0-w-next');
+    const hintBtn = container.querySelector('#t0-w-hint');
+    let answered = false;
+
+    hintBtn.onclick = () => {
+      inp.value = targetWord[0] + '... (' + targetWord.length + ' chữ cái)';
+      inp.focus();
+    };
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      if (answered) return;
+      const userVal = norm(inp.value.trim());
+      if (!userVal) return;
+
+      const validAns = answers(v.w);
+      const isCorrect = validAns.has(userVal) || userVal === norm(targetWord);
+
+      answered = true;
+      inp.disabled = true;
+      hintBtn.disabled = true;
+      container.querySelector('#t0-w-btn').disabled = true;
+
+      if (isCorrect) {
+        score++;
+        inp.classList.add('ok');
+        fb.innerHTML = '<span style="color:var(--good)">✓ Chính xác tuyệt vời!</span>';
+        speak(targetWord);
+      } else {
+        wrongList.push(v);
+        store.addReviewWord(v, v.topicId, 'write');
+        inp.classList.add('no');
+        fb.innerHTML = `<span style="color:var(--bad)">Chưa chính xác. Đáp án đúng: <b>${esc(targetWord)}</b></span>`;
+        speak(targetWord);
+      }
+
+      nextBar.style.display = 'block';
+      nextBtn.focus();
+    };
+
+    nextBtn.onclick = () => {
+      i++;
+      draw();
+    };
+  }
+
+  draw();
+}
+
+// 3. Chế độ Trắc nghiệm (Quiz tổng hợp)
+function renderT0Quiz(container, rawPool) {
+  if (rawPool.length < 2) {
+    container.innerHTML = '<div class="card" style="text-align:center;padding:32px">Cần ít nhất 2 từ vựng để tạo bài trắc nghiệm.</div>';
+    return;
+  }
+
+  let dir = store.get('t0_qdir', 'en');
+  const allVocabPool = vocabPool();
+  const sampleCount = Math.min(15, rawPool.length);
+  const questions = shuffle([...rawPool]).slice(0, sampleCount).map(v => {
+    const same = shuffle(rawPool.filter(x => x !== v && shortVi(x.vi) !== shortVi(v.vi)));
+    const extra = shuffle(allVocabPool.filter(x => x.w !== v.w));
+    const distractors = same.concat(extra).slice(0, 3);
+    return {
+      v,
+      opts: shuffle([v, ...distractors])
+    };
+  });
+
+  let i = 0, score = 0, wrongList = [];
+
+  function draw() {
+    if (i >= questions.length) {
+      const pct = Math.round(score / questions.length * 100);
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:36px">
+          <div class="eyebrow">Kết quả trắc nghiệm tổng hợp</div>
+          <div class="big" style="margin:8px 0">${score} / ${questions.length}</div>
+          <div class="hint">Điểm số: <b>${pct}%</b></div>
+          ${pct >= 80 ? '<div class="fb ok" style="margin-top:12px">✓ Xuất sắc! Bạn nắm từ vựng rất vững.</div>' : '<div class="hint" style="margin-top:8px">Hãy luyện thêm để đạt từ 80% trở lên nhé!</div>'}
+          ${wrongList.length ? `
+            <div style="text-align:left;margin-top:18px">
+              <b>Các từ cần ôn lại (${wrongList.length} từ đã tự động lưu vào Từ khó ⭐):</b>
+              <ul class="wrong-list" style="margin-top:8px">
+                ${wrongList.map(v => `<li><b>${esc(v.w)}</b>${v.pos ? ` (${esc(v.pos)})` : ''}: ${esc(v.vi)} <small>(${esc(v.topicTitle)})</small></li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          <div style="margin-top:20px">
+            <button class="btn primary" id="t0-quiz-again">Làm lại bài khác</button>
+          </div>
+        </div>
+      `;
+      container.querySelector('#t0-quiz-again').onclick = () => renderT0Quiz(container, rawPool);
+      return;
+    }
+
+    const q = questions[i];
+    const topObj = TOPICS.find(t => t.id === q.v.topicId) || TOPICS[0];
+    const viDesc = getWordDescVi(topObj, q.v);
+
+    const promptHtml = dir === 'en'
+      ? `<div style="display:flex;align-items:center;gap:10px">${esc(q.v.w)} <button class="icon-btn" id="t0-q-speak" title="Nghe phát âm" style="display:inline-flex">${SPEAK}</button></div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}chọn nghĩa tiếng Việt đúng</small>`
+      : `<div>${esc(shortVi(q.v.vi))}</div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}chọn từ tiếng Anh đúng</small>`;
+
+    container.innerHTML = `
+      <div class="row between" style="margin-bottom:8px">
+        <div class="seg" id="t0-dir">
+          <button data-d="en" ${dir === 'en' ? 'aria-pressed="true"' : ''}>Anh → Việt</button>
+          <button data-d="vi" ${dir === 'vi' ? 'aria-pressed="true"' : ''}>Việt → Anh</button>
+        </div>
+        <span class="hint" style="font-weight:600">Câu ${i + 1} / ${questions.length} · Đúng ${score}</span>
+      </div>
+      <div class="card">
+        <div class="qprog"><i style="width:${(i / questions.length) * 100}%"></i></div>
+        <div class="qprompt">
+          ${promptHtml}
+          ${viDesc ? `<div class="qdesc-vi">💡 <i>${esc(viDesc)}</i></div>` : ''}
+        </div>
+        <div class="opts" style="margin-top:16px">
+          ${q.opts.map((o, k) => `
+            <button class="opt" data-k="${k}">
+              <span class="l">${'ABCD'[k]}</span>
+              <span>${esc(dir === 'en' ? shortVi(o.vi) : cleanWord(o.w))}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="row between" style="margin-top:14px">
+          <span class="fb" id="t0-fb"></span>
+          <button class="btn primary" id="t0-next" hidden>Câu tiếp theo →</button>
+        </div>
+      </div>
+    `;
+
+    const spkBtn = container.querySelector('#t0-q-speak');
+    if (spkBtn) spkBtn.onclick = () => speak(q.v.w);
+
+    container.querySelectorAll('#t0-dir button').forEach(btn => {
+      btn.onclick = () => {
+        dir = btn.dataset.d;
+        store.set('t0_qdir', dir);
+        draw();
+      };
+    });
+
+    let answered = false;
+    container.querySelectorAll('.opts .opt').forEach(btn => {
+      btn.onclick = () => {
+        if (answered) return;
+        answered = true;
+        const chosen = q.opts[+btn.dataset.k];
+        const ok = chosen.w === q.v.w;
+        btn.classList.add(ok ? 'ok' : 'no');
+
+        if (ok) {
+          score++;
+          container.querySelector('#t0-fb').className = 'fb ok';
+          container.querySelector('#t0-fb').textContent = '✓ Chính xác!';
+          speak(q.v.w);
+        } else {
+          wrongList.push(q.v);
+          store.addReviewWord(q.v, q.v.topicId, 'quiz');
+          container.querySelector('#t0-fb').className = 'fb no';
+          container.querySelector('#t0-fb').textContent = '✕ Chưa đúng. Đáp án: ' + (dir === 'en' ? q.v.vi : cleanWord(q.v.w));
+          // Highlight nút đúng
+          container.querySelectorAll('.opts .opt').forEach((b, k) => {
+            if (q.opts[k].w === q.v.w) b.classList.add('ok');
+          });
+        }
+
+        container.querySelectorAll('.opts .opt').forEach(b => b.disabled = true);
+        const nextBtn = container.querySelector('#t0-next');
+        nextBtn.hidden = false;
+        nextBtn.focus();
+        nextBtn.onclick = () => {
+          i++;
+          draw();
+        };
+      };
+    });
+  }
+
+  draw();
+}
+
 function renderReview(box) {
   const allHardWords = store.getReviewList();
   let activeTab = 'list';
@@ -2855,7 +3527,8 @@ function render(){
     if (thead) thead.hidden = true;
     if (tabs) tabs.hidden = true;
     if (mobPick) mobPick.hidden = true;
-    if (currentRoute === 'review') renderReview(panel);
+    if (currentRoute === 'topic0') renderTopic0(panel);
+    else if (currentRoute === 'review') renderReview(panel);
     else if (currentRoute === 'leaderboard') renderLeaderboard(panel);
     else if (currentRoute === 'profile') renderProfile(panel);
     else if (currentRoute === 'admin') renderAdmin(panel);

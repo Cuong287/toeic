@@ -2602,7 +2602,7 @@ function renderT0WriteDrill(container, rawPool) {
       if (!userVal) return;
 
       const validAns = answers(v.w);
-      const isCorrect = validAns.has(userVal) || userVal === norm(targetWord);
+      const isCorrect = validAns.includes(userVal) || userVal === norm(targetWord);
 
       answered = true;
       inp.disabled = true;

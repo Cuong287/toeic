@@ -690,6 +690,7 @@ button{cursor:pointer}
 .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .tab[aria-selected="true"] .k{background:var(--accent);color:var(--accent-ink)}
 .panel{display:flex;flex-direction:column;gap:18px}
+.seg-sm button{padding:4px 10px!important;font-size:12.5px!important}
 .seg{display:inline-flex;background:var(--sunk);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
 .seg button{border:0;background:none;padding:7px 14px;border-radius:7px;font-weight:600;font-size:13.5px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
@@ -1910,23 +1911,216 @@ function renderHead(t){
 
 // ---------- PART 1 ----------
 
-// ---------- PART 0: TỔNG HỢP TỪ VỰNG CỦA MỖI CHƯƠNG ----------
+
+// ---------- TỪ ĐIỂN BỔ TRỢ HỌ TỪ, ĐỒNG NGHĨA & BÀI NGHE ----------
+const CHAPTER_VOCAB_DICT = {"check":{"pos":"n","vi":"séc, chi phiếu, kiểm tra"},"receipt":{"pos":"n","vi":"biên lai, giấy biên nhận"},"cancellation":{"pos":"n","vi":"sự hủy bỏ"},"confirmative":{"pos":"a","vi":"mang tính xác nhận"},"confirmation":{"pos":"n","vi":"sự xác nhận"},"request a refund":{"pos":"","vi":"yêu cầu hoàn tiền"},"give a refund":{"pos":"","vi":"hoàn trả tiền"},"deliver":{"pos":"v","vi":"giao hàng, vận chuyển"},"delivery":{"pos":"n","vi":"sự giao hàng"},"verification":{"pos":"n","vi":"sự xác minh, chứng nhận"},"next week":{"pos":"","vi":"tuần tới"},"food":{"pos":"n","vi":"thức ăn, thực phẩm"},"vegetable":{"pos":"n","vi":"rau củ"},"more expensive":{"pos":"a","vi":"đắt hơn"},"special":{"pos":"a","vi":"đặc biệt"},"confirm the hotel":{"pos":"","vi":"xác nhận đặt phòng khách sạn"},"do that":{"pos":"","vi":"làm việc đó"},"windows":{"pos":"n","vi":"các cửa sổ"},"ahead of":{"pos":"prep","vi":"trước, sớm hơn (thời hạn)"},"before":{"pos":"prep","vi":"trước khi"},"contract":{"pos":"n","vi":"hợp đồng"},"this morning":{"pos":"","vi":"sáng nay"},"yesterday":{"pos":"","vi":"hôm qua"},"key":{"pos":"n","vi":"chìa khóa, yếu tố then chốt"},"extra":{"pos":"a","vi":"thêm, phụ thêm"},"free":{"pos":"a","vi":"miễn phí"},"reasonable":{"pos":"a","vi":"hợp lý, phải chăng"},"competitive":{"pos":"a","vi":"có tính cạnh tranh"},"customer":{"pos":"n","vi":"khách hàng"},"client":{"pos":"n","vi":"khách hàng, thân chủ"},"buyer":{"pos":"n","vi":"người mua"},"user":{"pos":"n","vi":"người sử dụng"},"beyond":{"pos":"prep","vi":"vượt quá, bên kia"},"over":{"pos":"prep","vi":"hơn, vượt quá"},"at no charge":{"pos":"","vi":"miễn phí, không tính tiền"},"in large number/amount":{"pos":"","vi":"với số lượng lớn"},"installment":{"pos":"n","vi":"kỳ trả góp, tiền trả góp"},"installation":{"pos":"n","vi":"sự lắp đặt, cài đặt"},"busy":{"pos":"a","vi":"bận rộn"},"restaurant":{"pos":"n","vi":"nhà hàng"},"discount":{"pos":"n, v","vi":"giảm giá, chiết khấu"},"coupon":{"pos":"n","vi":"phiếu giảm giá"},"voucher":{"pos":"n","vi":"phiếu mua hàng"},"warranty":{"pos":"n","vi":"bảo hành"},"guarantee":{"pos":"n, v","vi":"bảo đảm, cam kết"},"recommend":{"pos":"v","vi":"khuyên, đề xuất"},"recommendation":{"pos":"n","vi":"lời khuyên, sự giới thiệu"},"suggest":{"pos":"v","vi":"gợi ý, đề xuất"},"suggestion":{"pos":"n","vi":"lời gợi ý, đề xuất"},"advise":{"pos":"v","vi":"khuyên bảo"},"advice":{"pos":"n","vi":"lời khuyên"},"propose":{"pos":"v","vi":"đề xuất"},"proposal":{"pos":"n","vi":"bản đề xuất, kế hoạch"},"grateful":{"pos":"a","vi":"biết ơn"},"gratitude":{"pos":"n","vi":"lòng biết ơn"},"appreciate":{"pos":"v","vi":"đánh giá cao, cảm kích"},"appreciation":{"pos":"n","vi":"sự cảm kích, ghi nhận"},"thankful":{"pos":"a","vi":"biết ơn"},"acknowledge":{"pos":"v","vi":"công nhận, xác nhận đã nhận"},"acknowledgment":{"pos":"n","vi":"sự ghi nhận, lời cảm ơn"},"commerce":{"pos":"n","vi":"thương mại"},"commercial":{"pos":"a, n","vi":"thuộc thương mại; quảng cáo"},"enterprise":{"pos":"n","vi":"doanh nghiệp"},"corporation":{"pos":"n","vi":"tập đoàn"},"firm":{"pos":"n, a","vi":"công ty; vững chắc"},"celebration":{"pos":"n","vi":"sự kỷ niệm, lễ kỷ niệm"},"anniversary":{"pos":"n","vi":"ngày kỷ niệm"},"ceremony":{"pos":"n","vi":"buổi lễ, nghi lễ"},"annual":{"pos":"a","vi":"hằng năm"},"register":{"pos":"v","vi":"đăng ký"},"registration":{"pos":"n","vi":"sự đăng ký"},"sign up":{"pos":"v","vi":"đăng ký"},"amenity":{"pos":"n","vi":"tiện nghi"},"convenience":{"pos":"n","vi":"sự thuận tiện, tiện nghi"},"extend":{"pos":"v","vi":"kéo dài, mở rộng"},"expansion":{"pos":"n","vi":"sự mở rộng"},"lengthen":{"pos":"v","vi":"làm dài thêm"},"reliable":{"pos":"a","vi":"đáng tin cậy"},"dependable":{"pos":"a","vi":"đáng tin cậy"},"trustful":{"pos":"a","vi":"đáng tin"},"terminate":{"pos":"v","vi":"chấm dứt, kết thúc"},"destroy":{"pos":"v","vi":"phá hủy"},"finance":{"pos":"n, v","vi":"tài chính; cấp vốn"},"financial":{"pos":"a","vi":"thuộc tài chính"},"approximately":{"pos":"adv","vi":"xấp xỉ, khoảng chừng"},"about":{"pos":"adv","vi":"khoảng"},"asset":{"pos":"n","vi":"tài sản"},"property":{"pos":"n","vi":"bất động sản, tài sản"},"possession":{"pos":"n","vi":"sở hữu, tài sản"},"immensely":{"pos":"adv","vi":"vô cùng, hết sức"},"extremely":{"pos":"adv","vi":"cực kỳ"},"very":{"pos":"adv","vi":"rất"},"proceeds":{"pos":"n","vi":"tiền thu được, doanh thu"},"proceedings":{"pos":"n","vi":"biên bản cuộc họp, tố tụng"},"proceed":{"pos":"v","vi":"tiến hành, tiếp tục"},"reimburse":{"pos":"v","vi":"hoàn tiền, bồi hoàn"},"appraisal":{"pos":"n","vi":"sự thẩm định, đánh giá"},"inspection":{"pos":"n","vi":"sự thanh tra, kiểm tra kỹ thuật"},"assessment":{"pos":"n","vi":"sự đánh giá"},"review":{"pos":"v, n","vi":"xem xét, đánh giá"},"landlord":{"pos":"n","vi":"chủ nhà"},"owner":{"pos":"n","vi":"chủ sở hữu"},"resident":{"pos":"n","vi":"cư dân"},"inhabitant":{"pos":"n","vi":"cư dân, người ở"},"citizen":{"pos":"n","vi":"công dân"},"agency":{"pos":"n","vi":"đại lý, cơ quan"},"dealership":{"pos":"n","vi":"đại lý phân phối"},"short-term":{"pos":"a","vi":"ngắn hạn"},"temporary":{"pos":"a","vi":"tạm thời"},"utility bills":{"pos":"n","vi":"hóa đơn điện nước"},"within walking distance":{"pos":"","vi":"trong khoảng cách đi bộ"},"near":{"pos":"prep, a","vi":"gần"},"close":{"pos":"a, prep","vi":"gần gũi, sát bên"},"applicant":{"pos":"n","vi":"ứng viên xin việc"},"candidate":{"pos":"n","vi":"ứng viên"},"degree":{"pos":"n","vi":"bằng cấp"},"certificate":{"pos":"n","vi":"chứng chỉ"},"job openings":{"pos":"n","vi":"vị trí tuyển dụng"},"vacant position":{"pos":"n","vi":"vị trí còn trống"},"vacancy":{"pos":"n","vi":"chỗ trống công việc"},"requirement":{"pos":"n","vi":"yêu cầu"},"demand":{"pos":"n, v","vi":"nhu cầu; đòi hỏi"},"short-staffed":{"pos":"a","vi":"thiếu nhân sự"},"staff shortage":{"pos":"n","vi":"tình trạng thiếu nhân viên"},"impermanent":{"pos":"a","vi":"tạm thời, không lâu dài"},"permanent":{"pos":"a","vi":"vĩnh viễn, lâu dài"},"vary":{"pos":"v","vi":"thay đổi, khác nhau"},"differ":{"pos":"v","vi":"khác với"},"nominee":{"pos":"n","vi":"người được đề cử"},"outline":{"pos":"n, v","vi":"bản phác thảo; vạch ra"},"performance":{"pos":"n","vi":"hiệu suất làm việc, biểu diễn"},"scheduling conflict":{"pos":"n","vi":"trùng lịch trình"},"conflict":{"pos":"n","vi":"xung đột, mâu thuẫn"},"shareholder":{"pos":"n","vi":"cổ đông"},"share":{"pos":"n, v","vi":"cổ phiếu; chia sẻ"},"stockholder":{"pos":"n","vi":"cổ đông"},"unanimous":{"pos":"a","vi":"nhất trí, đồng lòng"},"address a problem":{"pos":"","vi":"giải quyết vấn đề"},"deal with":{"pos":"v","vi":"xử lý, giải quyết"},"solve":{"pos":"v","vi":"giải quyết"},"face":{"pos":"v","vi":"đối mặt"},"cope with":{"pos":"v","vi":"đương đầu với"},"agenda":{"pos":"n","vi":"chương trình nghị sự"},"schedule":{"pos":"n, v","vi":"lịch trình; lên lịch"},"agreed with":{"pos":"v","vi":"đồng thuận với"},"approved":{"pos":"a, v","vi":"được phê duyệt"},"concurred with":{"pos":"v","vi":"đồng tình với"},"administrative":{"pos":"a","vi":"thuộc hành chính"},"managerial":{"pos":"a","vi":"thuộc quản lý"},"assume a job":{"pos":"","vi":"đảm nhận công việc"},"take on a position":{"pos":"","vi":"tiếp nhận vị trí"},"be appointed":{"pos":"v","vi":"được bổ nhiệm"},"be named":{"pos":"v","vi":"được chỉ định, bổ nhiệm"},"headquarters":{"pos":"n","vi":"trụ sở chính"},"main office":{"pos":"n","vi":"văn phòng chính"},"oversee":{"pos":"v","vi":"giám sát"},"supervise":{"pos":"v","vi":"giám sát, quản lý"},"replace":{"pos":"v","vi":"thay thế"},"displace":{"pos":"v","vi":"chiếm chỗ, thay thế"},"task":{"pos":"n","vi":"nhiệm vụ"},"duty":{"pos":"n","vi":"nhiệm vụ, bổn phận"},"mission":{"pos":"n","vi":"sứ mệnh, nhiệm vụ"},"assignment":{"pos":"n","vi":"bài tập, phân công"},"transfer":{"pos":"v, n","vi":"chuyển giao; điều chuyển"},"transmit":{"pos":"v","vi":"truyền phát, chuyển tiếp"},"council":{"pos":"n","vi":"hội đồng"},"committee":{"pos":"n","vi":"ủy ban"},"commission":{"pos":"n","vi":"ủy ban; hoa hồng"},"convert":{"pos":"v","vi":"chuyển đổi"},"transform":{"pos":"v","vi":"biến đổi"},"switch":{"pos":"v, n","vi":"chuyển đổi; công tắc"},"municipal":{"pos":"a","vi":"thuộc thành phố, đô thị"},"urban":{"pos":"a","vi":"thuộc thành thị"},"civic":{"pos":"a","vi":"thuộc công dân, đô thị"},"resume":{"pos":"n","vi":"sơ yếu lý lịch"},"continue":{"pos":"v","vi":"tiếp tục"},"keep on":{"pos":"v","vi":"tiếp tục"},"launch":{"pos":"v, n","vi":"ra mắt, khởi động"},"start":{"pos":"v","vi":"bắt đầu"},"introduce":{"pos":"v","vi":"giới thiệu"},"release":{"pos":"v, n","vi":"phát hành, ra mắt"},"disrupt":{"pos":"v","vi":"làm gián đoạn"},"disturb":{"pos":"v","vi":"làm phiền"},"interrupt":{"pos":"v","vi":"ngắt lời, làm đứt quãng"},"intrude":{"pos":"v","vi":"xâm nhập, làm phiền"},"accommodate":{"pos":"v","vi":"chứa, đáp ứng chỗ ở"},"reside":{"pos":"v","vi":"cư trú"},"live":{"pos":"v","vi":"sống"},"device":{"pos":"n","vi":"thiết bị"},"appliance":{"pos":"n","vi":"thiết bị gia dụng"},"equipment":{"pos":"n","vi":"thiết bị, dụng cụ"},"machine":{"pos":"n","vi":"máy móc"},"feature":{"pos":"n, v","vi":"tính năng, đặc điểm; nổi bật"},"characteristic":{"pos":"n, a","vi":"đặc tính, đặc trưng"},"aspect":{"pos":"n","vi":"khía cạnh"},"intricate":{"pos":"a","vi":"tinh xảo, phức tạp"},"complex":{"pos":"a","vi":"phức tạp"},"complicated":{"pos":"a","vi":"rắc rối, phức tạp"},"sophisticated":{"pos":"a","vi":"tinh vi, phức tạp"},"replica":{"pos":"n","vi":"bản sao"},"copy":{"pos":"n, v","vi":"bản sao; sao chép"},"versatile":{"pos":"a","vi":"đa năng, linh hoạt"},"flexible":{"pos":"a","vi":"linh hoạt"},"customers":{"pos":"n","vi":"các khách hàng"},"tables":{"pos":"n","vi":"các bàn"},"complimentary tickets":{"pos":"n","vi":"vé miễn phí"},"show":{"pos":"n, v","vi":"buổi biểu diễn; cho thấy"},"festival":{"pos":"n","vi":"lễ hội"},"café":{"pos":"n","vi":"quán cà phê"},"coffee shop":{"pos":"n","vi":"quán cà phê"},"shop":{"pos":"n, v","vi":"cửa hàng; mua sắm"},"closing":{"pos":"n, a","vi":"sự đóng cửa; kết thúc"},"temperature":{"pos":"n","vi":"nhiệt độ"},"repair":{"pos":"v, n","vi":"sửa chữa"},"store":{"pos":"n, v","vi":"cửa hàng; lưu trữ"},"suitable":{"pos":"a","vi":"phù hợp, thích hợp"},"fitting":{"pos":"a","vi":"vừa vặn, thích hợp"},"try":{"pos":"v","vi":"thử, cố gắng"},"attempt":{"pos":"v, n","vi":"nỗ lực, cố gắng"},"ideal":{"pos":"a","vi":"lý tưởng"},"ability":{"pos":"n","vi":"khả năng, năng lực"},"marketing":{"pos":"n","vi":"tiếp thị"},"qualifications":{"pos":"n","vi":"trình độ chuyên môn, bằng cấp"},"experience":{"pos":"n, v","vi":"kinh nghiệm; trải nghiệm"},"office":{"pos":"n","vi":"văn phòng"},"branch":{"pos":"n","vi":"chi nhánh"},"position":{"pos":"n","vi":"vị trí (công việc)"},"understand":{"pos":"v","vi":"hiểu"},"team":{"pos":"n","vi":"đội, nhóm"},"travel":{"pos":"v, n","vi":"đi lại, đi công tác"},"selected":{"pos":"a, v","vi":"được chọn lựa"},"chosen":{"pos":"a, v","vi":"được chọn"},"presentations":{"pos":"n","vi":"các bài thuyết trình"},"seminars":{"pos":"n","vi":"các buổi hội thảo"},"products":{"pos":"n","vi":"các sản phẩm"},"company":{"pos":"n","vi":"công ty"},"questions":{"pos":"n","vi":"các câu hỏi"},"materials":{"pos":"n","vi":"tài liệu, vật liệu"},"last year":{"pos":"","vi":"năm ngoái"},"their":{"pos":"det","vi":"của họ"},"attached":{"pos":"a","vi":"được đính kèm"},"invaluable":{"pos":"a","vi":"vô giá, rất quý báu"},"priceless":{"pos":"a","vi":"vô giá"},"worthless":{"pos":"a","vi":"vô giá trị, không có giá trị"},"unfortunately":{"pos":"adv","vi":"thật không may"},"delighted":{"pos":"a","vi":"vui mừng, hài lòng"},"happy":{"pos":"a","vi":"vui vẻ, hạnh phúc"},"postpone":{"pos":"v","vi":"trì hoãn, hoãn lại"},"phone":{"pos":"n, v","vi":"điện thoại; gọi điện"},"manager":{"pos":"n","vi":"người quản lý"},"supervisor":{"pos":"n","vi":"người giám sát"},"credit card":{"pos":"n","vi":"thẻ tín dụng"},"offices":{"pos":"n","vi":"các văn phòng"},"contractor":{"pos":"n","vi":"nhà thầu"},"supplier":{"pos":"n","vi":"nhà cung cấp"},"vendor":{"pos":"n","vi":"nhà cung cấp, người bán"},"inventory":{"pos":"n","vi":"hàng tồn kho, kiểm kê"},"stock":{"pos":"n, v","vi":"kho hàng, cổ phiếu; dự trữ"},"invoice":{"pos":"n, v","vi":"hóa đơn; lập hóa đơn"},"bill":{"pos":"n, v","vi":"hóa đơn; tính phí"},"shipment":{"pos":"n","vi":"lô hàng, việc giao hàng"},"cargo":{"pos":"n","vi":"hàng hóa (vận chuyển)"},"freight":{"pos":"n","vi":"cước phí, hàng hóa vận chuyển"},"logistics":{"pos":"n","vi":"ngành hậu cần, vận tải"},"tracking":{"pos":"n","vi":"sự theo dõi lộ trình"},"reservation":{"pos":"n","vi":"sự đặt chỗ trước"},"booking":{"pos":"n","vi":"sự đặt chỗ"},"flight":{"pos":"n","vi":"chuyến bay"},"hotel":{"pos":"n","vi":"khách sạn"},"itinerary":{"pos":"n","vi":"lịch trình chuyến đi"},"luggage":{"pos":"n","vi":"hành lý"},"baggage":{"pos":"n","vi":"hành lý"},"passenger":{"pos":"n","vi":"hành khách"},"commute":{"pos":"v, n","vi":"đi lại hằng ngày giữa nhà và nơi làm việc"},"public transit":{"pos":"n","vi":"giao thông công cộng"},"transportation":{"pos":"n","vi":"phương tiện giao thông, sự vận tải"},"vehicle":{"pos":"n","vi":"phương tiện giao thông"},"pedestrian":{"pos":"n","vi":"người đi bộ"},"traffic":{"pos":"n","vi":"giao thông"},"congestion":{"pos":"n","vi":"sự ùn tắc, tắc nghẽn"},"delay":{"pos":"v, n","vi":"trì hoãn, làm chậm"},"cancelled":{"pos":"a","vi":"bị hủy bỏ"},"renovation":{"pos":"n","vi":"sự cải tạo, nâng cấp"},"remodel":{"pos":"v","vi":"sửa chữa, làm mới lại"},"refurbish":{"pos":"v","vi":"tân trang lại"},"facility":{"pos":"n","vi":"cơ sở vật chất, tiện ích"},"real estate":{"pos":"n","vi":"bất động sản"},"lease":{"pos":"n, v","vi":"hợp đồng thuê; thuê dài hạn"},"tenant":{"pos":"n","vi":"người thuê nhà/văn phòng"},"mortgage":{"pos":"n, v","vi":"khoản vay thế chấp"},"colleague":{"pos":"n","vi":"đồng nghiệp"},"coworker":{"pos":"n","vi":"đồng nghiệp"},"peer":{"pos":"n","vi":"đồng nghiệp ngang hàng"},"executive":{"pos":"n, a","vi":"giám đốc điều hành; cấp cao"},"director":{"pos":"n","vi":"giám đốc"},"representative":{"pos":"n","vi":"người đại diện"},"personnel":{"pos":"n","vi":"nhân sự, cán bộ"},"human resources":{"pos":"n","vi":"phòng nhân sự"},"staff":{"pos":"n","vi":"nhân viên, đội ngũ"},"workforce":{"pos":"n","vi":"lực lượng lao động"},"recruit":{"pos":"v, n","vi":"tuyển dụng; tân binh"},"hire":{"pos":"v, n","vi":"thuê, tuyển dụng"},"interview":{"pos":"n, v","vi":"phỏng vấn"},"cover letter":{"pos":"n","vi":"thư xin việc"},"reference":{"pos":"n","vi":"thư giới thiệu, người chứng nhận"},"salary":{"pos":"n","vi":"tiền lương (tháng/năm)"},"wage":{"pos":"n","vi":"tiền công (giờ/tuần)"},"compensation":{"pos":"n","vi":"tiền thù lao, bồi thường"},"benefits":{"pos":"n","vi":"phúc lợi, bảo hiểm"},"promotion":{"pos":"n","vi":"thăng chức, khuyến mãi"},"retire":{"pos":"v","vi":"nghỉ hưu"},"retirement":{"pos":"n","vi":"sự nghỉ hưu"},"pension":{"pos":"n","vi":"lương hưu"},"resignation":{"pos":"n","vi":"sự từ chức"},"layoff":{"pos":"n","vi":"sự sa thải hàng loạt"},"budget":{"pos":"n, v","vi":"ngân sách; dự toán"},"revenue":{"pos":"n","vi":"doanh thu"},"profit":{"pos":"n, v","vi":"lợi nhuận"},"deficit":{"pos":"n","vi":"thâm hụt, thiếu hụt"},"loss":{"pos":"n","vi":"sự thua lỗ, mất mát"},"audit":{"pos":"n, v","vi":"sự kiểm toán; kiểm toán"},"accounting":{"pos":"n","vi":"ngành kế toán"},"tax":{"pos":"n, v","vi":"thuế; đánh thuế"},"investment":{"pos":"n","vi":"khoản đầu tư"},"investor":{"pos":"n","vi":"nhà đầu tư"},"funds":{"pos":"n","vi":"nguồn tiền, quỹ"},"funding":{"pos":"n","vi":"sự cấp vốn, tài trợ"},"grant":{"pos":"n, v","vi":"khoản trợ cấp; ban cho"},"loan":{"pos":"n, v","vi":"khoản vay; cho vay"},"interest rate":{"pos":"n","vi":"lãi suất"},"transaction":{"pos":"n","vi":"giao dịch"},"bank account":{"pos":"n","vi":"tài khoản ngân hàng"},"deposit":{"pos":"v, n","vi":"gửi tiền; tiền đặt cọc"},"withdraw":{"pos":"v","vi":"rút tiền"},"balance":{"pos":"n","vi":"số dư tài khoản"},"strategy":{"pos":"n","vi":"chiến lược"},"campaign":{"pos":"n","vi":"chiến dịch (quảng bá/tiếp thị)"},"advertisement":{"pos":"n","vi":"mục quảng cáo"},"target audience":{"pos":"n","vi":"khách hàng mục tiêu"},"survey":{"pos":"n, v","vi":"cuộc khảo sát; khảo sát"},"feedback":{"pos":"n","vi":"phản hồi, ý kiến đóng góp"},"questionnaire":{"pos":"n","vi":"bảng câu hỏi khảo sát"},"satisfaction":{"pos":"n","vi":"sự hài lòng"},"complaint":{"pos":"n","vi":"lời phàn nàn, khiếu nại"},"inquiry":{"pos":"n","vi":"yêu cầu giải đáp, câu hỏi tìm hiểu"},"request":{"pos":"n, v","vi":"lời yêu cầu; yêu cầu"},"catering":{"pos":"n","vi":"dịch vụ ăn uống phục vụ tiệc"},"menu":{"pos":"n","vi":"thực đơn"},"beverage":{"pos":"n","vi":"đồ uống"},"banquet":{"pos":"n","vi":"bữa tiệc lớn, dạ tiệc"},"venue":{"pos":"n","vi":"địa điểm tổ chức sự kiện"},"conference":{"pos":"n","vi":"hội nghị"},"convention":{"pos":"n","vi":"đại hội, hội nghị lớn"},"workshop":{"pos":"n","vi":"buổi tập huấn, xưởng thực hành"},"attendee":{"pos":"n","vi":"người tham dự"},"participant":{"pos":"n","vi":"người tham gia"},"registration desk":{"pos":"n","vi":"bàn đăng ký tiếp đón"},"keynote speaker":{"pos":"n","vi":"diễn giả chính"},"speech":{"pos":"n","vi":"bài phát biểu"},"lecture":{"pos":"n, v","vi":"bài giảng, thuyết trình"},"announcement":{"pos":"n","vi":"thông báo"},"notice":{"pos":"n, v","vi":"thông báo; để ý"},"memo":{"pos":"n","vi":"bản ghi nhớ nội bộ"},"bulletin":{"pos":"n","vi":"bản tin"},"newsletter":{"pos":"n","vi":"bản tin định kỳ"},"press release":{"pos":"n","vi":"thông cáo báo chí"},"guidelines":{"pos":"n","vi":"hướng dẫn, chỉ dẫn"},"manual":{"pos":"n, a","vi":"sách hướng dẫn; thủ công"},"policy":{"pos":"n","vi":"chính sách, quy định"},"procedure":{"pos":"n","vi":"quy trình, thủ tục"},"regulation":{"pos":"n","vi":"quy định, luật lệ"},"compliance":{"pos":"n","vi":"sự tuân thủ"},"standard":{"pos":"n, a","vi":"tiêu chuẩn; chuẩn mực"},"safety":{"pos":"n","vi":"sự an toàn"},"hazard":{"pos":"n","vi":"mối nguy hiểm"},"precaution":{"pos":"n","vi":"biện pháp phòng ngừa"},"emergency":{"pos":"n","vi":"trường hợp khẩn cấp"},"evacuation":{"pos":"n","vi":"sự sơ tán"},"maintenance":{"pos":"n","vi":"sự bảo trì, bảo dưỡng"},"malfunction":{"pos":"n, v","vi":"sự cố trục trặc; gặp sự cố"},"defect":{"pos":"n","vi":"lỗi, khiếm khuyết"},"out of order":{"pos":"a","vi":"bị hỏng, ngừng hoạt động"},"upgrade":{"pos":"v, n","vi":"nâng cấp"},"software":{"pos":"n","vi":"phần mềm"},"hardware":{"pos":"n","vi":"phần cứng"},"network":{"pos":"n","vi":"mạng lưới, kết nối"},"database":{"pos":"n","vi":"cơ sở dữ liệu"},"backup":{"pos":"n, v","vi":"sao lưu dữ liệu"},"security":{"pos":"n","vi":"an ninh, bảo mật"},"password":{"pos":"n","vi":"mật khẩu"},"technician":{"pos":"n","vi":"kỹ thuật viên"},"it department":{"pos":"n","vi":"phòng công nghệ thông tin"},"support":{"pos":"v, n","vi":"hỗ trợ"},"troubleshoot":{"pos":"v","vi":"khắc phục sự cố"}};
+
+function getChapterAllWords(t) {
+  const e = enr(t.id);
+  const wordMap = new Map();
+
+  // 1. Phần 1: Từ vựng chính
+  (t.vocab || []).forEach(v => {
+    if (!v.w || !v.vi) return;
+    const clean = cleanWord(v.w);
+    if (!clean) return;
+    const k = clean.toLowerCase();
+    wordMap.set(k, {
+      ...v,
+      w: clean,
+      topicId: t.id,
+      topicTitle: splitTitle(t).main,
+      source: 'Phần 1',
+      sourceFull: 'Phần 1: Từ vựng chính',
+      part: 1
+    });
+  });
+
+  // 2. Phần 2: Ghi chú họ từ, đồng nghĩa
+  (t.notes || []).forEach(line => {
+    let lineVi = '';
+    const colonIdx = line.indexOf(':');
+    if (colonIdx !== -1) {
+      lineVi = line.slice(colonIdx + 1).trim();
+    }
+    const leftPart = line.split(/[:;]/)[0];
+    const toks = leftPart.split(/\s*(?:->|→|=|~|><|,)\s*/);
+    toks.forEach(tk => {
+      let raw = cleanWord(tk);
+      raw = raw.replace(/^\d+[\.\)]\s*/, '').trim();
+      if (!raw || raw.length < 2 || raw.split(/\s+/).length > 4) return;
+      const k = raw.toLowerCase();
+      if (wordMap.has(k)) return;
+
+      let pos = 'họ từ', vi = lineVi;
+      if (CHAPTER_VOCAB_DICT[k]) {
+        pos = CHAPTER_VOCAB_DICT[k].pos || pos;
+        vi = CHAPTER_VOCAB_DICT[k].vi || vi;
+      } else {
+        const hit = vocabPool().find(x => norm(cleanWord(x.w)) === norm(k));
+        if (hit) {
+          pos = hit.pos || pos;
+          vi = hit.vi || vi;
+        }
+      }
+      if (vi) {
+        wordMap.set(k, {
+          w: raw,
+          pos,
+          vi,
+          topicId: t.id,
+          topicTitle: splitTitle(t).main,
+          source: 'Phần 2',
+          sourceFull: 'Phần 2: Họ từ & đồng nghĩa',
+          part: 2
+        });
+      }
+    });
+  });
+
+  // 2b. Phần 2: Dạng đúng của từ (forms)
+  if (e && e.forms) {
+    e.forms.forEach(f => {
+      const base = f[1];
+      (f[2] || []).forEach(ans => {
+        ans.split(/\s*\/\s*/).forEach(p => {
+          const raw = cleanWord(p);
+          const k = raw.toLowerCase();
+          if (raw && !wordMap.has(k)) {
+            let vi = '';
+            if (CHAPTER_VOCAB_DICT[k]) vi = CHAPTER_VOCAB_DICT[k].vi;
+            else {
+              const hit = vocabPool().find(x => norm(cleanWord(x.w)) === norm(k));
+              if (hit) vi = hit.vi;
+              else if (wordMap.has(base.toLowerCase())) vi = wordMap.get(base.toLowerCase()).vi;
+            }
+            if (vi) {
+              wordMap.set(k, {
+                w: raw,
+                pos: 'dạng từ',
+                vi,
+                topicId: t.id,
+                topicTitle: splitTitle(t).main,
+                source: 'Phần 2',
+                sourceFull: 'Phần 2: Chia dạng từ',
+                part: 2
+              });
+            }
+          }
+        });
+      });
+    });
+  }
+
+  // 3. Phần 3: Từ vựng đề xuất trong bài đọc & dịch
+  if (e && e.tr) {
+    Object.values(e.tr).forEach(sec => {
+      Object.values(sec).forEach(it => {
+        (it[1] || []).forEach(w => {
+          const raw = cleanWord(w[0]);
+          const k = raw.toLowerCase();
+          if (raw && !wordMap.has(k) && w[2]) {
+            wordMap.set(k, {
+              w: w[0],
+              pos: w[1] || '',
+              vi: w[2],
+              topicId: t.id,
+              topicTitle: splitTitle(t).main,
+              source: 'Phần 3',
+              sourceFull: 'Phần 3: Bài đọc & dịch',
+              part: 3
+            });
+          }
+        });
+      });
+    });
+  }
+
+  // 4. Phần 4: Từ khóa trong bài nghe điền từ
+  if (e && e.gap) {
+    Object.values(e.gap).forEach(sec => {
+      Object.values(sec).forEach(it => {
+        (it[0] || []).forEach(ans => {
+          ans.split(/\s*\/\s*/).forEach(a => {
+            const raw = cleanWord(a);
+            const k = raw.toLowerCase();
+            if (raw && raw.length > 2 && raw.split(/\s+/).length <= 3 && !wordMap.has(k)) {
+              let vi = '';
+              if (CHAPTER_VOCAB_DICT[k]) vi = CHAPTER_VOCAB_DICT[k].vi;
+              else {
+                const hit = vocabPool().find(x => norm(cleanWord(x.w)) === norm(k));
+                if (hit) vi = hit.vi;
+              }
+              if (vi) {
+                wordMap.set(k, {
+                  w: raw,
+                  pos: 'bài nghe',
+                  vi,
+                  topicId: t.id,
+                  topicTitle: splitTitle(t).main,
+                  source: 'Phần 4',
+                  sourceFull: 'Phần 4: Nghe điền từ',
+                  part: 4
+                });
+              }
+            }
+          });
+        });
+      });
+    });
+  }
+
+  return [...wordMap.values()];
+}
+
+
+// ---------- PART 0: TỔNG HỢP TỪ VỰNG TỪ CẢ 4 PHẦN CỦA CHƯƠNG ----------
 function part0(t, el){
   let sub = store.get('p0_sub_' + t.id, 'quiz'); // 'quiz' | 'flashcard' | 'write'
-  const pool = t.vocab.filter(v => v.vi).map(v => ({
-    ...v,
-    topicId: t.id,
-    topicTitle: splitTitle(t).main
-  }));
+  let partFilter = store.get('p0_filter_' + t.id, 'all'); // 'all' | '1' | '2' | '3' | '4'
+
+  const allWords = getChapterAllWords(t);
+  
+  const countAll = allWords.length;
+  const countP1 = allWords.filter(x => x.part === 1).length;
+  const countP2 = allWords.filter(x => x.part === 2).length;
+  const countP3 = allWords.filter(x => x.part === 3).length;
+  const countP4 = allWords.filter(x => x.part === 4).length;
+
+  let pool = allWords;
+  if (partFilter === '1') pool = allWords.filter(x => x.part === 1);
+  else if (partFilter === '2') pool = allWords.filter(x => x.part === 2);
+  else if (partFilter === '3') pool = allWords.filter(x => x.part === 3);
+  else if (partFilter === '4') pool = allWords.filter(x => x.part === 4);
+
+  if (!pool.length) {
+    pool = allWords;
+    partFilter = 'all';
+  }
 
   el.innerHTML = `
-    <div class="row between" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
-      <div class="seg" id="p0-sub">
-        <button data-s="quiz" ${sub === 'quiz' ? 'aria-pressed="true"' : ''}>🎯 Trắc nghiệm</button>
-        <button data-s="flashcard" ${sub === 'flashcard' ? 'aria-pressed="true"' : ''}>🃏 Lật hình (Flashcards)</button>
-        <button data-s="write" ${sub === 'write' ? 'aria-pressed="true"' : ''}>✍️ Viết từ (Việt → Anh)</button>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+      <div class="row between" style="flex-wrap:wrap;gap:10px;align-items:center">
+        <div class="seg" id="p0-sub">
+          <button data-s="quiz" ${sub === 'quiz' ? 'aria-pressed="true"' : ''}>🎯 Trắc nghiệm</button>
+          <button data-s="flashcard" ${sub === 'flashcard' ? 'aria-pressed="true"' : ''}>🃏 Lật hình (Flashcards)</button>
+          <button data-s="write" ${sub === 'write' ? 'aria-pressed="true"' : ''}>✍️ Viết từ (Việt → Anh)</button>
+        </div>
+        <span class="hint" style="font-weight:700;font-size:13.5px;color:var(--accent)">
+          📚 Đang luyện: ${pool.length} / ${countAll} từ tổng hợp (Chương ${t.id})
+        </span>
       </div>
-      <span class="hint" style="font-weight:600;font-size:13px">${pool.length} từ vựng của chương này</span>
+
+      <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">
+        <span style="font-size:12px;font-weight:700;color:var(--muted);margin-right:2px;text-transform:uppercase;letter-spacing:0.4px">Nguồn từ:</span>
+        <div class="seg seg-sm" id="p0-filter">
+          <button data-f="all" ${partFilter === 'all' ? 'aria-pressed="true"' : ''}>Tất cả phần (${countAll})</button>
+          ${countP1 ? `<button data-f="1" ${partFilter === '1' ? 'aria-pressed="true"' : ''}>Phần 1: Từ vựng (${countP1})</button>` : ''}
+          ${countP2 ? `<button data-f="2" ${partFilter === '2' ? 'aria-pressed="true"' : ''}>Phần 2: Họ từ (${countP2})</button>` : ''}
+          ${countP3 ? `<button data-f="3" ${partFilter === '3' ? 'aria-pressed="true"' : ''}>Phần 3: Bài dịch (${countP3})</button>` : ''}
+          ${countP4 ? `<button data-f="4" ${partFilter === '4' ? 'aria-pressed="true"' : ''}>Phần 4: Nghe điền (${countP4})</button>` : ''}
+        </div>
+      </div>
     </div>
     <div id="p0-box" class="panel"></div>
   `;
@@ -1935,6 +2129,14 @@ function part0(t, el){
     b.onclick = () => {
       sub = b.dataset.s;
       store.set('p0_sub_' + t.id, sub);
+      part0(t, el);
+    };
+  });
+
+  el.querySelectorAll('#p0-filter button').forEach(b => {
+    b.onclick = () => {
+      partFilter = b.dataset.f;
+      store.set('p0_filter_' + t.id, partFilter);
       part0(t, el);
     };
   });
@@ -2458,7 +2660,7 @@ function renderT0Flashcards(container, rawPool) {
           <div class="fc-card ${isFlipped ? 'flipped' : ''}" id="fc-main-card">
             <!-- Mặt trước (Front) -->
             <div class="fc-face front">
-              <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}</span>
+              <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}${v.source ? ` · <b style="color:var(--accent)">${esc(v.source)}</b>` : ''}</span>
               <div style="margin-top:20px">
                 <div class="fc-word">${esc(v.w)}</div>
                 ${v.pos ? `<span class="pos" style="font-size:14px;padding:3px 8px;border-radius:6px">${esc(v.pos)}</span>` : ''}
@@ -2475,7 +2677,7 @@ function renderT0Flashcards(container, rawPool) {
 
             <!-- Mặt sau (Back) -->
             <div class="fc-face back">
-              <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}</span>
+              <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}${v.source ? ` · <b style="color:var(--accent)">${esc(v.source)}</b>` : ''}</span>
               <div class="fc-vi">${esc(v.vi)}</div>
               ${exEn ? `<div class="fc-ex-box">
                 <div style="font-weight:600;color:var(--accent);margin-bottom:4px">“${esc(exEn)}”</div>

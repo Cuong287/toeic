@@ -354,6 +354,29 @@
   from { opacity: 0; transform: translate(-50%, -90%) scale(0.92); }
   to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
 }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.syncing svg { animation: spin 0.8s linear infinite !important; color: #38BDF8 !important; }
+.btn-sync-icon {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-sync-icon:hover {
+  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
@@ -1310,7 +1333,7 @@ function markDirty(k) {
   if (LOCAL_ONLY_KEYS.test(k)) return;
   dirtyKeys.add(k);
   if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(flushDirtyKeys, 4000);
+  debounceTimer = setTimeout(flushDirtyKeys, 1500);
 }
 
 async function flushDirtyKeys() {
@@ -1338,6 +1361,17 @@ async function flushDirtyKeys() {
         progressUpdates[tId] = progressUpdates[tId] || {};
         progressUpdates[tId].best = Number(val) || 0;
         progressUpdates[tId].completed = (Number(val) || 0) >= 80;
+      } else if (k.startsWith('p0_best:')) {
+        const tId = k.split(':')[1];
+        progressUpdates[tId] = progressUpdates[tId] || {};
+        const curBest = Number(progressUpdates[tId].best) || Number(store.get('best:' + tId, 0)) || 0;
+        progressUpdates[tId].best = Math.max(Number(val) || 0, curBest);
+        progressUpdates[tId].completed = progressUpdates[tId].best >= 80;
+      } else if (k.startsWith('wf-')) {
+        const parts = k.split('-');
+        const tId = parts[1];
+        answerUpdates[tId] = answerUpdates[tId] || {};
+        answerUpdates[tId][k] = val;
       } else if (k === 'review') {
         reviewUpdate = val;
       }
@@ -1375,7 +1409,24 @@ async function flushDirtyKeys() {
     keys.forEach(k => dirtyKeys.add(k));
   }
 }
+
 window.addEventListener('beforeunload', () => flushDirtyKeys());
+window.addEventListener('pagehide', () => flushDirtyKeys());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    flushDirtyKeys();
+  } else if (document.visibilityState === 'visible' && currentUser && currentUid !== 'guest') {
+    // Tự động kéo tiến độ mới nhất về khi người dùng quay lại tab trình duyệt
+    downloadCloudData(currentUser.uid).then(() => {
+      renderSide();
+      if (currentRoute === 'topic') {
+        const t = TOPICS[S.t - 1];
+        if (t) renderHead(t);
+      }
+    });
+  }
+});
+
 
 async function syncLeaderboardFromClient(uid) {
   if (!fbDb || !uid || !currentUser || currentUser.uid !== uid || !firestoreModules) return;
@@ -1405,6 +1456,51 @@ async function syncLeaderboardFromClient(uid) {
     });
   } catch(e) {
     console.warn('Lỗi đồng bộ leaderboard:', e);
+  }
+}
+
+
+function showToast(msg) {
+  let toast = $('#global-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'global-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E293B;color:#F8FAFC;border:1.5px solid #38BDF8;padding:10px 20px;border-radius:24px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.55);z-index:9999999;transition:opacity 0.25s,transform 0.25s;pointer-events:none;opacity:0';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2500);
+}
+
+async function manualSyncCloud() {
+  if (!currentUser || currentUid === 'guest') {
+    openAuthModal('login');
+    return;
+  }
+  const syncBtn = $('#btn-manual-sync');
+  const syncTxt = $('#sync-status-txt');
+  if (syncBtn) syncBtn.classList.add('syncing');
+  if (syncTxt) syncTxt.textContent = 'Đang đồng bộ...';
+
+  try {
+    await flushDirtyKeys();
+    await downloadCloudData(currentUser.uid);
+    renderSide();
+    render();
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (syncTxt) syncTxt.textContent = 'Đã đồng bộ ' + nowStr;
+    showToast('✓ Đồng bộ dữ liệu thành công!');
+  } catch (err) {
+    console.error('Lỗi khi đồng bộ thủ công:', err);
+    if (syncTxt) syncTxt.textContent = 'Lỗi kết nối';
+    showToast('Không thể kết nối đến máy chủ.');
+  } finally {
+    if (syncBtn) syncBtn.classList.remove('syncing');
   }
 }
 
@@ -1439,6 +1535,8 @@ async function initFirebase() {
         await checkAdminStatus(user.uid);
         renderAuthBox();
         await checkFirstLoginMerge(user.uid);
+        // Luôn kéo dữ liệu mới nhất từ đám mây về máy tính/thiết bị này
+        await downloadCloudData(user.uid);
       } else {
         store.setUid('guest');
         isAdminUser = false;
@@ -1447,6 +1545,7 @@ async function initFirebase() {
         if (sAdmin) sAdmin.hidden = true;
       }
       renderSide();
+      if (currentRoute === 'topic') render();
       if (currentRoute === 'leaderboard') renderLeaderboard($('#panel'));
       if (currentRoute === 'profile') renderProfile($('#panel'));
       if (currentRoute === 'admin') renderAdmin($('#panel'));
@@ -1553,30 +1652,56 @@ function showMergeModal(uid) {
 }
 
 async function downloadCloudData(uid) {
-  if (!fbDb || !uid) return;
+  if (!fbDb || !uid || !firestoreModules) return;
   try {
+    // 1. Đồng bộ điểm trắc nghiệm & trạng thái hoàn thành
     const progSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', uid, 'progress'));
     progSnap.forEach(d => {
       const data = d.data();
+      const tId = d.id;
       if (typeof data.best === 'number') {
-        localStorage.setItem(`toeic45:${uid}:best:${d.id}`, JSON.stringify(data.best));
+        const localBest = Number(store.get('best:' + tId, 0)) || 0;
+        const higherBest = Math.max(data.best, localBest);
+        localStorage.setItem(`toeic45:${uid}:best:${tId}`, JSON.stringify(higherBest));
       }
       if (data.completedManual) {
-        localStorage.setItem(`toeic45:${uid}:completedManual:${d.id}`, JSON.stringify(true));
+        localStorage.setItem(`toeic45:${uid}:completedManual:${tId}`, JSON.stringify(true));
       }
     });
 
+    // 2. Đồng bộ các bài làm (dịch câu, điền từ, dạng từ)
     const ansSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', uid, 'answers'));
     ansSnap.forEach(d => {
       const answers = d.data().data || {};
       Object.entries(answers).forEach(([k, val]) => {
-        localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify(val));
+        const localVal = store.get(k, null);
+        if (localVal == null || localVal === '') {
+          localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify(val));
+        }
       });
     });
 
+    // 3. Đồng bộ danh sách từ khó (gộp chung cả 2 thiết bị)
     const revDoc = await firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', uid, 'meta', 'review'));
     if (revDoc.exists() && revDoc.data().items) {
-      localStorage.setItem(`toeic45:${uid}:review`, JSON.stringify(revDoc.data()));
+      const cloudItems = revDoc.data().items || [];
+      const localRev = store.get('review', { items: [] });
+      const localItems = (localRev && Array.isArray(localRev.items)) ? localRev.items : [];
+      const itemMap = new Map();
+      localItems.forEach(it => { if (it && it.w) itemMap.set(norm(cleanWord(it.w)), it); });
+      cloudItems.forEach(it => {
+        if (it && it.w) {
+          const key = norm(cleanWord(it.w));
+          if (!itemMap.has(key)) {
+            itemMap.set(key, it);
+          } else {
+            const existing = itemMap.get(key);
+            if (existing.deleted && !it.deleted) itemMap.set(key, it);
+          }
+        }
+      });
+      localStorage.setItem(`toeic45:${uid}:review`, JSON.stringify({ items: Array.from(itemMap.values()) }));
+      updateReviewBadge();
     }
   } catch (e) {
     console.error('Lỗi downloadCloudData:', e);
@@ -1667,12 +1792,25 @@ function renderAuthBox() {
       ? `<img src="${esc(currentUser.photoURL)}" alt="Avatar">`
       : (currentUser.displayName ? esc(currentUser.displayName[0].toUpperCase()) : 'U');
     box.innerHTML = `
-      <div class="auth-avatar">${avatar}</div>
-      <div class="auth-info">
-        <span class="auth-name">${esc(currentUser.displayName || currentUser.email || 'Người học')}</span>
-        <span class="auth-status">Xem hồ sơ cá nhân</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1;min-width:0" id="auth-click-profile">
+          <div class="auth-avatar">${avatar}</div>
+          <div class="auth-info" style="min-width:0">
+            <span class="auth-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(currentUser.displayName || currentUser.email || 'Người học')}</span>
+            <span class="auth-status" id="sync-status-txt">Đã đồng bộ</span>
+          </div>
+        </div>
+        <button class="btn-sync-icon" id="btn-manual-sync" title="Đồng bộ tiến độ học với đám mây ngay lập tức">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
       </div>`;
-    box.onclick = () => goTo('profile');
+    box.onclick = (e) => {
+      if (e.target.closest('#btn-manual-sync')) {
+        manualSyncCloud();
+      } else {
+        goTo('profile');
+      }
+    };
   }
 }
 
@@ -1895,6 +2033,7 @@ function renderHead(t){
   $('#btn-toggle-comp').onclick = () => {
     const nextVal = !completedManual;
     store.set('completedManual:' + t.id, nextVal);
+    flushDirtyKeys();
     renderHead(t);
     renderSide();
   };
@@ -2893,6 +3032,33 @@ function renderT0Quiz(container, rawPool) {
   function draw() {
     if (i >= questions.length) {
       const pct = Math.round(score / questions.length * 100);
+      const topId = (questions[0] && questions[0].v && questions[0].v.topicId) || S.t;
+      const curBest = Number(store.get('best:' + topId, 0)) || 0;
+      const newBest = Math.max(pct, curBest);
+      store.set('best:' + topId, newBest);
+
+      if (wrongList.length) {
+        wrongList.forEach(w => store.addReviewWord(w, topId, 'quiz'));
+      }
+
+      if (currentUser && fbDb && firestoreModules && currentUid !== 'guest') {
+        const isCompleted = newBest >= 80 || store.get('completedManual:' + topId, false);
+        firestoreModules.setDoc(
+          firestoreModules.doc(fbDb, 'users', currentUid, 'progress', String(topId)),
+          {
+            best: newBest,
+            completed: isCompleted,
+            updatedAt: firestoreModules.serverTimestamp()
+          },
+          { merge: true }
+        ).then(() => {
+          syncLeaderboardFromClient(currentUid);
+        }).catch(err => {
+          console.warn('Lỗi lưu điểm Tab 0 lên Firestore:', err);
+        });
+      }
+      flushDirtyKeys();
+
       container.innerHTML = `
         <div class="card" style="text-align:center;padding:36px">
           <div class="eyebrow">Kết quả trắc nghiệm tổng hợp</div>
@@ -3364,6 +3530,22 @@ async function renderProfile(box) {
       <h1 style="font-size:28px">Hồ sơ cá nhân</h1>
     </div>
 
+    
+    <!-- Thẻ trạng thái đồng bộ đa thiết bị -->
+    <div class="card" style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--sunk);border:1.5px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:20px">☁️</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">Đồng bộ đa thiết bị (Điện thoại ↔ Máy tính)</div>
+          <div style="font-size:13px;color:var(--muted)">Tiến độ học tập và điểm số được đồng bộ theo thời gian thực qua tài khoản đám mây.</div>
+        </div>
+      </div>
+      <button class="btn primary" id="btn-profile-sync" style="display:inline-flex;align-items:center;gap:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Đồng bộ ngay với đám mây</span>
+      </button>
+    </div>
+
     <div class="card" style="display:flex;gap:18px;align-items:center;margin-bottom:18px">
       ${avatar}
       <div style="flex:1;min-width:0">
@@ -3490,7 +3672,8 @@ async function renderProfile(box) {
     });
   }
 
-  box.querySelector('#btn-logout').onclick = () => {
+  box.querySelector('#btn-profile-sync').onclick = manualSyncCloud;
+    box.querySelector('#btn-logout').onclick = () => {
     openModal(`
       <div class="modal-backdrop">
         <div class="modal-box">

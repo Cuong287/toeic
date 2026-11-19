@@ -1,5 +1,5 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v20';
+const V = 'so-tu-toeic-v21';
 const CORE = [
   './',
   './index.html',
@@ -7,7 +7,11 @@ const CORE = [
   './pronunciation-data.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
-  './icons/apple-touch-icon.png'
+  './icons/apple-touch-icon.png',
+  './img/pronun/mouth_i_long.png',
+  './img/pronun/mouth_i_short.png',
+  './img/pronun/mouth_u_long.png',
+  './img/pronun/mouth_u_short.png'
 ];
 
 self.addEventListener('install', e => {

@@ -1598,6 +1598,289 @@ export const PRONUN_UNITS = [
       "How many letters and how many sounds?",
       "One letter does not always equal one sound.",
       "English spelling is not always the same as pronunciation."
+    ],
+    "sections": [
+      {
+        "letter": "A",
+        "title": "Alphabet Letters & Sounds Overview",
+        "guideEn": "There are 26 letters in the English alphabet (5 vowel letters: A E I O U, and 21 consonant letters). But there are more than 40 vowel and consonant sounds in English. In some words, the number of letters is the same as the number of sounds: best (4 letters, 4 sounds: b-e-s-t), dentist (7 letters, 7 sounds: d-e-n-t-i-s-t).",
+        "guideVi": "Bảng chữ cái tiếng Anh có 26 chữ cái (5 nguyên âm: A E I O U, 21 phụ âm). Nhưng lại có hơn 40 âm ngữ âm! Trong một số từ, số chữ cái bằng số âm: best (4 chữ cái, 4 âm: b-e-s-t), dentist (7 chữ cái, 7 âm: d-e-n-t-i-s-t).",
+        "groups": [
+          {
+            "pattern": "Số chữ cái = Số âm",
+            "badge": "1:1",
+            "words": [
+              {
+                "w": "best",
+                "ipa": "/best/",
+                "vi": "tốt nhất (4 chữ cái, 4 âm)"
+              },
+              {
+                "w": "dentist",
+                "ipa": "/ˈdentɪst/",
+                "vi": "nha sĩ (7 chữ cái, 7 âm)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "letter": "B",
+        "title": "Number of sounds different from number of letters",
+        "guideEn": "In green, ee is one sound. In happy, pp is one sound. In bread, ea is one sound. In some words there are silent letters: in listen, t is silent. In some words, one letter is two sounds: x in six is k + s.",
+        "guideVi": "Đôi khi số âm khác số chữ cái: trong green, 2 chữ ee gộp thành 1 âm /iː/ (5 chữ, 4 âm). Trong bread, ea là 1 âm /e/ (5 chữ, 4 âm). Có từ chứa chữ câm: listen có chữ t câm (6 chữ, 5 âm). Có từ 1 chữ cái sinh 2 âm: x trong six là /ks/ (3 chữ, 4 âm).",
+        "groups": [
+          {
+            "pattern": "Chữ ghép & chữ câm",
+            "badge": "Quy tắc",
+            "words": [
+              {
+                "w": "green",
+                "ipa": "/ɡriːn/",
+                "vi": "5 chữ cái, 4 âm"
+              },
+              {
+                "w": "happy",
+                "ipa": "/ˈhæpi/",
+                "vi": "5 chữ cái, 4 âm"
+              },
+              {
+                "w": "bread",
+                "ipa": "/bred/",
+                "vi": "5 chữ cái, 4 âm"
+              },
+              {
+                "w": "listen",
+                "ipa": "/ˈlɪsn/",
+                "vi": "chữ t câm, 6 chữ cái, 5 âm"
+              },
+              {
+                "w": "six",
+                "ipa": "/sɪks/",
+                "vi": "x = /ks/, 3 chữ cái, 4 âm"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "letter": "C",
+        "title": "Same sound, different spelling / Same spelling, different sound",
+        "guideEn": "We sometimes write the same sound differently in different words: e in red sounds like ea in bread. Two words have the same pronunciation but different spellings (know - no). Two words have the same spelling but different pronunciations: read (/riːd/ present) vs read (/red/ past).",
+        "guideVi": "Cùng một âm có thể viết bằng chữ khác nhau (red và bread đều có âm /e/). Hai từ phát âm giống hệt nhau nhưng viết khác nhau (know và no đều là /nəʊ/). Cùng một cách viết nhưng phát âm khác nhau: read (/riːd/ hiện tại) và read (/red/ quá khứ).",
+        "sentences": [
+          {
+            "en": "Do you know? No, I don't.",
+            "vi": "Bạn có biết không? Không, tôi không biết."
+          },
+          {
+            "en": "Do you want to read the newspaper?",
+            "vi": "Bạn có muốn đọc báo không? (/riːd/)"
+          },
+          {
+            "en": "No, thanks, I read it this morning.",
+            "vi": "Không, cảm ơn, tôi đã đọc sáng nay rồi. (/red/)"
+          }
+        ]
+      }
+    ],
+    "exercises": [
+      {
+        "id": "1.1",
+        "title": "Exercise 1.1: Đếm số chữ cái và số âm của từ",
+        "type": "letters_sounds_table",
+        "instruction": "Write the number of letters and the number of sounds in these words (Điền số chữ cái và số âm):",
+        "items": [
+          {
+            "w": "all",
+            "letters": 3,
+            "sounds": 2,
+            "explain": "3 chữ cái, 2 âm /ɔː-l/"
+          },
+          {
+            "w": "back",
+            "letters": 4,
+            "sounds": 3,
+            "explain": "4 chữ cái, 3 âm /b-æ-k/"
+          },
+          {
+            "w": "could",
+            "letters": 5,
+            "sounds": 3,
+            "explain": "5 chữ cái, 3 âm /k-ʊ-d/ (l câm)"
+          },
+          {
+            "w": "knee",
+            "letters": 4,
+            "sounds": 2,
+            "explain": "4 chữ cái, 2 âm /n-iː/ (k câm)"
+          },
+          {
+            "w": "sixty",
+            "letters": 5,
+            "sounds": 6,
+            "explain": "5 chữ cái, 6 âm /s-ɪ-k-s-t-i/ (x = k+s)"
+          },
+          {
+            "w": "thing",
+            "letters": 5,
+            "sounds": 3,
+            "explain": "5 chữ cái, 3 âm /θ-ɪ-ŋ/"
+          },
+          {
+            "w": "who",
+            "letters": 3,
+            "sounds": 2,
+            "explain": "3 chữ cái, 2 âm /h-uː/ (w câm)"
+          },
+          {
+            "w": "address",
+            "letters": 7,
+            "sounds": 5,
+            "explain": "7 chữ cái, 5 âm /ə-d-r-e-s/"
+          }
+        ]
+      },
+      {
+        "id": "1.2",
+        "title": "Exercise 1.2: Phiên âm sang từ tiếng Anh",
+        "type": "ipa_to_spelling",
+        "instruction": "Write these words in their normal spelling (Nhìn ký hiệu phiên âm và gõ từ tiếng Anh):",
+        "items": [
+          {
+            "ipa": "/bɪɡ/",
+            "answer": "big"
+          },
+          {
+            "ipa": "/dres/",
+            "answer": "dress"
+          },
+          {
+            "ipa": "/frend/",
+            "answer": "friend"
+          },
+          {
+            "ipa": "/ɡɪv/",
+            "answer": "give"
+          },
+          {
+            "ipa": "/help/",
+            "answer": "help"
+          },
+          {
+            "ipa": "/nekst/",
+            "answer": "next"
+          },
+          {
+            "ipa": "/ˈveri/",
+            "answer": "very"
+          },
+          {
+            "ipa": "/wel/",
+            "answer": "well"
+          }
+        ]
+      },
+      {
+        "id": "1.3",
+        "title": "Exercise 1.3: Tìm từ có nguyên âm phát âm khác nhóm (Odd one out)",
+        "type": "odd_one_out",
+        "instruction": "Find the word with the different vowel sound in each group (Tìm từ có nguyên âm phát âm khác):",
+        "groups": [
+          {
+            "options": [
+              "give",
+              "time",
+              "sit",
+              "think",
+              "rich"
+            ],
+            "correct": "time",
+            "explain": "time phát âm là /aɪ/, còn các từ khác là /ɪ/"
+          },
+          {
+            "options": [
+              "apple",
+              "bad",
+              "wash",
+              "catch",
+              "bank"
+            ],
+            "correct": "wash",
+            "explain": "wash phát âm là /ɒ/, còn các từ khác là /æ/"
+          },
+          {
+            "options": [
+              "much",
+              "bus",
+              "sun",
+              "push",
+              "up"
+            ],
+            "correct": "push",
+            "explain": "push phát âm là /ʊ/, còn các từ khác là /ʌ/"
+          },
+          {
+            "options": [
+              "many",
+              "maths",
+              "man",
+              "hat",
+              "flat"
+            ],
+            "correct": "many",
+            "explain": "many phát âm là /e/, còn các từ khác là /æ/"
+          }
+        ]
+      },
+      {
+        "id": "1.4",
+        "title": "Exercise 1.4: Tìm từ gieo vần (Rhyme words)",
+        "type": "rhyme_words",
+        "instruction": "Write words that rhyme (the end part of the word sounds the same):",
+        "items": [
+          {
+            "word": "key",
+            "prefix": "tr_ _",
+            "answer": "tree"
+          },
+          {
+            "word": "blue",
+            "prefix": "sh_ _",
+            "answer": "shoe"
+          },
+          {
+            "word": "not",
+            "prefix": "w_ _ _",
+            "answer": "what"
+          },
+          {
+            "word": "one",
+            "prefix": "r_ _",
+            "answer": "run"
+          },
+          {
+            "word": "date",
+            "prefix": "w_ _ _",
+            "answer": "wait"
+          },
+          {
+            "word": "lie",
+            "prefix": "w_ _",
+            "answer": "why"
+          },
+          {
+            "word": "so",
+            "prefix": "sh_ _",
+            "answer": "show"
+          },
+          {
+            "word": "beer",
+            "prefix": "n_ _ _",
+            "answer": "near"
+          }
+        ]
+      }
     ]
   },
   {
@@ -1605,7 +1888,7 @@ export const PRONUN_UNITS = [
     "section": "A",
     "sectionName": "Sounds and spelling",
     "title": "Pizza for dinner",
-    "subtitle": "Luyện tập cặp âm /iː/ (dài) và /ɪ/ (ngắn)",
+    "subtitle": "Cặp âm /iː/ (nguyên âm dài) và /ɪ/ (nguyên âm ngắn)",
     "sound": "/iː/ and /ɪ/",
     "rule": "/iː/ là âm dài, mở miệng bè rộng như mỉm cười (see, seat). /ɪ/ là âm ngắn, mở miệng hơi hé, thả lỏng hàm (sit, dinner).",
     "words": [
@@ -1646,6 +1929,657 @@ export const PRONUN_UNITS = [
       "Peter is in the team.",
       "A kilo of peaches and a litre of cream.",
       "Please can you teach me to speak Portuguese?"
+    ],
+    "sections": [
+      {
+        "letter": "A",
+        "title": "How to make the sound /iː/",
+        "targetSound": "/iː/",
+        "targetType": "long vowel",
+        "diagram": "img/pronun/mouth_i_long.png",
+        "diagramDesc": "front of tongue up · wide mouth",
+        "guideEn": "/iː/ is a long sound. Look at the diagram. Listen and then say the sound. Make your mouth wide, like a smile. Your tongue touches the sides of your teeth. Target sound: /iː/",
+        "guideVi": "/iː/ là một nguyên âm dài. Hãy quan sát sơ đồ khẩu hình: Mở miệng bè rộng sang hai bên như đang mỉm cười tươi. Nâng phần trước của lưỡi lên cao chạm vào hai bên cạnh răng trên. Âm đích: /iː/",
+        "targetWord": "see"
+      },
+      {
+        "letter": "B",
+        "title": "Sound and spelling (/iː/)",
+        "commonRule": "/iː/ is usually spelled ee or ea. Listen and say these words.",
+        "groups": [
+          {
+            "pattern": "ee, ea (thông dụng nhất)",
+            "badge": "Phổ biến",
+            "words": [
+              {
+                "w": "see",
+                "ipa": "/siː/",
+                "vi": "nhìn thấy"
+              },
+              {
+                "w": "agree",
+                "ipa": "/əˈɡriː/",
+                "vi": "đồng ý"
+              },
+              {
+                "w": "eat",
+                "ipa": "/iːt/",
+                "vi": "ăn"
+              },
+              {
+                "w": "seat",
+                "ipa": "/siːt/",
+                "vi": "chỗ ngồi"
+              },
+              {
+                "w": "team",
+                "ipa": "/tiːm/",
+                "vi": "đội ngũ"
+              }
+            ]
+          },
+          {
+            "pattern": "ie",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "field",
+                "ipa": "/fiːld/",
+                "vi": "cánh đồng, sân bóng"
+              },
+              {
+                "w": "piece",
+                "ipa": "/piːs/",
+                "vi": "miếng, mẩu"
+              }
+            ]
+          },
+          {
+            "pattern": "e",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "these",
+                "ipa": "/ðiːz/",
+                "vi": "những cái này"
+              },
+              {
+                "w": "metre",
+                "ipa": "/ˈmiːtər/",
+                "vi": "mét"
+              },
+              {
+                "w": "secret",
+                "ipa": "/ˈsiːkrət/",
+                "vi": "bí mật"
+              },
+              {
+                "w": "evening",
+                "ipa": "/ˈiːvnɪŋ/",
+                "vi": "buổi tối"
+              },
+              {
+                "w": "equal",
+                "ipa": "/ˈiːkwəl/",
+                "vi": "bằng nhau, bình đẳng"
+              },
+              {
+                "w": "Peter",
+                "ipa": "/ˈpiːtər/",
+                "vi": "Peter"
+              },
+              {
+                "w": "museum",
+                "ipa": "/mjuːˈziːəm/",
+                "vi": "bảo tàng"
+              },
+              {
+                "w": "European",
+                "ipa": "/ˌjʊərəˈpiːən/",
+                "vi": "thuộc châu Âu"
+              },
+              {
+                "w": "Chinese",
+                "ipa": "/ˌtʃaɪˈniːz/",
+                "vi": "tiếng Trung"
+              },
+              {
+                "w": "Japanese",
+                "ipa": "/ˌdʒæpəˈniːz/",
+                "vi": "tiếng Nhật"
+              },
+              {
+                "w": "complete",
+                "ipa": "/kəmˈpliːt/",
+                "vi": "hoàn thành"
+              }
+            ]
+          },
+          {
+            "pattern": "ey",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "key",
+                "ipa": "/kiː/",
+                "vi": "chìa khóa"
+              }
+            ]
+          },
+          {
+            "pattern": "i (từ mượn tiếng Pháp / Ý)",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "ski",
+                "ipa": "/skiː/",
+                "vi": "trượt tuyết"
+              },
+              {
+                "w": "kilo",
+                "ipa": "/ˈkiːləʊ/",
+                "vi": "ki-lô-gam"
+              },
+              {
+                "w": "litre",
+                "ipa": "/ˈliːtər/",
+                "vi": "lít"
+              },
+              {
+                "w": "pizza",
+                "ipa": "/ˈpiːtsə/",
+                "vi": "bánh pizza"
+              },
+              {
+                "w": "police",
+                "ipa": "/pəˈliːs/",
+                "vi": "cảnh sát"
+              },
+              {
+                "w": "machine",
+                "ipa": "/məˈʃiːn/",
+                "vi": "máy móc"
+              },
+              {
+                "w": "magazine",
+                "ipa": "/ˌmæɡəˈziːn/",
+                "vi": "tạp chí"
+              }
+            ]
+          },
+          {
+            "pattern": "eo",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "people",
+                "ipa": "/ˈpiːpl/",
+                "vi": "con người"
+              }
+            ]
+          }
+        ],
+        "sentences": [
+          {
+            "en": "Can you see the sea?",
+            "vi": "Bạn có nhìn thấy biển không?"
+          },
+          {
+            "en": "A piece of pizza, please.",
+            "vi": "Làm ơn cho tôi một miếng pizza."
+          },
+          {
+            "en": "Peter's in the team.",
+            "vi": "Peter ở trong đội."
+          },
+          {
+            "en": "A kilo of peaches and a litre of cream.",
+            "vi": "Một cân đào và một lít kem sữa."
+          },
+          {
+            "en": "Please can you teach me to speak Portuguese?",
+            "vi": "Làm ơn dạy tôi nói tiếng Bồ Đào Nha được không?"
+          }
+        ]
+      },
+      {
+        "letter": "C",
+        "title": "How to make the sound /ɪ/",
+        "targetSound": "/ɪ/",
+        "targetType": "short vowel",
+        "diagram": "img/pronun/mouth_i_short.png",
+        "diagramDesc": "front of tongue up · jaw down (a little)",
+        "guideEn": "/ɪ/ is a short sound. Look at the diagram. Listen and then say the sound. Make your mouth a bit less wide than for /iː/. Your tongue is a bit further back in your mouth than for /iː/. Target sound: /ɪ/",
+        "guideVi": "/ɪ/ là một nguyên âm ngắn. Hãy quan sát sơ đồ: Miệng mở bớt bè hơn so với /iː/, hạ nhẹ hàm dưới xuống một chút. Lưỡi hơi lùi về phía sau hơn so với khi phát âm /iː/. Âm đích: /ɪ/",
+        "targetWord": "sit"
+      },
+      {
+        "letter": "D",
+        "title": "Sound and spelling (/ɪ/)",
+        "commonRule": "/ɪ/ is usually spelled i. Listen and say these words.",
+        "groups": [
+          {
+            "pattern": "i (thông dụng nhất)",
+            "badge": "Phổ biến",
+            "words": [
+              {
+                "w": "if",
+                "ipa": "/ɪf/",
+                "vi": "nếu"
+              },
+              {
+                "w": "listen",
+                "ipa": "/ˈlɪsn/",
+                "vi": "lắng nghe"
+              },
+              {
+                "w": "miss",
+                "ipa": "/mɪs/",
+                "vi": "nhớ / bỏ lỡ"
+              },
+              {
+                "w": "dinner",
+                "ipa": "/ˈdɪnər/",
+                "vi": "bữa tối"
+              },
+              {
+                "w": "swim",
+                "ipa": "/swɪm/",
+                "vi": "bơi lội"
+              }
+            ]
+          },
+          {
+            "pattern": "chữ cái khác (u, ui, y)",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "busy",
+                "ipa": "/ˈbɪzi/",
+                "vi": "bận rộn"
+              },
+              {
+                "w": "business",
+                "ipa": "/ˈbɪznəs/",
+                "vi": "kinh doanh"
+              },
+              {
+                "w": "building",
+                "ipa": "/ˈbɪldɪŋ/",
+                "vi": "tòa nhà"
+              },
+              {
+                "w": "system",
+                "ipa": "/ˈsɪstəm/",
+                "vi": "hệ thống"
+              }
+            ]
+          }
+        ],
+        "sentences": [
+          {
+            "en": "fifty-six",
+            "vi": "số 56"
+          },
+          {
+            "en": "dinner in the kitchen",
+            "vi": "bữa tối trong nhà bếp"
+          },
+          {
+            "en": "a cinema ticket",
+            "vi": "vé xem phim rạp"
+          },
+          {
+            "en": "a picture of a building",
+            "vi": "bức tranh một tòa nhà"
+          },
+          {
+            "en": "big business",
+            "vi": "doanh nghiệp lớn"
+          }
+        ],
+        "notes": [
+          {
+            "tag": "8 Chữ cái Alphabet phát âm /iː/",
+            "content": "Trong bảng chữ cái tiếng Anh, 8 chữ cái sau có phát âm kết thúc bằng âm /iː/: B, C, D, E, G, P, T, V."
+          },
+          {
+            "tag": "Âm yếu Schwa /ə/",
+            "content": "Nguyên âm ở các âm tiết không nhấn trọng âm thường đọc lướt thành âm yếu schwa /ə/: agree, equal, kitchen, museum, Peter, picture, pizza."
+          },
+          {
+            "tag": "Âm /i/ ở cuối từ",
+            "content": "Ở cuối từ trong âm tiết không nhấn, âm /i/ phát âm như /iː/ nhưng ngắn hơn: happy, coffee, busy, sixty."
+          }
+        ]
+      }
+    ],
+    "exercises": [
+      {
+        "id": "2.1",
+        "title": "Exercise 2.1: Điền từ chứa âm /iː/ vào đoạn đối thoại",
+        "type": "fill_dialogue",
+        "instruction": "Put these /iː/ words in the dialogues: email, evening, police, secret, Steve, TV",
+        "wordBank": [
+          "email",
+          "evening",
+          "police",
+          "secret",
+          "Steve",
+          "TV"
+        ],
+        "dialogues": [
+          {
+            "id": 1,
+            "lines": [
+              {
+                "speaker": "A",
+                "parts": [
+                  "What shall we do this ",
+                  {
+                    "blank": "evening"
+                  },
+                  "?"
+                ]
+              },
+              {
+                "speaker": "B",
+                "parts": [
+                  "Let's stay at home and watch ",
+                  {
+                    "blank": "TV"
+                  },
+                  "."
+                ]
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "lines": [
+              {
+                "speaker": "A",
+                "parts": [
+                  "Let me read that ",
+                  {
+                    "blank": "email"
+                  },
+                  "!"
+                ]
+              },
+              {
+                "speaker": "B",
+                "parts": [
+                  "No – it's a secret!"
+                ]
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "lines": [
+              {
+                "speaker": "A",
+                "parts": [
+                  "You know my friend ",
+                  {
+                    "blank": "Steve"
+                  },
+                  "?"
+                ]
+              },
+              {
+                "speaker": "B",
+                "parts": [
+                  "Yes."
+                ]
+              },
+              {
+                "speaker": "A",
+                "parts": [
+                  "Well, he's got a new job. He's joined the ",
+                  {
+                    "blank": "police"
+                  },
+                  "!"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2.2",
+        "title": "Exercise 2.2: Đố vui - Tìm từ chứa âm /ɪ/",
+        "type": "clues",
+        "instruction": "Find the /ɪ/ words from these clues (Đọc gợi ý và điền từ thích hợp chứa âm /ɪ/):",
+        "items": [
+          {
+            "id": 1,
+            "clue": "You can use a _____ to go up and down in a building.",
+            "answer": "lift",
+            "hint": "Thang máy (l___)"
+          },
+          {
+            "id": 2,
+            "clue": "There are sixty seconds in a _____.",
+            "answer": "minute",
+            "hint": "Phút (m_____)"
+          },
+          {
+            "id": 3,
+            "clue": "A _____ is a book of words to help you with your English.",
+            "answer": "dictionary",
+            "hint": "Từ điển (d_________)"
+          },
+          {
+            "id": 4,
+            "clue": "It's too warm in here - open the _____.",
+            "answer": "window",
+            "hint": "Cửa sổ (w_____)"
+          },
+          {
+            "id": 5,
+            "clue": "Would you like a _____ with your coffee?",
+            "answer": "biscuit",
+            "hint": "Bánh quy (b______)"
+          },
+          {
+            "id": 6,
+            "clue": "Birds and planes have _____.",
+            "answer": "wings",
+            "hint": "Đôi cánh (w____)"
+          },
+          {
+            "id": 7,
+            "clue": "You can see yourself in a _____.",
+            "answer": "mirror",
+            "hint": "Chiếc gương soi (m_____)"
+          },
+          {
+            "id": 8,
+            "clue": "Don't drop _____ - put it in a bin!",
+            "answer": "litter",
+            "hint": "Rác thải (l_____)"
+          }
+        ]
+      },
+      {
+        "id": "2.3",
+        "title": "Exercise 2.3: Phân loại âm /iː/ (dài) và /ɪ/ (ngắn)",
+        "type": "sort_sounds",
+        "instruction": "Circle all the /iː/ sounds and underline all the /ɪ/ sounds (Chọn từ và phân loại vào đúng nhóm âm):",
+        "targetA": {
+          "name": "/iː/ (âm dài)",
+          "key": "i_long"
+        },
+        "targetB": {
+          "name": "/ɪ/ (âm ngắn)",
+          "key": "i_short"
+        },
+        "words": [
+          {
+            "w": "green",
+            "target": "i_long",
+            "ipa": "/ɡriːn/"
+          },
+          {
+            "w": "meet",
+            "target": "i_long",
+            "ipa": "/miːt/"
+          },
+          {
+            "w": "people",
+            "target": "i_long",
+            "ipa": "/ˈpiːpl/"
+          },
+          {
+            "w": "pizza",
+            "target": "i_long",
+            "ipa": "/ˈpiːtsə/"
+          },
+          {
+            "w": "please",
+            "target": "i_long",
+            "ipa": "/pliːz/"
+          },
+          {
+            "w": "tea",
+            "target": "i_long",
+            "ipa": "/tiː/"
+          },
+          {
+            "w": "three",
+            "target": "i_long",
+            "ipa": "/θriː/"
+          },
+          {
+            "w": "big",
+            "target": "i_short",
+            "ipa": "/bɪɡ/"
+          },
+          {
+            "w": "busy",
+            "target": "i_short",
+            "ipa": "/ˈbɪzi/"
+          },
+          {
+            "w": "dinner",
+            "target": "i_short",
+            "ipa": "/ˈdɪnər/"
+          },
+          {
+            "w": "give",
+            "target": "i_short",
+            "ipa": "/ɡɪv/"
+          },
+          {
+            "w": "in",
+            "target": "i_short",
+            "ipa": "/ɪn/"
+          },
+          {
+            "w": "listen",
+            "target": "i_short",
+            "ipa": "/ˈlɪsn/"
+          },
+          {
+            "w": "office",
+            "target": "i_short",
+            "ipa": "/ˈɒfɪs/"
+          },
+          {
+            "w": "six",
+            "target": "i_short",
+            "ipa": "/sɪks/"
+          },
+          {
+            "w": "repeat",
+            "target": "both",
+            "ipa": "/rɪˈpiːt/",
+            "note": "Âm tiết 1 là /ɪ/, âm tiết 2 là /iː/!"
+          }
+        ]
+      },
+      {
+        "id": "2.4",
+        "title": "Exercise 2.4: Nối vế câu có nghĩa",
+        "type": "match_sentences",
+        "instruction": "Match the beginnings and endings of the sentences (Ghép nửa đầu và nửa sau của câu):",
+        "pairs": [
+          {
+            "id": 1,
+            "start": "We're always busy",
+            "end": "in the office.",
+            "full": "We're always busy in the office."
+          },
+          {
+            "id": 2,
+            "start": "Would you like tea",
+            "end": "or coffee?",
+            "full": "Would you like tea or coffee?"
+          },
+          {
+            "id": 3,
+            "start": "Give me that big",
+            "end": "green book, please.",
+            "full": "Give me that big green book, please."
+          },
+          {
+            "id": 4,
+            "start": "There were only three",
+            "end": "people in the museum.",
+            "full": "There were only three people in the museum."
+          },
+          {
+            "id": 5,
+            "start": "Listen and",
+            "end": "repeat.",
+            "full": "Listen and repeat."
+          },
+          {
+            "id": 6,
+            "start": "Let's meet at",
+            "end": "six o'clock.",
+            "full": "Let's meet at six o'clock."
+          }
+        ]
+      },
+      {
+        "id": "2.5",
+        "title": "Exercise 2.5: Luyện nghe phân biệt cặp từ (Minimal Pairs Drill)",
+        "type": "listen_pairs",
+        "instruction": "Listen and choose the word you hear (Bấm nghe máy phát âm và chọn đúng từ):",
+        "drills": [
+          {
+            "id": 1,
+            "pair": [
+              "leave",
+              "live"
+            ],
+            "correct": "leave",
+            "pairName": "sound pair 1"
+          },
+          {
+            "id": 2,
+            "pair": [
+              "knee",
+              "near"
+            ],
+            "correct": "near",
+            "pairName": "sound pair 2"
+          },
+          {
+            "id": 3,
+            "pair": [
+              "litter",
+              "letter"
+            ],
+            "correct": "letter",
+            "pairName": "sound pair 3"
+          }
+        ]
+      }
     ]
   },
   {
@@ -1653,7 +2587,7 @@ export const PRONUN_UNITS = [
     "section": "A",
     "sectionName": "Sounds and spelling",
     "title": "A spoonful of sugar",
-    "subtitle": "Luyện tập cặp âm /uː/ (dài) và /ʊ/ (ngắn)",
+    "subtitle": "Cặp âm /uː/ (nguyên âm dài) và /ʊ/ (nguyên âm ngắn)",
     "sound": "/uː/ and /ʊ/",
     "rule": "/uː/ là âm dài, môi chu tròn nhỏ như ống hút (too, blue, food). /ʊ/ là âm ngắn, môi hơi tròn tự nhiên (book, sugar, put).",
     "words": [
@@ -1693,6 +2627,201 @@ export const PRONUN_UNITS = [
       "Look at that good book.",
       "Who took my blue shoes?",
       "The food at school was really good."
+    ],
+    "sections": [
+      {
+        "letter": "A",
+        "title": "How to make the sound /uː/",
+        "targetSound": "/uː/",
+        "targetType": "long vowel",
+        "diagram": "img/pronun/mouth_u_long.png",
+        "diagramDesc": "back of tongue up · lips rounded · lips forward",
+        "guideEn": "/uː/ is a long sound. Look at the diagram. Listen and then say the sound. Make your lips into a tunnel shape. Your tongue is a long way back in your mouth. Target sound: /uː/",
+        "guideVi": "/uː/ là một nguyên âm dài. Hãy quan sát sơ đồ: Chu môi tròn hướng về phía trước như hình ống hầm. Nâng phần sau của lưỡi lên cao và lùi sâu về phía vòm họng. Âm đích: /uː/",
+        "targetWord": "too"
+      },
+      {
+        "letter": "B",
+        "title": "Sound and spelling (/uː/)",
+        "commonRule": "/uː/ is often spelled oo, ou, oe, u, ue or ew. Listen and say these words.",
+        "groups": [
+          {
+            "pattern": "oo, ou, oe, u, ue, ew",
+            "badge": "Phổ biến",
+            "words": [
+              {
+                "w": "too",
+                "ipa": "/tuː/",
+                "vi": "quá / cũng"
+              },
+              {
+                "w": "group",
+                "ipa": "/ɡruːp/",
+                "vi": "nhóm"
+              },
+              {
+                "w": "shoe",
+                "ipa": "/ʃuː/",
+                "vi": "chiếc giày"
+              },
+              {
+                "w": "blue",
+                "ipa": "/bluː/",
+                "vi": "màu xanh lam"
+              }
+            ]
+          },
+          {
+            "pattern": "u, ew có âm /j/ đi trước (/juː/)",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "music",
+                "ipa": "/ˈmjuːzɪk/",
+                "vi": "âm nhạc"
+              },
+              {
+                "w": "new",
+                "ipa": "/njuː/",
+                "vi": "mới mẻ"
+              }
+            ]
+          },
+          {
+            "pattern": "cách viết khác (two, fruit, juice)",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "two",
+                "ipa": "/tuː/",
+                "vi": "số hai"
+              },
+              {
+                "w": "fruit",
+                "ipa": "/fruːt/",
+                "vi": "trái cây"
+              },
+              {
+                "w": "juice",
+                "ipa": "/dʒuːs/",
+                "vi": "nước ép"
+              }
+            ]
+          }
+        ],
+        "sentences": [
+          {
+            "en": "me too",
+            "vi": "tôi cũng vậy"
+          },
+          {
+            "en": "work in groups",
+            "vi": "làm việc theo nhóm"
+          },
+          {
+            "en": "new shoes",
+            "vi": "đôi giày mới"
+          },
+          {
+            "en": "red and blue",
+            "vi": "màu đỏ và xanh"
+          },
+          {
+            "en": "listen to the music",
+            "vi": "nghe nhạc"
+          },
+          {
+            "en": "forty-two",
+            "vi": "số 42"
+          },
+          {
+            "en": "fruit juice",
+            "vi": "nước ép hoa quả"
+          }
+        ]
+      },
+      {
+        "letter": "C",
+        "title": "How to make the sound /ʊ/",
+        "targetSound": "/ʊ/",
+        "targetType": "short vowel",
+        "diagram": "img/pronun/mouth_u_short.png",
+        "diagramDesc": "back of tongue up · lips rounded (a little) · lips forward (a little)",
+        "guideEn": "/ʊ/ is a short sound. Look at the diagram. Listen and then say the sound. Your tongue is not so far back as for /uː/. Lips rounded a little. Target sound: /ʊ/",
+        "guideVi": "/ʊ/ là một nguyên âm ngắn. Hãy quan sát sơ đồ: Môi chỉ hơi tròn và hơi đưa về trước một chút (ít hơn /uː/). Lưỡi không lùi quá sâu như âm /uː/. Âm đích: /ʊ/",
+        "targetWord": "book"
+      },
+      {
+        "letter": "D",
+        "title": "Sound and spelling (/ʊ/)",
+        "commonRule": "/ʊ/ is often spelled u, oo or ou. Listen and say these words.",
+        "groups": [
+          {
+            "pattern": "u, oo, ou",
+            "badge": "Phổ biến",
+            "words": [
+              {
+                "w": "full",
+                "ipa": "/fʊl/",
+                "vi": "đầy đủ"
+              },
+              {
+                "w": "sugar",
+                "ipa": "/ˈʃʊɡər/",
+                "vi": "đường ăn"
+              },
+              {
+                "w": "book",
+                "ipa": "/bʊk/",
+                "vi": "quyển sách"
+              },
+              {
+                "w": "foot",
+                "ipa": "/fʊt/",
+                "vi": "bàn chân"
+              },
+              {
+                "w": "would",
+                "ipa": "/wʊd/",
+                "vi": "sẽ / muốn"
+              }
+            ]
+          },
+          {
+            "pattern": "o (woman)",
+            "badge": "Đặc biệt",
+            "words": [
+              {
+                "w": "woman",
+                "ipa": "/ˈwʊmən/",
+                "vi": "người phụ nữ"
+              }
+            ]
+          }
+        ],
+        "sentences": [
+          {
+            "en": "My bag's full.",
+            "vi": "Túi của tôi đã đầy."
+          },
+          {
+            "en": "Where's my book?",
+            "vi": "Sách của tôi ở đâu?"
+          },
+          {
+            "en": "my left foot",
+            "vi": "chân trái của tôi"
+          },
+          {
+            "en": "a kilo of sugar",
+            "vi": "một cân đường"
+          },
+          {
+            "en": "Who's that woman?",
+            "vi": "Người phụ nữ đó là ai?"
+          }
+        ]
+      }
     ]
   },
   {

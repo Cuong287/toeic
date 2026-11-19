@@ -1167,6 +1167,186 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
     gap: 8px;
   }
 }
+
+/* Unit Sections & Cambridge Book Layout */
+.unit-subtab-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px;
+  margin-bottom: 16px;
+  background: var(--sunk);
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.unit-subtab-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.unit-subtab-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.unit-sec-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.unit-sec-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.unit-sec-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #E11D48;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(225,29,72,0.3);
+}
+.unit-sec-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+}
+.unit-mouth-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .unit-mouth-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.unit-mouth-box {
+  background: #fff;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+  padding: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(225,29,72,0.08);
+  max-width: 220px;
+  margin: 0 auto;
+}
+.unit-mouth-box img {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+.unit-mouth-desc {
+  font-size: 11.5px;
+  color: #9f1239;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.unit-note-box {
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.unit-ex-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.unit-word-bank {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.unit-word-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.unit-word-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.05);
+}
+.unit-word-chip.used {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.unit-blank-input {
+  display: inline-block;
+  min-width: 80px;
+  padding: 4px 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 4px;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+.unit-blank-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.unit-blank-input.correct {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+}
+.unit-blank-input.wrong {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+}
+
 .sentence-drill-item {
   background: var(--sunk);
   border: 1px solid var(--line);
@@ -3888,6 +4068,9 @@ let curSelectedIpaId = 'i_long';
 let curSelectedPairId = 'pair_1';
 let curSelectedSection = 'A';
 let curSelectedUnitId = 2;
+let curUnitViewMode = 'sections'; // 'sections' (Mục A-B-C-D) | 'exercises' (Bài tập thực hành) | 'ai_speaking' (Luyện nói AI)
+let unitExState = {}; // { [unitId]: { [exId]: { answers: {}, checked: false, score: 0 } } }
+let listenPairsPlayed = {}; // stores randomly played word per drill
 let earQuizWord = null;
 let earQuizPair = null;
 
@@ -4207,6 +4390,7 @@ function renderUnitsTab(container) {
   let curUnit = sectionUnits.find(u => u.id === curSelectedUnitId) || sectionUnits[0] || PRONUN_UNITS[0];
 
   container.innerHTML = `
+    <!-- Top Filter & Unit Selector -->
     <div style="background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px">
       <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px">
         <button class="btn ${curSelectedSection === 'A' ? 'primary' : 'ghost'}" data-sec="A">Section A: Sounds & Spelling (1-27)</button>
@@ -4227,77 +4411,38 @@ function renderUnitsTab(container) {
       </div>
     </div>
 
-    <!-- Unit detail card -->
-    <div class="card" style="margin-bottom:20px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--line);padding-bottom:12px">
+    <!-- Unit Header & Mode Switcher -->
+    <div class="card" style="margin-bottom:16px;padding:18px 20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px">
         <div>
           <div class="eyebrow" style="color:var(--accent);font-weight:700">Unit ${curUnit.id} · ${esc(curUnit.sectionName)}</div>
-          <h2 style="margin:4px 0 2px;font-size:22px">${esc(curUnit.title)}</h2>
+          <h2 style="margin:4px 0 2px;font-size:22px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span>${esc(curUnit.title)}</span>
+            <span style="font-size:15px;font-weight:800;color:#E11D48;background:rgba(225,29,72,0.1);padding:4px 10px;border-radius:6px">${esc(curUnit.sound)}</span>
+          </h2>
           <div style="font-size:13.5px;color:var(--muted)">${esc(curUnit.subtitle)}</div>
         </div>
-        <div style="font-size:16px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:6px 14px;border-radius:8px">
-          ${esc(curUnit.sound)}
+
+        <!-- Mode switcher tab buttons -->
+        <div style="display:flex;gap:6px;background:var(--sunk);padding:4px;border-radius:10px;border:1px solid var(--line);flex-wrap:wrap">
+          <button class="btn ${curUnitViewMode === 'sections' ? 'primary' : 'ghost'} unit-mode-btn" data-mode="sections" style="padding:7px 12px;font-size:13px;font-weight:700">
+            📖 Bài học (Mục A-B-C-D)
+          </button>
+          <button class="btn ${curUnitViewMode === 'exercises' ? 'primary' : 'ghost'} unit-mode-btn" data-mode="exercises" style="padding:7px 12px;font-size:13px;font-weight:700">
+            ✏️ Làm bài tập (${curUnit.exercises ? curUnit.exercises.length : 'Thực hành'})
+          </button>
+          <button class="btn ${curUnitViewMode === 'ai_speaking' ? 'primary' : 'ghost'} unit-mode-btn" data-mode="ai_speaking" style="padding:7px 12px;font-size:13px;font-weight:700">
+            🎙️ Luyện nói AI
+          </button>
         </div>
       </div>
 
-      <div style="margin-top:14px">
-        <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:4px">💡 Quy tắc phát âm & Hướng dẫn:</div>
-        <div style="font-size:14px;line-height:1.6;background:var(--sunk);padding:12px 14px;border-radius:8px">${esc(curUnit.rule)}</div>
-      </div>
-
-      <!-- Practice words -->
-      <div style="margin-top:18px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:8px">Phần 1: Luyện đọc các từ vựng trọng tâm (${curUnit.words.length} từ)</div>
-        <div class="pronun-word-grid">
-          ${curUnit.words.map((w, idx) => `
-            <div class="pronun-word-card">
-              <div>
-                <div style="font-size:15px;font-weight:800">${esc(w.w)}</div>
-                <div style="font-size:12px;color:var(--muted)">${esc(w.ipa)} · ${esc(w.vi)}</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:4px">
-                <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Nghe phát âm" style="width:34px;height:34px">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                </button>
-                <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${curUnit.id}-${idx}" title="Luyện đọc ${esc(w.w)}" style="width:34px;height:34px">
-                  ${MIC_ICON}
-                </button>
-              </div>
-            </div>
-            <div id="slot-u-w-${curUnit.id}-${idx}" class="rec-slot" style="grid-column:1/-1;margin-top:-4px"></div>
-          `).join('')}
-        </div>
-      </div>
-
-      <!-- Practice sentences -->
-      <div style="margin-top:24px">
-        <div style="font-size:15px;font-weight:800;margin-bottom:10px">Phần 2: Luyện nói cả câu hội thoại thực tế (${curUnit.sentences.length} câu)</div>
-        <div>
-          ${curUnit.sentences.map((sent, idx) => `
-            <div class="sentence-drill-item">
-              <div class="sentence-top-bar">
-                <div style="font-size:15.5px;font-weight:700;color:var(--ink);flex:1;min-width:200px">
-                  ${idx + 1}. "${esc(sent)}"
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button class="btn" onclick="speak('${esc(sent)}')" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:12.5px">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                    <span>Nghe mẫu</span>
-                  </button>
-                  <button class="btn rec-btn" data-rec-text="${esc(sent)}" data-rec-id="u-s-${curUnit.id}-${idx}" title="Luyện nói cả câu này" style="padding:6px 12px;font-size:12.5px">
-                    ${MIC_ICON}
-                    <span>Luyện nói câu này</span>
-                  </button>
-                </div>
-              </div>
-              <div id="slot-u-s-${curUnit.id}-${idx}" class="rec-slot"></div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
+      <!-- Main Unit Content Area -->
+      <div id="unit-main-content"></div>
     </div>
   `;
 
+  // Attach section filter & unit dropdown
   container.querySelectorAll('[data-sec]').forEach(b => {
     b.onclick = () => {
       curSelectedSection = b.dataset.sec;
@@ -4311,11 +4456,824 @@ function renderUnitsTab(container) {
     curSelectedUnitId = Number(e.target.value);
     renderUnitsTab(container);
   };
+
+  container.querySelectorAll('.unit-mode-btn').forEach(b => {
+    b.onclick = () => {
+      curUnitViewMode = b.dataset.mode;
+      renderUnitsTab(container);
+    };
+  });
+
+  const contentBox = container.querySelector('#unit-main-content');
+  if (curUnitViewMode === 'sections') {
+    renderUnitSections(curUnit, contentBox, container);
+  } else if (curUnitViewMode === 'exercises') {
+    renderUnitExercises(curUnit, contentBox, container);
+  } else {
+    renderUnitAiSpeaking(curUnit, contentBox);
+  }
 }
 
 // --------------------------------------------------------------------------
-// 4. SUB-TAB: RULES (-S & -ED ENDINGS)
+// 3.1. RENDER UNIT SECTIONS (MỤC A, B, C, D THEO SÁCH CAMBRIDGE)
 // --------------------------------------------------------------------------
+function renderUnitSections(u, box, container) {
+  if (u.sections && u.sections.length > 0) {
+    box.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:18px">
+        ${u.sections.map((sec, secIdx) => `
+          <div class="unit-sec-card">
+            <!-- Section Header -->
+            <div class="unit-sec-header">
+              <div class="unit-sec-badge">${esc(sec.letter)}</div>
+              <div style="flex:1">
+                <h3 class="unit-sec-title">${esc(sec.title)}</h3>
+                ${sec.commonRule ? `<div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(sec.commonRule)}</div>` : ''}
+              </div>
+              ${sec.targetSound ? `
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button class="btn" onclick="speak('${esc(sec.targetWord || sec.targetSound)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12.5px" title="Nghe âm mẫu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <span>Nghe âm ${esc(sec.targetSound)}</span>
+                  </button>
+                  <button class="btn rec-btn" data-rec-text="${esc(sec.targetWord || sec.targetSound)}" data-rec-id="sec-${u.id}-${sec.letter}" style="padding:5px 10px;font-size:12.5px" title="Luyện phát âm âm này">
+                    ${MIC_ICON}
+                    <span>Tập nói</span>
+                  </button>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Target sound slot if user records -->
+            ${sec.targetSound ? `<div id="slot-sec-${u.id}-${sec.letter}" class="rec-slot" style="margin-bottom:12px"></div>` : ''}
+
+            <!-- How to make sound: 2-column layout (Guide text + Diagram) -->
+            ${sec.diagram ? `
+              <div class="unit-mouth-grid" style="margin-bottom:16px">
+                <div style="font-size:14px;line-height:1.6">
+                  <div style="color:var(--ink);font-weight:600;margin-bottom:8px">${esc(sec.guideEn)}</div>
+                  <div style="background:var(--sunk);border-left:3px solid #E11D48;padding:10px 12px;border-radius:6px;font-size:13.5px;color:var(--muted)">
+                    💡 <strong>Mẹo khẩu hình:</strong> ${esc(sec.guideVi)}
+                  </div>
+                </div>
+                <div class="unit-mouth-box">
+                  <img src="${esc(sec.diagram)}" alt="Khẩu hình ${esc(sec.targetSound)}" />
+                  <div class="unit-mouth-desc">${esc(sec.diagramDesc || '')}</div>
+                </div>
+              </div>
+            ` : (sec.guideEn ? `
+              <div style="background:var(--sunk);padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.6;margin-bottom:14px">
+                <div style="font-weight:600;color:var(--ink);margin-bottom:4px">${esc(sec.guideEn)}</div>
+                ${sec.guideVi ? `<div style="font-size:13px;color:var(--muted)">💡 ${esc(sec.guideVi)}</div>` : ''}
+              </div>
+            ` : '')}
+
+            <!-- Word Groups (if any) -->
+            ${sec.groups && sec.groups.length > 0 ? `
+              <div style="margin-top:14px">
+                <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Từ vựng theo chữ viết:</div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  ${sec.groups.map((grp, gIdx) => `
+                    <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <span style="font-weight:800;font-size:13.5px;color:var(--ink)">Nhóm: ${esc(grp.pattern)}</span>
+                        ${grp.badge ? `<span style="font-size:11px;font-weight:700;color:#E11D48;background:rgba(225,29,72,0.1);padding:2px 8px;border-radius:12px">${esc(grp.badge)}</span>` : ''}
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:8px">
+                        ${grp.words.map((w, wIdx) => `
+                          <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px">
+                            <span style="font-weight:800;font-size:14px">${esc(w.w)}</span>
+                            <span style="font-size:12px;color:var(--muted)">${esc(w.ipa)}</span>
+                            <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Nghe ${esc(w.w)}" style="width:26px;height:26px">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                            </button>
+                            <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${sec.letter}-${gIdx}-${wIdx}" title="Luyện đọc" style="width:26px;height:26px">
+                              ${MIC_ICON}
+                            </button>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Sentences or Phrases (if any) -->
+            ${sec.sentences && sec.sentences.length > 0 ? `
+              <div style="margin-top:16px">
+                <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Câu / Cụm từ luyện nói:</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  ${sec.sentences.map((sent, sIdx) => {
+                    const enText = typeof sent === 'string' ? sent : sent.en;
+                    const viText = typeof sent === 'object' ? sent.vi : '';
+                    return `
+                      <div class="sentence-drill-item">
+                        <div class="sentence-top-bar">
+                          <div style="flex:1;min-width:200px">
+                            <div style="font-size:15px;font-weight:700;color:var(--ink)">${sIdx + 1}. "${esc(enText)}"</div>
+                            ${viText ? `<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(viText)}</div>` : ''}
+                          </div>
+                          <div style="display:flex;gap:6px">
+                            <button class="btn" onclick="speak('${esc(enText)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                              <span>Nghe</span>
+                            </button>
+                            <button class="btn rec-btn" data-rec-text="${esc(enText)}" data-rec-id="u-s-${u.id}-${sec.letter}-${sIdx}" style="padding:5px 10px;font-size:12px">
+                              ${MIC_ICON}
+                              <span>Luyện nói</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div id="slot-u-s-${u.id}-${sec.letter}-${sIdx}" class="rec-slot"></div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Notes (if any) -->
+            ${sec.notes && sec.notes.length > 0 ? `
+              <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
+                ${sec.notes.map(n => `
+                  <div class="unit-note-box">
+                    <div style="font-weight:800;color:#d97706;margin-bottom:2px">⚠️ ${esc(n.tag)}:</div>
+                    <div style="color:var(--ink)">${esc(n.content)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+
+        <!-- Bottom CTA to Exercises -->
+        <div style="background:linear-gradient(135deg, rgba(225,29,72,0.06), rgba(99,102,241,0.06));border:1.5px dashed var(--accent);border-radius:12px;padding:20px;text-align:center">
+          <div style="font-size:16px;font-weight:800;margin-bottom:6px">Bạn đã nắm vững lý thuyết Unit ${u.id}?</div>
+          <div style="font-size:13.5px;color:var(--muted);margin-bottom:12px">Hãy chuyển sang phần Bài tập thực hành để làm trọn bộ bài tập như trong sách giáo trình!</div>
+          <button class="btn primary" id="btn-jump-exercises" style="padding:10px 24px;font-size:14.5px;font-weight:700">
+            ✏️ Bắt đầu Làm bài tập Unit ${u.id} ngay →
+          </button>
+        </div>
+      </div>
+    `;
+
+    const jumpBtn = box.querySelector('#btn-jump-exercises');
+    if (jumpBtn) {
+      jumpBtn.onclick = () => {
+        curUnitViewMode = 'exercises';
+        renderUnitsTab(container);
+      };
+    }
+  } else {
+    // Fallback for units without sections
+    box.innerHTML = `
+      <div style="background:var(--sunk);padding:14px;border-radius:8px;font-size:14px;line-height:1.6;margin-bottom:16px">
+        💡 <strong>Quy tắc phát âm:</strong> ${esc(u.rule)}
+      </div>
+      <!-- Words grid -->
+      <div style="margin-top:14px">
+        <div style="font-size:14px;font-weight:800;margin-bottom:8px">Từ vựng trọng tâm:</div>
+        <div class="pronun-word-grid">
+          ${u.words.map((w, idx) => `
+            <div class="pronun-word-card">
+              <div>
+                <div style="font-size:15px;font-weight:800">${esc(w.w)}</div>
+                <div style="font-size:12px;color:var(--muted)">${esc(w.ipa)} · ${esc(w.vi)}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px">
+                <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Nghe phát âm" style="width:34px;height:34px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+                <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${idx}" title="Luyện đọc" style="width:34px;height:34px">
+                  ${MIC_ICON}
+                </button>
+              </div>
+            </div>
+            <div id="slot-u-w-${u.id}-${idx}" class="rec-slot" style="grid-column:1/-1"></div>
+          `).join('')}
+        </div>
+      </div>
+      <!-- Sentences -->
+      <div style="margin-top:20px">
+        <div style="font-size:14px;font-weight:800;margin-bottom:8px">Câu luyện nói:</div>
+        <div>
+          ${u.sentences.map((sent, idx) => `
+            <div class="sentence-drill-item">
+              <div class="sentence-top-bar">
+                <div style="font-size:15px;font-weight:700;color:var(--ink);flex:1">${idx + 1}. "${esc(sent)}"</div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn" onclick="speak('${esc(sent)}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:12.5px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <span>Nghe</span>
+                  </button>
+                  <button class="btn rec-btn" data-rec-text="${esc(sent)}" data-rec-id="u-s-${u.id}-${idx}" style="padding:6px 12px;font-size:12.5px">
+                    ${MIC_ICON}
+                    <span>Luyện nói</span>
+                  </button>
+                </div>
+              </div>
+              <div id="slot-u-s-${u.id}-${idx}" class="rec-slot"></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+}
+
+// --------------------------------------------------------------------------
+// 3.2. RENDER UNIT EXERCISES (BÀI TẬP THỰC HÀNH TƯƠNG TÁC TỪ SÁCH)
+// --------------------------------------------------------------------------
+function renderUnitExercises(u, box, container) {
+  if (!unitExState[u.id]) {
+    unitExState[u.id] = {};
+  }
+  const uState = unitExState[u.id];
+
+  const exList = u.exercises || [];
+  if (exList.length === 0) {
+    box.innerHTML = `
+      <div style="background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:24px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">📝</div>
+        <div style="font-size:16px;font-weight:800;color:var(--ink)">Bài tập thực hành Unit ${u.id}</div>
+        <div style="font-size:13.5px;color:var(--muted);margin:8px auto 16px;max-width:460px">
+          Hãy luyện tập phản xạ phân biệt âm và luyện nói các từ vựng và mẫu câu của bài học này!
+        </div>
+        <div style="display:flex;justify-content:center;gap:10px">
+          <button class="btn primary" onclick="speak('${esc(u.words[0] ? u.words[0].w : 'hello')}')">🔊 Nghe từ vựng bài học</button>
+          <button class="btn" onclick="curUnitViewMode='sections';renderUnitsTab(document.querySelector('#pronun-container')||document.body)">📖 Xem lại lý thuyết</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // Calculate completed exercises count
+  const completedCount = exList.filter(ex => uState[ex.id] && uState[ex.id].checked).length;
+  const pct = Math.round((completedCount / exList.length) * 100);
+
+  box.innerHTML = `
+    <!-- Exercise Progress Bar -->
+    <div style="background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px">
+          <span>Tiến độ làm bài tập Unit ${u.id}:</span>
+          <span style="color:var(--accent)">${completedCount}/${exList.length} bài (${pct}%)</span>
+        </div>
+        <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg, #E11D48, #6366F1);border-radius:4px;transition:width 0.3s"></div>
+        </div>
+      </div>
+      <div>
+        <button class="btn ghost" id="btn-reset-exercises" style="font-size:12.5px;padding:6px 12px">
+          🔄 Làm lại từ đầu
+        </button>
+      </div>
+    </div>
+
+    <!-- Render Each Exercise Card -->
+    <div style="display:flex;flex-direction:column;gap:22px">
+      ${exList.map((ex, exIdx) => renderSingleExercise(u, ex, exIdx, uState)).join('')}
+    </div>
+  `;
+
+  // Attach Reset All
+  box.querySelector('#btn-reset-exercises').onclick = () => {
+    if (confirm('Bạn có chắc muốn làm lại tất cả bài tập của Unit này?')) {
+      delete unitExState[u.id];
+      renderUnitsTab(container);
+    }
+  };
+
+  // Bind Exercise Interactive Events
+  bindAllExerciseEvents(u, box, container);
+}
+
+// --------------------------------------------------------------------------
+// Helper: Render Single Exercise Card
+// --------------------------------------------------------------------------
+function renderSingleExercise(u, ex, exIdx, uState) {
+  const st = uState[ex.id] || { answers: {}, checked: false };
+
+  if (ex.type === 'fill_dialogue') {
+    // Exercise 2.1
+    return `
+      <div class="unit-ex-card" id="ex-card-${ex.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
+          </div>
+          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã hoàn thành</span>` : ''}
+        </div>
+
+        <!-- Word Bank Chips -->
+        <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px">Ngân hàng từ vựng (Bấm vào từ để điền nhanh vào ô trống):</div>
+        <div class="unit-word-bank">
+          ${ex.wordBank.map(w => `<button type="button" class="unit-word-chip" data-word="${esc(w)}">${esc(w)}</button>`).join('')}
+        </div>
+
+        <!-- Dialogues List -->
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+          ${ex.dialogues.map((diag, dIdx) => `
+            <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+              <div style="font-weight:800;font-size:13px;color:var(--muted);margin-bottom:6px">Đoạn ${dIdx + 1}:</div>
+              ${diag.lines.map((line, lIdx) => `
+                <div style="font-size:14.5px;line-height:2;margin-bottom:4px">
+                  <strong style="color:var(--accent)">${esc(line.speaker)}:</strong>
+                  ${line.parts.map((p, pIdx) => {
+                    if (typeof p === 'string') return esc(p);
+                    const blankKey = `d_${diag.id}_l_${lIdx}_b_${pIdx}`;
+                    const val = st.answers[blankKey] || '';
+                    const isRight = st.checked && (val.trim().toLowerCase() === p.blank.toLowerCase());
+                    const isWrong = st.checked && !isRight;
+                    return `
+                      <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
+                        data-blank-key="${blankKey}"
+                        data-expected="${esc(p.blank)}"
+                        value="${esc(val)}"
+                        placeholder="..."
+                        autocomplete="off"
+                        autocapitalize="none"
+                        style="width:${Math.max(90, p.blank.length * 12)}px" />
+                      ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(p.blank)})</span>` : ''}
+                    `;
+                  }).join('')}
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Check Button & Speech Tools -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <button class="btn primary btn-check-ex" data-ex-id="${ex.id}" style="padding:8px 18px;font-weight:700">
+            ${st.checked ? 'Kiểm tra lại' : 'Kiểm tra đáp án'}
+          </button>
+          <div style="display:flex;gap:6px">
+            <button class="btn ghost" onclick="speak('What shall we do this evening? Let\\'s stay at home and watch TV.')" style="font-size:12.5px">
+              🔊 Nghe đoạn 1
+            </button>
+            <button class="btn ghost" onclick="speak('Let me read that email! No, it is a secret!')" style="font-size:12.5px">
+              🔊 Nghe đoạn 2
+            </button>
+            <button class="btn ghost" onclick="speak('You know my friend Steve? Yes. Well, he has got a new job. He has joined the police!')" style="font-size:12.5px">
+              🔊 Nghe đoạn 3
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (ex.type === 'clues') {
+    // Exercise 2.2
+    return `
+      <div class="unit-ex-card" id="ex-card-${ex.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
+          </div>
+          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã kiểm tra</span>` : ''}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          ${ex.items.map((it, idx) => {
+            const val = st.answers[`clue_${it.id}`] || '';
+            const isRight = st.checked && (val.trim().toLowerCase() === it.answer.toLowerCase());
+            const isWrong = st.checked && !isRight;
+            return `
+              <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div style="flex:1;min-width:260px;font-size:14.5px">
+                  <span style="font-weight:800;color:var(--accent)">${it.id}.</span> ${esc(it.clue)}
+                  <div id="hint-box-${ex.id}-${it.id}" style="font-size:12px;color:var(--muted);margin-top:2px;display:none">
+                    💡 Gợi ý: <strong>${esc(it.hint)}</strong>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button type="button" class="btn ghost btn-show-hint" data-hint-id="hint-box-${ex.id}-${it.id}" style="padding:4px 8px;font-size:12px" title="Xem gợi ý">
+                    💡
+                  </button>
+                  <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
+                    data-clue-id="${it.id}"
+                    data-expected="${esc(it.answer)}"
+                    value="${esc(val)}"
+                    placeholder="Điền từ..."
+                    style="width:110px" />
+                  <button class="icon-btn" onclick="speak('${esc(it.answer)}')" title="Nghe phát âm từ này" style="width:30px;height:30px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  </button>
+                  ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(it.answer)})</span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <button class="btn primary btn-check-clues" data-ex-id="${ex.id}" style="padding:8px 18px;font-weight:700">
+            ${st.checked ? 'Kiểm tra lại' : 'Kiểm tra đáp án'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (ex.type === 'sort_sounds') {
+    // Exercise 2.3
+    const words = ex.words;
+    return `
+      <div class="unit-ex-card" id="ex-card-${ex.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
+          </div>
+          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã kiểm tra</span>` : ''}
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:8px;margin-bottom:16px">
+          ${words.map((w, idx) => {
+            const userChoice = st.answers[w.w] || '';
+            const isChecked = st.checked;
+            let statusClass = '';
+            if (isChecked) {
+              if (w.target === 'both') {
+                statusClass = (userChoice === 'i_long' || userChoice === 'i_short') ? 'correct' : 'wrong';
+              } else {
+                statusClass = (userChoice === w.target) ? 'correct' : 'wrong';
+              }
+            }
+            return `
+              <div style="background:var(--sunk);border:1px solid ${statusClass === 'correct' ? '#10b981' : (statusClass === 'wrong' ? '#ef4444' : 'var(--line)')};border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <span style="font-weight:800;font-size:14px">${esc(w.w)}</span>
+                  <span style="font-size:11.5px;color:var(--muted);margin-left:4px">${esc(w.ipa)}</span>
+                  <button class="icon-btn" onclick="speak('${esc(w.w)}')" style="width:22px;height:22px;display:inline-flex;vertical-align:middle;margin-left:2px" title="Nghe">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  </button>
+                </div>
+                <div style="display:flex;gap:4px">
+                  <button type="button" class="btn ${userChoice === 'i_long' ? 'primary' : 'ghost'} btn-sort-choice"
+                    data-word="${esc(w.w)}" data-choice="i_long" style="padding:3px 7px;font-size:11.5px;font-weight:700">
+                    /iː/
+                  </button>
+                  <button type="button" class="btn ${userChoice === 'i_short' ? 'primary' : 'ghost'} btn-sort-choice"
+                    data-word="${esc(w.w)}" data-choice="i_short" style="padding:3px 7px;font-size:11.5px;font-weight:700">
+                    /ɪ/
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        ${st.checked ? `
+          <div class="unit-note-box" style="margin-bottom:14px">
+            💡 <strong>Giải thích chi tiết từ sách Cambridge:</strong><br/>
+            - <strong>Âm /iː/ (8 từ):</strong> green, meet, people, pizza, please, repeat (âm 2), tea, three.<br/>
+            - <strong>Âm /ɪ/ (9 từ):</strong> big, busy, dinner, give, in, listen, office, repeat (âm 1), six.<br/>
+            ⭐ <em>Đặc biệt: từ <strong>repeat /rɪˈpiːt/</strong> chứa cả 2 âm (/ɪ/ ở đầu và /iː/ ở đuôi)!</em>
+          </div>
+        ` : ''}
+
+        <div>
+          <button class="btn primary btn-check-sort" data-ex-id="${ex.id}" style="padding:8px 18px;font-weight:700">
+            ${st.checked ? 'Kiểm tra lại' : 'Kiểm tra phân loại'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (ex.type === 'match_sentences') {
+    // Exercise 2.4
+    const pairs = ex.pairs;
+    return `
+      <div class="unit-ex-card" id="ex-card-${ex.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
+          </div>
+          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã kiểm tra</span>` : ''}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          ${pairs.map((p, idx) => {
+            const userChoice = st.answers[`match_${p.id}`] || '';
+            const isRight = st.checked && (userChoice === p.end);
+            const isWrong = st.checked && !isRight;
+            return `
+              <div style="background:var(--sunk);border:1px solid ${isRight ? '#10b981' : (isWrong ? '#ef4444' : 'var(--line)')};border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div style="font-size:14.5px;font-weight:700;color:var(--ink);flex:1;min-width:200px">
+                  ${idx + 1}. ${esc(p.start)} ...
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <select class="match-select" data-pair-id="${p.id}" style="padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;font-weight:600">
+                    <option value="">-- Chọn vế sau --</option>
+                    ${pairs.map(opt => `
+                      <option value="${esc(opt.end)}" ${userChoice === opt.end ? 'selected' : ''}>${esc(opt.end)}</option>
+                    `).join('')}
+                  </select>
+                  ${isRight ? `
+                    <button class="btn" onclick="speak('${esc(p.full)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 8px;font-size:12px" title="Nghe câu hoàn chỉnh">
+                      🔊 Nghe
+                    </button>
+                    <button class="btn rec-btn" data-rec-text="${esc(p.full)}" data-rec-id="match-${p.id}" style="padding:5px 8px;font-size:12px" title="Luyện đọc câu này">
+                      ${MIC_ICON}
+                    </button>
+                  ` : ''}
+                  ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">Đúng: "${esc(p.end)}"</span>` : ''}
+                </div>
+                ${isRight ? `<div id="slot-match-${p.id}" class="rec-slot" style="width:100%"></div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div>
+          <button class="btn primary btn-check-match" data-ex-id="${ex.id}" style="padding:8px 18px;font-weight:700">
+            ${st.checked ? 'Kiểm tra lại' : 'Kiểm tra nối câu'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (ex.type === 'listen_pairs') {
+    // Exercise 2.5
+    const drills = ex.drills;
+    return `
+      <div class="unit-ex-card" id="ex-card-${ex.id}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
+          </div>
+          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã hoàn thành</span>` : ''}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+          ${drills.map((drill, idx) => {
+            const playedWord = listenPairsPlayed[`${u.id}_${ex.id}_${drill.id}`] || drill.correct;
+            const userChoice = st.answers[`drill_${drill.id}`] || '';
+            const isRight = st.checked && (userChoice === playedWord);
+            const isWrong = st.checked && !isRight;
+            return `
+              <div style="background:var(--sunk);border:1px solid ${isRight ? '#10b981' : (isWrong ? '#ef4444' : 'var(--line)')};border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="font-weight:800;font-size:14px;color:var(--accent)">Câu ${idx + 1}:</span>
+                  <button type="button" class="btn primary btn-play-pair"
+                    data-drill-key="${u.id}_${ex.id}_${drill.id}"
+                    data-word-a="${esc(drill.pair[0])}"
+                    data-word-b="${esc(drill.pair[1])}"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:13px;font-weight:700">
+                    🔊 Bấm nghe từ
+                  </button>
+                  <span style="font-size:12px;color:var(--muted)">(${esc(drill.pairName)})</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${drill.pair.map(word => `
+                    <button type="button" class="btn ${userChoice === word ? 'primary' : 'ghost'} btn-choose-pair-word"
+                      data-drill-id="${drill.id}"
+                      data-word="${esc(word)}"
+                      style="font-size:14px;font-weight:800;padding:6px 14px;min-width:70px">
+                      ${esc(word)}
+                    </button>
+                  `).join('')}
+                  ${isRight ? `<span style="color:#059669;font-weight:800;font-size:13px">✓ Đúng</span>` : ''}
+                  ${isWrong ? `<span style="color:#dc2626;font-weight:700;font-size:12.5px">✗ Máy đọc: "${esc(playedWord)}"</span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div>
+          <button class="btn primary btn-check-pairs" data-ex-id="${ex.id}" style="padding:8px 18px;font-weight:700">
+            ${st.checked ? 'Kiểm tra lại' : 'Kiểm tra đáp án'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Fallback generic exercise card
+  return `
+    <div class="unit-ex-card">
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px">${esc(ex.title)}</div>
+      <div style="font-size:13.5px;color:var(--muted);margin-bottom:12px">${esc(ex.instruction)}</div>
+      <div style="background:var(--sunk);padding:12px;border-radius:8px;font-size:13.5px">
+        Bài tập thực hành tương tác đang được đồng bộ cho dạng ${esc(ex.type)}.
+      </div>
+    </div>
+  `;
+}
+
+// --------------------------------------------------------------------------
+// Helper: Bind Event Listeners for All Exercises
+// --------------------------------------------------------------------------
+function bindAllExerciseEvents(u, box, container) {
+  const uState = unitExState[u.id];
+
+  // 1. Fill Dialogue Events
+  box.querySelectorAll('.unit-word-chip').forEach(chip => {
+    chip.onclick = () => {
+      const w = chip.dataset.word;
+      // Find focused or first empty blank input in dialogue card
+      const inputs = box.querySelectorAll('.unit-blank-input');
+      let targetInput = Array.from(inputs).find(inp => document.activeElement === inp);
+      if (!targetInput) {
+        targetInput = Array.from(inputs).find(inp => !inp.value);
+      }
+      if (targetInput) {
+        targetInput.value = w;
+        const key = targetInput.dataset.blankKey;
+        if (key) {
+          const exCard = targetInput.closest('.unit-ex-card');
+          const exId = exCard.id.replace('ex-card-', '');
+          if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+          uState[exId].answers[key] = w;
+        }
+        speak(w);
+      }
+    };
+  });
+
+  box.querySelectorAll('.unit-blank-input').forEach(inp => {
+    inp.oninput = () => {
+      const key = inp.dataset.blankKey || (inp.dataset.clueId ? `clue_${inp.dataset.clueId}` : null);
+      if (key) {
+        const exCard = inp.closest('.unit-ex-card');
+        const exId = exCard.id.replace('ex-card-', '');
+        if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+        uState[exId].answers[key] = inp.value;
+      }
+    };
+  });
+
+  box.querySelectorAll('.btn-check-ex').forEach(b => {
+    b.onclick = () => {
+      const exId = b.dataset.exId;
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].checked = true;
+      renderUnitsTab(container);
+    };
+  });
+
+  // 2. Clues Events
+  box.querySelectorAll('.btn-show-hint').forEach(b => {
+    b.onclick = () => {
+      const hintBox = box.querySelector('#' + b.dataset.hintId);
+      if (hintBox) {
+        hintBox.style.display = hintBox.style.display === 'none' ? 'block' : 'none';
+      }
+    };
+  });
+
+  box.querySelectorAll('.btn-check-clues').forEach(b => {
+    b.onclick = () => {
+      const exId = b.dataset.exId;
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].checked = true;
+      renderUnitsTab(container);
+    };
+  });
+
+  // 3. Sort Sounds Events
+  box.querySelectorAll('.btn-sort-choice').forEach(b => {
+    b.onclick = () => {
+      const word = b.dataset.word;
+      const choice = b.dataset.choice;
+      const exCard = b.closest('.unit-ex-card');
+      const exId = exCard.id.replace('ex-card-', '');
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].answers[word] = choice;
+      speak(word);
+      renderUnitsTab(container);
+    };
+  });
+
+  box.querySelectorAll('.btn-check-sort').forEach(b => {
+    b.onclick = () => {
+      const exId = b.dataset.exId;
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].checked = true;
+      renderUnitsTab(container);
+    };
+  });
+
+  // 4. Match Sentences Events
+  box.querySelectorAll('.match-select').forEach(sel => {
+    sel.onchange = () => {
+      const pairId = sel.dataset.pairId;
+      const exCard = sel.closest('.unit-ex-card');
+      const exId = exCard.id.replace('ex-card-', '');
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].answers[`match_${pairId}`] = sel.value;
+    };
+  });
+
+  box.querySelectorAll('.btn-check-match').forEach(b => {
+    b.onclick = () => {
+      const exId = b.dataset.exId;
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].checked = true;
+      renderUnitsTab(container);
+    };
+  });
+
+  // 5. Listen Pairs Events
+  box.querySelectorAll('.btn-play-pair').forEach(b => {
+    b.onclick = () => {
+      const key = b.dataset.drillKey;
+      const wordA = b.dataset.wordA;
+      const wordB = b.dataset.wordB;
+      const chosenWord = Math.random() < 0.5 ? wordA : wordB;
+      listenPairsPlayed[key] = chosenWord;
+      speak(chosenWord);
+    };
+  });
+
+  box.querySelectorAll('.btn-choose-pair-word').forEach(b => {
+    b.onclick = () => {
+      const drillId = b.dataset.drillId;
+      const word = b.dataset.word;
+      const exCard = b.closest('.unit-ex-card');
+      const exId = exCard.id.replace('ex-card-', '');
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].answers[`drill_${drillId}`] = word;
+      renderUnitsTab(container);
+    };
+  });
+
+  box.querySelectorAll('.btn-check-pairs').forEach(b => {
+    b.onclick = () => {
+      const exId = b.dataset.exId;
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+      uState[exId].checked = true;
+      renderUnitsTab(container);
+    };
+  });
+}
+
+// --------------------------------------------------------------------------
+// 3.3. RENDER UNIT AI SPEAKING (PHÒNG LUYỆN NÓI CHUYÊN SÂU CHẤM ĐIỂM AI)
+// --------------------------------------------------------------------------
+function renderUnitAiSpeaking(u, box) {
+  const allSentences = [];
+  if (u.sections) {
+    u.sections.forEach(sec => {
+      if (sec.sentences) {
+        sec.sentences.forEach(s => allSentences.push(s));
+      }
+    });
+  }
+  if (allSentences.length === 0 && u.sentences) {
+    u.sentences.forEach(s => allSentences.push(s));
+  }
+
+  box.innerHTML = `
+    <div style="background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px">
+      <div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px">🎙️ Phòng luyện nói thông minh AI - Unit ${u.id}</div>
+      <div style="font-size:13.5px;color:var(--muted)">
+        Hệ thống nhận diện giọng nói đa phương án (Live Visualizer) sẽ phân tích độ chính xác phát âm từng từ của bạn theo thời gian thực!
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${allSentences.map((sent, idx) => {
+        const en = typeof sent === 'string' ? sent : sent.en;
+        const vi = typeof sent === 'object' ? sent.vi : '';
+        return `
+          <div class="sentence-drill-item" style="padding:14px 16px">
+            <div class="sentence-top-bar">
+              <div style="flex:1;min-width:220px">
+                <div style="font-size:16px;font-weight:800;color:var(--ink)">${idx + 1}. "${esc(en)}"</div>
+                ${vi ? `<div style="font-size:13px;color:var(--muted);margin-top:2px">${esc(vi)}</div>` : ''}
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="btn" onclick="speak('${esc(en)}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:13px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span>Nghe giọng mẫu</span>
+                </button>
+                <button class="btn rec-btn primary" data-rec-text="${esc(en)}" data-rec-id="ai-spk-${u.id}-${idx}" style="padding:6px 14px;font-size:13px;font-weight:700">
+                  ${MIC_ICON}
+                  <span>Bấm thu âm & Chấm điểm</span>
+                </button>
+              </div>
+            </div>
+            <div id="slot-ai-spk-${u.id}-${idx}" class="rec-slot" style="margin-top:8px"></div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 function renderRulesTab(container) {
   const sWords = [
     { w: "boxes", ipa: "/ˈbɒksɪz/", group: "iz", note: "sau x (/ks/) -> /ɪz/" },

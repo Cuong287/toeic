@@ -1,9 +1,10 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v19';
+const V = 'so-tu-toeic-v20';
 const CORE = [
   './',
   './index.html',
   './firebase-config.js',
+  './pronunciation-data.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/apple-touch-icon.png'

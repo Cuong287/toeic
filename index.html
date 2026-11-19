@@ -1245,6 +1245,35 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   gap: 6px;
   flex-wrap: wrap;
 }
+
+.cambridge-segment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(225, 29, 72, 0.1);
+  color: #E11D48;
+  border: 1.5px solid rgba(225, 29, 72, 0.35);
+  border-radius: 16px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.cambridge-segment-btn:hover {
+  background: #E11D48;
+  color: #fff;
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.35);
+}
+.cambridge-segment-btn.playing {
+  background: #E11D48;
+  color: #fff;
+  animation: pulse-ring 1.5s infinite;
+}
+
 .cambridge-seek-bar {
   flex: 1;
   min-width: 140px;
@@ -4241,6 +4270,60 @@ function skipCambridgeTrack(seconds) {
     currentCambridgeAudio.currentTime = Math.max(0, Math.min(currentCambridgeAudio.duration || 999, currentCambridgeAudio.currentTime + seconds));
   }
 }
+let currentCambridgeSegmentCode = null;
+
+function playCambridgeSegment(cdNum, trackName, startSec, endSec, code, btnEl) {
+  const audioPath = `audio/pronun/cd${cdNum}/${trackName}`;
+
+  if (currentCambridgeAudio && currentCambridgeSegmentCode === code) {
+    if (!currentCambridgeAudio.paused) {
+      currentCambridgeAudio.pause();
+      if (btnEl) btnEl.classList.remove('playing');
+      return;
+    } else {
+      currentCambridgeAudio.play();
+      if (btnEl) btnEl.classList.add('playing');
+      return;
+    }
+  }
+
+  if (currentCambridgeAudio) {
+    currentCambridgeAudio.pause();
+    document.querySelectorAll('.cambridge-segment-btn').forEach(b => b.classList.remove('playing'));
+    document.querySelectorAll('.cambridge-play-btn').forEach(b => {
+      if (b.dataset.origLabel) b.innerHTML = b.dataset.origLabel;
+    });
+  }
+
+  const audio = new Audio(audioPath);
+  currentCambridgeAudio = audio;
+  currentCambridgeSegmentCode = code;
+
+  audio.currentTime = startSec;
+  audio.play().then(() => {
+    if (btnEl) btnEl.classList.add('playing');
+  }).catch(err => {
+    console.error('Audio play error:', err);
+    alert(`Không thể phát đoạn âm thanh ${code} từ ${audioPath}`);
+  });
+
+  audio.ontimeupdate = () => {
+    if (audio.currentTime >= endSec) {
+      audio.pause();
+      if (btnEl) btnEl.classList.remove('playing');
+      currentCambridgeAudio = null;
+      currentCambridgeSegmentCode = null;
+    }
+  };
+
+  audio.onended = () => {
+    if (btnEl) btnEl.classList.remove('playing');
+    currentCambridgeAudio = null;
+    currentCambridgeSegmentCode = null;
+  };
+}
+window.playCambridgeSegment = playCambridgeSegment;
+
 window.playCambridgeTrack = playCambridgeTrack;
 window.seekCambridgeTrack = seekCambridgeTrack;
 window.skipCambridgeTrack = skipCambridgeTrack;
@@ -4666,7 +4749,18 @@ function renderUnitSections(u, box, container) {
               <div class="unit-sec-badge">${esc(sec.letter)}</div>
               <div style="flex:1">
                 <h3 class="unit-sec-title">${esc(sec.title)}</h3>
-                ${sec.commonRule ? `<div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(sec.commonRule)}</div>` : ''}
+                ${sec.commonRule ? `
+                  <div style="font-size:13.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+                    ${sec.ruleSegment ? `
+                      <button type="button" class="cambridge-segment-btn"
+                        onclick="playCambridgeSegment(${sec.ruleSegment.cd}, '${esc(sec.ruleSegment.track)}', ${sec.ruleSegment.start}, ${sec.ruleSegment.end}, '${esc(sec.ruleSegment.code)}', this)"
+                        title="Nghe riêng phần ${esc(sec.ruleSegment.code)} (Audio gốc)">
+                        🎧 ${esc(sec.ruleSegment.code)}
+                      </button>
+                    ` : ''}
+                    <span>${esc(sec.commonRule)}</span>
+                  </div>
+                ` : ''}
               </div>
               ${sec.targetSound ? `
                 <div style="display:flex;align-items:center;gap:6px">
@@ -4682,7 +4776,7 @@ function renderUnitSections(u, box, container) {
               ` : ''}
             </div>
 
-            <!-- Cambridge Official CD Audio Player Bar -->
+            <!-- Cambridge Official CD Audio Player Bar (Full Track) -->
             ${(sec.audio && (sec.letter === 'A' || sec.letter === 'C')) ? `
               <div class="cambridge-player-bar" id="cambridge-player-${u.id}-${sec.letter}">
                 <div class="cambridge-tag">
@@ -4706,11 +4800,20 @@ function renderUnitSections(u, box, container) {
             <!-- Target sound slot if user records -->
             ${sec.targetSound ? `<div id="slot-sec-${u.id}-${sec.letter}" class="rec-slot" style="margin-bottom:12px"></div>` : ''}
 
-            <!-- How to make sound: 2-column layout (Guide text + Diagram) -->
+            <!-- How to make sound: 2-column layout (Guide text + Diagram) with Segment Button -->
             ${sec.diagram ? `
               <div class="unit-mouth-grid" style="margin-bottom:16px">
                 <div style="font-size:14px;line-height:1.6">
-                  <div style="color:var(--ink);font-weight:600;margin-bottom:8px">${esc(sec.guideEn)}</div>
+                  <div style="color:var(--ink);font-weight:600;margin-bottom:8px;display:flex;align-items:flex-start;gap:6px">
+                    ${sec.audioSegment ? `
+                      <button type="button" class="cambridge-segment-btn" style="flex-shrink:0;margin-top:2px"
+                        onclick="playCambridgeSegment(${sec.audioSegment.cd}, '${esc(sec.audioSegment.track)}', ${sec.audioSegment.start}, ${sec.audioSegment.end}, '${esc(sec.audioSegment.code)}', this)"
+                        title="Nghe riêng phần ${esc(sec.audioSegment.code)} (Khẩu hình & Phát âm âm đích)">
+                        🎧 ${esc(sec.audioSegment.code)}
+                      </button>
+                    ` : ''}
+                    <span>${esc(sec.guideEn)}</span>
+                  </div>
                   <div style="background:var(--sunk);border-left:3px solid #E11D48;padding:10px 12px;border-radius:6px;font-size:13.5px;color:var(--muted)">
                     💡 <strong>Mẹo khẩu hình:</strong> ${esc(sec.guideVi)}
                   </div>
@@ -4722,15 +4825,33 @@ function renderUnitSections(u, box, container) {
               </div>
             ` : (sec.guideEn ? `
               <div style="background:var(--sunk);padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.6;margin-bottom:14px">
-                <div style="font-weight:600;color:var(--ink);margin-bottom:4px">${esc(sec.guideEn)}</div>
+                <div style="font-weight:600;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+                  ${sec.audioSegment ? `
+                    <button type="button" class="cambridge-segment-btn"
+                      onclick="playCambridgeSegment(${sec.audioSegment.cd}, '${esc(sec.audioSegment.track)}', ${sec.audioSegment.start}, ${sec.audioSegment.end}, '${esc(sec.audioSegment.code)}', this)"
+                      title="Nghe riêng phần ${esc(sec.audioSegment.code)}">
+                      🎧 ${esc(sec.audioSegment.code)}
+                    </button>
+                  ` : ''}
+                  <span>${esc(sec.guideEn)}</span>
+                </div>
                 ${sec.guideVi ? `<div style="font-size:13px;color:var(--muted)">💡 ${esc(sec.guideVi)}</div>` : ''}
               </div>
             ` : '')}
 
-            <!-- Word Groups (if any) -->
+            <!-- Word Groups (if any) with Segment Button -->
             ${sec.groups && sec.groups.length > 0 ? `
               <div style="margin-top:14px">
-                <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Từ vựng theo chữ viết:</div>
+                <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+                  ${sec.otherWordsSegment ? `
+                    <button type="button" class="cambridge-segment-btn"
+                      onclick="playCambridgeSegment(${sec.otherWordsSegment.cd}, '${esc(sec.otherWordsSegment.track)}', ${sec.otherWordsSegment.start}, ${sec.otherWordsSegment.end}, '${esc(sec.otherWordsSegment.code)}', this)"
+                      title="Nghe riêng phần ${esc(sec.otherWordsSegment.code)} (Listen and say these other words...)">
+                      🎧 ${esc(sec.otherWordsSegment.code)}
+                    </button>
+                  ` : ''}
+                  <span>Từ vựng theo chữ viết:</span>
+                </div>
                 <div style="display:flex;flex-direction:column;gap:10px">
                   ${sec.groups.map((grp, gIdx) => `
                     <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
@@ -4758,10 +4879,19 @@ function renderUnitSections(u, box, container) {
               </div>
             ` : ''}
 
-            <!-- Sentences or Phrases (with Book Illustration if available) -->
+            <!-- Sentences or Phrases with Segment Button & Book Illustration -->
             ${sec.sentences && sec.sentences.length > 0 ? `
               <div style="margin-top:16px">
-                <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Câu / Cụm từ luyện nói:</div>
+                <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+                  ${(sec.sentencesSegment || sec.phrasesSegment) ? `
+                    <button type="button" class="cambridge-segment-btn"
+                      onclick="playCambridgeSegment(${(sec.sentencesSegment||sec.phrasesSegment).cd}, '${esc((sec.sentencesSegment||sec.phrasesSegment).track)}', ${(sec.sentencesSegment||sec.phrasesSegment).start}, ${(sec.sentencesSegment||sec.phrasesSegment).end}, '${esc((sec.sentencesSegment||sec.phrasesSegment).code)}', this)"
+                      title="Nghe riêng phần ${esc((sec.sentencesSegment||sec.phrasesSegment).code)} (Now listen and say...)">
+                      🎧 ${esc((sec.sentencesSegment||sec.phrasesSegment).code)}
+                    </button>
+                  ` : ''}
+                  <span>${sec.letter === 'D' ? 'Cụm từ luyện nói:' : 'Câu luyện nói kinh điển:'}</span>
+                </div>
                 <div class="${sec.illustration ? 'unit-ex-with-img-grid' : ''}">
                   <div style="display:flex;flex-direction:column;gap:8px">
                     ${sec.sentences.map((sent, sIdx) => {
@@ -4800,12 +4930,21 @@ function renderUnitSections(u, box, container) {
               </div>
             ` : ''}
 
-            <!-- Notes (if any) -->
+            <!-- Notes with Segment Buttons (A10e, A10f, A10g) -->
             ${sec.notes && sec.notes.length > 0 ? `
               <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
                 ${sec.notes.map(n => `
                   <div class="unit-note-box">
-                    <div style="font-weight:800;color:#d97706;margin-bottom:2px">⚠️ ${esc(n.tag)}:</div>
+                    <div style="font-weight:800;color:#d97706;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+                      ${n.audioSegment ? `
+                        <button type="button" class="cambridge-segment-btn"
+                          onclick="playCambridgeSegment(${n.audioSegment.cd}, '${esc(n.audioSegment.track)}', ${n.audioSegment.start}, ${n.audioSegment.end}, '${esc(n.audioSegment.code)}', this)"
+                          title="Nghe riêng phần ${esc(n.audioSegment.code)} (Ghi chú audio gốc)">
+                          🎧 ${esc(n.audioSegment.code)}
+                        </button>
+                      ` : ''}
+                      <span>⚠️ ${esc(n.tag)}:</span>
+                    </div>
                     <div style="color:var(--ink)">${esc(n.content)}</div>
                   </div>
                 `).join('')}
@@ -4833,7 +4972,6 @@ function renderUnitSections(u, box, container) {
       };
     }
   } else {
-    // Fallback for units without sections
     box.innerHTML = `
       <div style="background:var(--sunk);padding:14px;border-radius:8px;font-size:14px;line-height:1.6;margin-bottom:16px">
         💡 <strong>Quy tắc phát âm:</strong> ${esc(u.rule)}
@@ -4887,9 +5025,6 @@ function renderUnitSections(u, box, container) {
   }
 }
 
-// --------------------------------------------------------------------------
-// 3.2. RENDER UNIT EXERCISES (BÀI TẬP THỰC HÀNH TƯƠNG TÁC TỪ SÁCH)
-// --------------------------------------------------------------------------
 function renderUnitExercises(u, box, container) {
   if (!unitExState[u.id]) {
     unitExState[u.id] = {};

@@ -1988,6 +1988,13 @@ export const PRONUN_UNITS = [
           "cd": 1,
           "track": "track09.mp3",
           "label": "Audio gốc Cambridge: Mục A & B (A9)"
+        },
+        "audioSegment": {
+          "code": "A9a",
+          "cd": 1,
+          "track": "track09.mp3",
+          "start": 0,
+          "end": 9
         }
       },
       {
@@ -2196,7 +2203,28 @@ export const PRONUN_UNITS = [
           "label": "Audio gốc Cambridge: Mục B (A9)"
         },
         "illustration": "img/pronun/unit2_boat.png",
-        "illustrationCaption": "Can you see the sea?"
+        "illustrationCaption": "Can you see the sea?",
+        "ruleSegment": {
+          "code": "A9b",
+          "cd": 1,
+          "track": "track09.mp3",
+          "start": 11,
+          "end": 25
+        },
+        "otherWordsSegment": {
+          "code": "A9c",
+          "cd": 1,
+          "track": "track09.mp3",
+          "start": 27,
+          "end": 76
+        },
+        "sentencesSegment": {
+          "code": "A9d",
+          "cd": 1,
+          "track": "track09.mp3",
+          "start": 78,
+          "end": 113.2
+        }
       },
       {
         "letter": "C",
@@ -2213,6 +2241,13 @@ export const PRONUN_UNITS = [
           "cd": 1,
           "track": "track10.mp3",
           "label": "Audio gốc Cambridge: Mục C & D (A10)"
+        },
+        "audioSegment": {
+          "code": "A10a",
+          "cd": 1,
+          "track": "track10.mp3",
+          "start": 0,
+          "end": 9
         }
       },
       {
@@ -2303,15 +2338,36 @@ export const PRONUN_UNITS = [
         "notes": [
           {
             "tag": "8 Chữ cái Alphabet phát âm /iː/",
-            "content": "Trong bảng chữ cái tiếng Anh, 8 chữ cái sau có phát âm kết thúc bằng âm /iː/: B, C, D, E, G, P, T, V."
+            "content": "Trong bảng chữ cái tiếng Anh, 8 chữ cái sau có phát âm kết thúc bằng âm /iː/: B, C, D, E, G, P, T, V.",
+            "audioSegment": {
+              "code": "A10e",
+              "cd": 1,
+              "track": "track10.mp3",
+              "start": 75,
+              "end": 92
+            }
           },
           {
             "tag": "Âm yếu Schwa /ə/",
-            "content": "Nguyên âm ở các âm tiết không nhấn trọng âm thường đọc lướt thành âm yếu schwa /ə/: agree, equal, kitchen, museum, Peter, picture, pizza."
+            "content": "Nguyên âm ở các âm tiết không nhấn trọng âm thường đọc lướt thành âm yếu schwa /ə/: agree, equal, kitchen, museum, Peter, picture, pizza.",
+            "audioSegment": {
+              "code": "A10f",
+              "cd": 1,
+              "track": "track10.mp3",
+              "start": 94,
+              "end": 114
+            }
           },
           {
             "tag": "Âm /i/ ở cuối từ",
-            "content": "Ở cuối từ trong âm tiết không nhấn, âm /i/ phát âm như /iː/ nhưng ngắn hơn: happy, coffee, busy, sixty."
+            "content": "Ở cuối từ trong âm tiết không nhấn, âm /i/ phát âm như /iː/ nhưng ngắn hơn: happy, coffee, busy, sixty.",
+            "audioSegment": {
+              "code": "A10g",
+              "cd": 1,
+              "track": "track10.mp3",
+              "start": 117,
+              "end": 133.1
+            }
           }
         ],
         "audio": {
@@ -2321,7 +2377,28 @@ export const PRONUN_UNITS = [
           "label": "Audio gốc Cambridge: Mục D (A10)"
         },
         "illustration": "img/pronun/unit2_56.png",
-        "illustrationCaption": "fifty-six"
+        "illustrationCaption": "fifty-six",
+        "ruleSegment": {
+          "code": "A10b",
+          "cd": 1,
+          "track": "track10.mp3",
+          "start": 11,
+          "end": 27
+        },
+        "otherWordsSegment": {
+          "code": "A10c",
+          "cd": 1,
+          "track": "track10.mp3",
+          "start": 30,
+          "end": 44
+        },
+        "phrasesSegment": {
+          "code": "A10d",
+          "cd": 1,
+          "track": "track10.mp3",
+          "start": 47,
+          "end": 72
+        }
       }
     ],
     "exercises": [

@@ -4253,9 +4253,16 @@ function playCambridgeTrack(cdNum, trackName, label, btnEl, playerContainerId) {
   };
 
   audio.onended = () => {
-    if (btnEl) btnEl.innerHTML = btnEl.dataset.origLabel || `▶️ Nghe Audio gốc`;
-    currentCambridgeAudio = null;
-    currentCambridgeTrackKey = null;
+    if (btnEl) btnEl.innerHTML = btnEl.dataset.origLabel || `▶️ Nghe Audio gốc (${label || trackName})`;
+    if (pContainer) {
+      const timeEl = pContainer.querySelector('.cambridge-time-text');
+      const seekEl = pContainer.querySelector('.cambridge-seek-bar');
+      const dur = audio.duration || 0;
+      const fmt = s => Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2, '0');
+      if (timeEl) timeEl.textContent = `0:00 / ${fmt(dur)}`;
+      if (seekEl) seekEl.value = 0;
+    }
+    audio.currentTime = 0;
   };
 }
 

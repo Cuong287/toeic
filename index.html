@@ -191,29 +191,108 @@
   cursor: pointer;
 }
 .rec-retry-btn:hover { background: var(--surface); color: var(--accent); }
-.rec-speech-feedback {
+.rec-sample-btn {
+  background: var(--sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.rec-sample-btn:hover {
+  background: #0284C7;
+  color: #FFFFFF;
+  border-color: #0284C7;
+}
+.rec-sample-btn svg { width: 13px; height: 13px; }
+
+/* Chi tiết đánh giá chấm điểm phát âm */
+.rec-assessment-box {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--sunk);
+  border: 1.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.rec-assessment-box.excellent { border-color: #22C55E; background: rgba(34, 197, 94, 0.08); }
+.rec-assessment-box.good { border-color: #38BDF8; background: rgba(56, 189, 248, 0.08); }
+.rec-assessment-box.fair { border-color: #F59E0B; background: rgba(245, 158, 11, 0.08); }
+.rec-assessment-box.needs_work { border-color: #EF4444; background: rgba(239, 68, 68, 0.08); }
+
+.rec-assess-header {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+.rec-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 13px;
+}
+.rec-score-pill.excellent { background: #DCFCE7; color: #15803D; }
+.rec-score-pill.good { background: #E0F2FE; color: #0369A1; }
+.rec-score-pill.fair { background: #FEF3C7; color: #B45309; }
+.rec-score-pill.needs_work { background: #FEE2E2; color: #B91C1C; }
+
+.rec-assess-msg {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rec-words-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
   font-size: 12.5px;
   padding-top: 4px;
   border-top: 1px dashed var(--line);
 }
-.rec-score-badge {
-  font-size: 11.5px;
-  font-weight: 700;
+.rec-words-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+.rec-words-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.rec-word-tag {
+  font-size: 12px;
+  font-weight: 600;
   padding: 2px 7px;
   border-radius: 5px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
-.rec-score-badge.good { background: #DCFCE7; color: #15803D; }
-.rec-score-badge.warn { background: #FEF3C7; color: #B45309; }
-.rec-score-badge.bad { background: #FEE2E2; color: #B91C1C; }
-.rec-transcript { color: var(--muted); }
-.user-spoken { color: var(--ink); font-style: italic; }
+.rec-word-tag.correct { background: rgba(34, 197, 94, 0.2); color: #16A34A; border: 1px solid rgba(34, 197, 94, 0.4); }
+.rec-word-tag.partial { background: rgba(245, 158, 11, 0.2); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.4); }
+.rec-word-tag.wrong { background: rgba(239, 68, 68, 0.2); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.4); text-decoration: line-through; }
+
+.rec-spoken-text {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.rec-spoken-text .user-spoken {
+  color: var(--ink);
+  font-style: italic;
+}
 .agroup-rec-bar {
   margin-top: 14px;
   padding: 12px 14px;
@@ -2809,6 +2888,7 @@ function renderT0Flashcards(container, rawPool) {
                 <button class="icon-btn" id="fc-speak" title="Nghe phát âm" style="width:38px;height:38px">${SPEAK}</button>
                 <button class="icon-btn rec-btn" data-rec-text="${esc(cleanWord(v.w))}" data-rec-id="fc-${v.topicId}-${curIdx}" title="Luyện đọc từ này" style="width:38px;height:38px">${MIC_ICON}</button>
               </div>
+              <div id="slot-fc-${v.topicId}-${curIdx}" class="rec-slot" style="display:none;width:100%;margin-top:12px;text-align:left"></div>
               <div class="fc-hint-flip">
                 <span>🔄 Bấm vào thẻ để lật xem nghĩa (hoặc nhấn phím Space)</span>
               </div>
@@ -3985,26 +4065,132 @@ const RecorderManager = (function() {
   let recognizedTranscript = '';
   let currentPlayingAudio = null;
 
-  // Cache lưu trữ kết quả ghi âm theo recId
   const cache = new Map();
 
   function isRecording() {
     return mediaRecorder && mediaRecorder.state === 'recording';
   }
 
-  function scorePronunciation(spoken, target) {
-    if (!spoken || !target) return { score: 0, text: spoken || '' };
-    const cleanSpoken = spoken.toLowerCase().replace(/[^\w\s]/g, '').trim().split(/\s+/);
-    const cleanTarget = target.toLowerCase().replace(/[^\w\s]/g, '').trim().split(/\s+/);
-    if (!cleanTarget.length) return { score: 100, text: spoken };
+  // Thuật toán chấm điểm và phân tích phát âm chuyên sâu
+  function assessPronunciation(spokenText, targetText) {
+    if (!targetText) return { score: 0, message: '', words: [] };
 
-    let matchCount = 0;
-    cleanTarget.forEach(tw => {
-      if (cleanSpoken.includes(tw)) matchCount++;
+    const rawTargetWords = targetText.trim().split(/\s+/).filter(Boolean);
+    const cleanTargetWords = rawTargetWords.map(w => w.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '')).filter(Boolean);
+    
+    if (!cleanTargetWords.length) return { score: 100, grade: 'excellent', message: 'Hoàn thành!', words: [] };
+
+    if (!spokenText || !spokenText.trim()) {
+      return {
+        score: 0,
+        grade: 'needs_work',
+        message: 'Chưa nhận diện rõ giọng nói. Bạn hãy kiểm tra micro, nói to rõ hơn và bấm [Thu lại] nhé!',
+        spoken: '',
+        words: cleanTargetWords.map((w, idx) => ({
+          word: rawTargetWords[idx] || w,
+          status: 'wrong',
+          match: false
+        }))
+      };
+    }
+
+    const rawSpokenWords = spokenText.trim().split(/\s+/).filter(Boolean);
+    const cleanSpokenWords = rawSpokenWords.map(w => w.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '')).filter(Boolean);
+
+    function wordSimilarity(s1, s2) {
+      if (s1 === s2) return 1.0;
+      const len1 = s1.length, len2 = s2.length;
+      const maxLen = Math.max(len1, len2);
+      if (!maxLen) return 1.0;
+
+      const track = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null));
+      for (let i = 0; i <= len1; i += 1) track[0][i] = i;
+      for (let j = 0; j <= len2; j += 1) track[j][0] = j;
+      for (let j = 1; j <= len2; j += 1) {
+        for (let i = 1; i <= len1; i += 1) {
+          const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+          track[j][i] = Math.min(
+            track[j][i - 1] + 1,
+            track[j - 1][i] + 1,
+            track[j - 1][i - 1] + indicator
+          );
+        }
+      }
+      const dist = track[len2][len1];
+      return Math.max(0, 1 - dist / maxLen);
+    }
+
+    const wordsResult = [];
+    let totalScorePoints = 0;
+    const usedSpokenIndices = new Set();
+
+    cleanTargetWords.forEach((tw, idx) => {
+      let bestSim = 0;
+      let bestSpokenIdx = -1;
+
+      cleanSpokenWords.forEach((sw, sIdx) => {
+        if (usedSpokenIndices.has(sIdx)) return;
+        const sim = wordSimilarity(tw, sw);
+        if (sim > bestSim) {
+          bestSim = sim;
+          bestSpokenIdx = sIdx;
+        }
+      });
+
+      if (bestSim >= 0.8) {
+        usedSpokenIndices.add(bestSpokenIdx);
+        wordsResult.push({
+          word: rawTargetWords[idx] || tw,
+          status: 'correct',
+          sim: bestSim,
+          heard: cleanSpokenWords[bestSpokenIdx]
+        });
+        totalScorePoints += 1.0;
+      } else if (bestSim >= 0.5) {
+        usedSpokenIndices.add(bestSpokenIdx);
+        wordsResult.push({
+          word: rawTargetWords[idx] || tw,
+          status: 'partial',
+          sim: bestSim,
+          heard: cleanSpokenWords[bestSpokenIdx]
+        });
+        totalScorePoints += 0.6;
+      } else {
+        wordsResult.push({
+          word: rawTargetWords[idx] || tw,
+          status: 'wrong',
+          sim: 0,
+          heard: null
+        });
+        totalScorePoints += 0;
+      }
     });
 
-    const percent = Math.min(100, Math.round((matchCount / cleanTarget.length) * 100));
-    return { score: percent, spoken };
+    const finalScore = Math.min(100, Math.round((totalScorePoints / cleanTargetWords.length) * 100));
+
+    let grade = 'needs_work';
+    let message = '';
+    if (finalScore >= 85) {
+      grade = 'excellent';
+      message = '🌟 Xuất sắc! Bạn phát âm rất chuẩn và tự tin.';
+    } else if (finalScore >= 70) {
+      grade = 'good';
+      message = '✅ Rất tốt! Bạn đọc rõ ràng, đúng ngữ điệu.';
+    } else if (finalScore >= 50) {
+      grade = 'fair';
+      message = '👍 Tương đối tốt. Hãy chú ý các từ màu vàng/đỏ để phát âm chuẩn hơn.';
+    } else {
+      grade = 'needs_work';
+      message = '⚠️ Cần cải thiện. Hãy bấm [Nghe mẫu chuẩn] và thử đọc lại nhé!';
+    }
+
+    return {
+      score: finalScore,
+      grade,
+      message,
+      spoken: spokenText.trim(),
+      words: wordsResult
+    };
   }
 
   async function start(recId, targetText, btn, slot) {
@@ -4036,6 +4222,9 @@ const RecorderManager = (function() {
       };
 
       mediaRecorder.onstop = async () => {
+        // Cho SpeechRecognition thêm thời gian nhận diện các âm tiết cuối
+        await new Promise(r => setTimeout(r, 350));
+
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
         const blob = new Blob(audioChunks, { type: mimeType });
         const audioUrl = URL.createObjectURL(blob);
@@ -4046,7 +4235,7 @@ const RecorderManager = (function() {
           currentStream = null;
         }
 
-        const assessment = scorePronunciation(recognizedTranscript, currentTargetText);
+        const assessment = assessPronunciation(recognizedTranscript, currentTargetText);
         const rawName = currentTargetText ? cleanWord(currentTargetText).slice(0, 20).replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') : 'Record';
         const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
         const fileName = `TOEIC_${rawName}_${Date.now()}.${ext}`;
@@ -4064,29 +4253,43 @@ const RecorderManager = (function() {
 
         cache.set(currentRecId, recordItem);
 
-        // Lưu vào IndexedDB để file ghi âm tồn tại vĩnh viễn trên máy học viên
         saveToIndexedDB(recordItem);
 
         renderPlayer(currentRecId, currentTriggerBtn, currentSlotEl);
         resetTriggerUI(currentTriggerBtn);
       };
 
-      // Nhận diện giọng nói Web Speech API (Edge/Chrome)
+      // Nhận diện giọng nói Web Speech API (Chrome, Edge, Safari iOS 14.5+)
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         try {
           recognitionInstance = new SpeechRecognition();
           recognitionInstance.lang = 'en-US';
-          recognitionInstance.interimResults = false;
+          recognitionInstance.continuous = true;
+          recognitionInstance.interimResults = true;
           recognitionInstance.maxAlternatives = 1;
+
           recognitionInstance.onresult = (ev) => {
-            if (ev.results && ev.results[0] && ev.results[0][0]) {
-              recognizedTranscript = ev.results[0][0].transcript;
+            let finalStr = '', interimStr = '';
+            for (let i = 0; i < ev.results.length; ++i) {
+              if (ev.results[i].isFinal) {
+                finalStr += ev.results[i][0].transcript + ' ';
+              } else {
+                interimStr += ev.results[i][0].transcript;
+              }
             }
+            const full = (finalStr + ' ' + interimStr).trim();
+            if (full) recognizedTranscript = full;
           };
-          recognitionInstance.onerror = () => {};
+
+          recognitionInstance.onerror = (ev) => {
+            console.warn('SpeechRecognition error:', ev.error);
+          };
+
           recognitionInstance.start();
-        } catch(e) {}
+        } catch(e) {
+          console.warn('SpeechRecognition init error:', e);
+        }
       }
 
       mediaRecorder.start();
@@ -4115,9 +4318,10 @@ const RecorderManager = (function() {
     clearInterval(timerInterval);
     if (recognitionInstance) {
       try { recognitionInstance.stop(); } catch(e) {}
-      recognitionInstance = null;
     }
-    mediaRecorder.stop();
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
   }
 
   function setBtnLabel(btn, text) {
@@ -4145,28 +4349,22 @@ const RecorderManager = (function() {
 
     slot.style.display = 'block';
     const assessment = data.assessment || {};
-    let feedbackHtml = '';
-
-    if (assessment.spoken) {
-      let badgeClass = 'bad', badgeIcon = '⚠️';
-      if (assessment.score >= 80) { badgeClass = 'good'; badgeIcon = '✅'; }
-      else if (assessment.score >= 50) { badgeClass = 'warn'; badgeIcon = '👍'; }
-
-      feedbackHtml = `
-        <div class="rec-speech-feedback">
-          <div class="rec-score-badge ${badgeClass}">${badgeIcon} Khớp ${assessment.score}%</div>
-          <div class="rec-transcript">Bạn vừa nói: <b class="user-spoken">"${esc(assessment.spoken)}"</b></div>
-        </div>
-      `;
-    }
+    const gradeClass = assessment.grade || 'fair';
+    const scorePillTxt = assessment.score >= 80 ? '✓ Đạt chuẩn' : (assessment.score >= 50 ? '👍 Khá tốt' : '⚠️ Cần luyện thêm');
 
     slot.innerHTML = `
       <div class="rec-result-card">
         <div class="rec-player-bar">
-          <button class="rec-play-btn" data-play-id="${recId}">
+          <button class="rec-play-btn" data-play-id="${recId}" title="Bấm để nghe lại giọng đọc của chính bạn">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span>Nghe lại giọng bạn (${data.duration}s)</span>
           </button>
+          ${data.targetText ? `
+            <button class="rec-sample-btn" data-say="${esc(cleanWord(data.targetText))}" title="Nghe phát âm chuẩn của người bản xứ để đối chiếu">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+              <span>Nghe mẫu chuẩn</span>
+            </button>
+          ` : ''}
           <a class="rec-download-btn" href="${data.audioUrl}" download="${data.fileName || 'TOEIC_VoiceRecord.webm'}" title="Tải file ghi âm này về máy">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>Tải về</span>
@@ -4176,12 +4374,45 @@ const RecorderManager = (function() {
             <span>Thu lại</span>
           </button>
         </div>
-        ${feedbackHtml}
+
+        <!-- Khung đánh giá phát âm chi tiết -->
+        <div class="rec-assessment-box ${gradeClass}">
+          <div class="rec-assess-header">
+            <div class="rec-score-pill ${gradeClass}">
+              <span>${assessment.score}%</span>
+              <span>·</span>
+              <span>${scorePillTxt}</span>
+            </div>
+            <div class="rec-assess-msg">${esc(assessment.message || '')}</div>
+          </div>
+
+          ${assessment.words && assessment.words.length ? `
+            <div class="rec-words-breakdown">
+              <span class="rec-words-label">Độ chuẩn từng từ:</span>
+              <div class="rec-words-list">
+                ${assessment.words.map(w => `
+                  <span class="rec-word-tag ${w.status}" title="${w.status === 'correct' ? 'Phát âm chuẩn xác' : (w.status === 'partial' ? 'Gần đúng (máy nghe thành: ' + (w.heard || '') + ')' : 'Chưa nhận diện được từ này')}">
+                    ${esc(w.word)} ${w.status === 'correct' ? '✓' : (w.status === 'partial' ? '~' : '✕')}
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          ${assessment.spoken ? `
+            <div class="rec-spoken-text">
+              <span>Máy nghe được:</span> <b class="user-spoken">"${esc(assessment.spoken)}"</b>
+            </div>
+          ` : `
+            <div class="rec-spoken-text" style="color:var(--warn)">
+              <span>⚠️ Không nhận diện rõ âm thanh hoặc micro quá nhỏ. Bạn hãy nói to hơn và bấm [Thu lại] nhé!</span>
+            </div>
+          `}
+        </div>
       </div>
     `;
   }
 
-  
   // ---------- IndexedDB Persistence & Export for Voice Recordings ----------
   function openDB() {
     return new Promise((resolve) => {
@@ -4326,7 +4557,7 @@ const RecorderManager = (function() {
     }
   }
 
-  // Khởi tạo Event Delegation toàn cục cho mọi nút ghi âm
+  // Event Delegation toàn cục cho mọi thao tác liên quan đến ghi âm & nghe mẫu
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.rec-btn');
     if (btn) {
@@ -4341,11 +4572,22 @@ const RecorderManager = (function() {
         if (recId.startsWith('p2-')) {
           const lIdx = recId.split('-')[1];
           slotEl = document.querySelector('#slot-p2-row-' + lIdx);
+        } else if (recId.startsWith('fc-')) {
+          slotEl = document.querySelector('#slot-' + recId) || (btn.closest('.fc-face') && btn.closest('.fc-face').querySelector('.rec-slot'));
         } else {
           slotEl = document.querySelector('#slot-' + recId);
         }
       }
       toggleRecord(recId, recText, btn, slotEl);
+      return;
+    }
+
+    const sampleBtn = e.target.closest('.rec-sample-btn');
+    if (sampleBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const sayTxt = sampleBtn.dataset.say;
+      if (sayTxt) speak(sayTxt);
       return;
     }
 

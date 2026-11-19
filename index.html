@@ -1799,6 +1799,7 @@ function fallbackBrowserSpeech(clean, onDone) {
     if (onDone) onDone();
   }
 }
+window.speak = speak;
 
 function srcLabel(src){
   const m = String(src).match(/(\d+)\s*-\s*(\d+)\s*ETS\s*(\d{4})\.(\d+)/i);
@@ -4252,6 +4253,10 @@ function playCambridgeTrack(cdNum, trackName, label, btnEl, playerContainerId) {
     }
   };
 
+  audio.onseeked = () => {
+    if (audio.ontimeupdate) audio.ontimeupdate();
+  };
+
   audio.onended = () => {
     if (btnEl) btnEl.innerHTML = btnEl.dataset.origLabel || `▶️ Nghe Audio gốc (${label || trackName})`;
     if (pContainer) {
@@ -4268,13 +4273,15 @@ function playCambridgeTrack(cdNum, trackName, label, btnEl, playerContainerId) {
 
 function seekCambridgeTrack(percent) {
   if (currentCambridgeAudio && currentCambridgeAudio.duration) {
-    currentCambridgeAudio.currentTime = (percent / 100) * currentCambridgeAudio.duration;
+    currentCambridgeAudio.currentTime = (Number(percent) / 100) * currentCambridgeAudio.duration;
+    if (currentCambridgeAudio.ontimeupdate) currentCambridgeAudio.ontimeupdate();
   }
 }
 
 function skipCambridgeTrack(seconds) {
   if (currentCambridgeAudio) {
-    currentCambridgeAudio.currentTime = Math.max(0, Math.min(currentCambridgeAudio.duration || 999, currentCambridgeAudio.currentTime + seconds));
+    currentCambridgeAudio.currentTime = Math.max(0, Math.min(currentCambridgeAudio.duration || 999, currentCambridgeAudio.currentTime + Number(seconds)));
+    if (currentCambridgeAudio.ontimeupdate) currentCambridgeAudio.ontimeupdate();
   }
 }
 let currentCambridgeSegmentCode = null;
@@ -5557,9 +5564,9 @@ function bindAllExerciseEvents(u, box, container) {
   // 2. Clues Events (Ex 2.2)
   box.querySelectorAll('.btn-show-hint').forEach(b => {
     b.onclick = () => {
-      const hintBox = box.querySelector('#' + b.dataset.hintId);
+      const hintBox = document.getElementById(b.dataset.hintId);
       if (hintBox) {
-        hintBox.style.display = hintBox.style.display === 'none' ? 'block' : 'none';
+        hintBox.style.display = (hintBox.style.display === 'none' || !hintBox.style.display) ? 'block' : 'none';
       }
     };
   });

@@ -5127,9 +5127,18 @@ function renderSingleExercise(u, ex, exIdx, uState) {
         ${exAudioBar}
 
         <!-- Word Bank Chips -->
-        <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px">Ngân hàng từ vựng (Bấm vào từ để điền nhanh vào ô trống):</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+          <div style="font-size:12.5px;font-weight:700;color:var(--muted)">Ngân hàng từ vựng (Bấm vào từ để điền nhanh vào ô trống):</div>
+          <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none" title="Mặc định tắt phát âm khi chọn để bạn nghe đoạn hội thoại không bị chèn âm thanh.">
+            <input type="checkbox" class="chk-speak-on-fill" data-ex-id="${ex.id}" style="cursor:pointer" />
+            <span>🔊 Phát âm khi chọn</span>
+          </label>
+        </div>
         <div class="unit-word-bank">
-          ${ex.wordBank.map(w => `<button type="button" class="unit-word-chip" data-word="${esc(w)}">${esc(w)}</button>`).join('')}
+          ${ex.wordBank.map(w => {
+            const isUsed = Object.values(st.answers || {}).some(val => String(val).trim().toLowerCase() === w.trim().toLowerCase());
+            return `<button type="button" class="unit-word-chip ${isUsed ? 'used' : ''}" data-word="${esc(w)}" title="Bấm để điền vào ô trống">${esc(w)}</button>`;
+          }).join('')}
         </div>
 
         <!-- Dialogues List with Book Illustration -->
@@ -5458,11 +5467,30 @@ function renderSingleExercise(u, ex, exIdx, uState) {
 function bindAllExerciseEvents(u, box, container) {
   const uState = unitExState[u.id];
 
+  // Helper to sync used chips state in word bank
+  function syncWordBankUsed(cardEl, exId) {
+    if (!cardEl) return;
+    const answers = uState[exId] ? uState[exId].answers || {} : {};
+    const usedWords = Object.values(answers).map(v => String(v).trim().toLowerCase()).filter(Boolean);
+    cardEl.querySelectorAll('.unit-word-chip').forEach(c => {
+      const cw = (c.dataset.word || '').trim().toLowerCase();
+      if (usedWords.includes(cw)) {
+        c.classList.add('used');
+      } else {
+        c.classList.remove('used');
+      }
+    });
+  }
+
   // 1. Fill Dialogue Events (Ex 2.1)
   box.querySelectorAll('.unit-word-chip').forEach(chip => {
     chip.onclick = () => {
       const w = chip.dataset.word;
-      const inputs = box.querySelectorAll('.unit-blank-input');
+      const exCard = chip.closest('.unit-ex-card');
+      const exId = exCard ? exCard.id.replace('ex-card-', '') : '2.1';
+      if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
+
+      const inputs = exCard ? exCard.querySelectorAll('.unit-blank-input') : box.querySelectorAll('.unit-blank-input');
       let targetInput = Array.from(inputs).find(inp => document.activeElement === inp);
       if (!targetInput) {
         targetInput = Array.from(inputs).find(inp => !inp.value);
@@ -5471,12 +5499,28 @@ function bindAllExerciseEvents(u, box, container) {
         targetInput.value = w;
         const key = targetInput.dataset.blankKey;
         if (key) {
-          const exCard = targetInput.closest('.unit-ex-card');
-          const exId = exCard.id.replace('ex-card-', '');
-          if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
           uState[exId].answers[key] = w;
         }
-        speak(w);
+
+        // Tự động chuyển con trỏ sang ô trống kế tiếp để người dùng điền liền mạch khi nghe
+        const inpsArr = Array.from(inputs);
+        const nextBlank = inpsArr.find(inp => !inp.value && inp !== targetInput);
+        if (nextBlank) {
+          nextBlank.focus();
+        }
+
+        // Cập nhật trạng thái 'used' (gạch ngang mờ) cho các từ đã điền trong Word bank
+        syncWordBankUsed(exCard, exId);
+
+        // Mặc định KHÔNG phát âm từ khi chọn để không chèn lên đoạn hội thoại khi đang nghe.
+        // Chỉ phát âm từ nếu người dùng chủ động tích chọn checkbox VÀ không có audio hội thoại nào đang phát.
+        const chk = exCard ? exCard.querySelector('.chk-speak-on-fill') : null;
+        const isAudioBusy = (currentCambridgeAudio && !currentCambridgeAudio.paused) ||
+                            (ttsAudioPlayer && !ttsAudioPlayer.paused) ||
+                            (window.speechSynthesis && window.speechSynthesis.speaking);
+        if (chk && chk.checked && !isAudioBusy) {
+          speak(w);
+        }
       }
     };
   });
@@ -5489,6 +5533,7 @@ function bindAllExerciseEvents(u, box, container) {
         const exId = exCard.id.replace('ex-card-', '');
         if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
         uState[exId].answers[key] = inp.value;
+        syncWordBankUsed(exCard, exId);
       }
     };
   });
@@ -5530,7 +5575,12 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = exCard.id.replace('ex-card-', '');
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].answers[word] = choice;
-      speak(word);
+      const isAudioBusy = (currentCambridgeAudio && !currentCambridgeAudio.paused) ||
+                          (ttsAudioPlayer && !ttsAudioPlayer.paused) ||
+                          (window.speechSynthesis && window.speechSynthesis.speaking);
+      if (!isAudioBusy) {
+        speak(word);
+      }
       renderUnitsTab(container);
     };
   });

@@ -1622,7 +1622,13 @@ export const PRONUN_UNITS = [
               }
             ]
           }
-        ]
+        ],
+        "audio": {
+          "code": "A2",
+          "cd": 1,
+          "track": "track02.mp3",
+          "label": "Audio Mục A (A2)"
+        }
       },
       {
         "letter": "B",
@@ -1661,7 +1667,13 @@ export const PRONUN_UNITS = [
               }
             ]
           }
-        ]
+        ],
+        "audio": {
+          "code": "A3",
+          "cd": 1,
+          "track": "track03.mp3",
+          "label": "Audio Mục B (A3)"
+        }
       },
       {
         "letter": "C",
@@ -1681,7 +1693,13 @@ export const PRONUN_UNITS = [
             "en": "No, thanks, I read it this morning.",
             "vi": "Không, cảm ơn, tôi đã đọc sáng nay rồi. (/red/)"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A4",
+          "cd": 1,
+          "track": "track04.mp3",
+          "label": "Audio Mục C (A4)"
+        }
       }
     ],
     "exercises": [
@@ -1739,7 +1757,13 @@ export const PRONUN_UNITS = [
             "sounds": 5,
             "explain": "7 chữ cái, 5 âm /ə-d-r-e-s/"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A5",
+          "cd": 1,
+          "track": "track05.mp3",
+          "label": "Audio Exercise 1.1 (A5)"
+        }
       },
       {
         "id": "1.2",
@@ -1779,7 +1803,13 @@ export const PRONUN_UNITS = [
             "ipa": "/wel/",
             "answer": "well"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A6",
+          "cd": 1,
+          "track": "track06.mp3",
+          "label": "Audio Exercise 1.2 (A6)"
+        }
       },
       {
         "id": "1.3",
@@ -1831,7 +1861,13 @@ export const PRONUN_UNITS = [
             "correct": "many",
             "explain": "many phát âm là /e/, còn các từ khác là /æ/"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A7",
+          "cd": 1,
+          "track": "track07.mp3",
+          "label": "Audio Exercise 1.3 (A7)"
+        }
       },
       {
         "id": "1.4",
@@ -1879,7 +1915,13 @@ export const PRONUN_UNITS = [
             "prefix": "n_ _ _",
             "answer": "near"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A8",
+          "cd": 1,
+          "track": "track08.mp3",
+          "label": "Audio Exercise 1.4 (A8)"
+        }
       }
     ]
   },
@@ -1940,7 +1982,13 @@ export const PRONUN_UNITS = [
         "diagramDesc": "front of tongue up · wide mouth",
         "guideEn": "/iː/ is a long sound. Look at the diagram. Listen and then say the sound. Make your mouth wide, like a smile. Your tongue touches the sides of your teeth. Target sound: /iː/",
         "guideVi": "/iː/ là một nguyên âm dài. Hãy quan sát sơ đồ khẩu hình: Mở miệng bè rộng sang hai bên như đang mỉm cười tươi. Nâng phần trước của lưỡi lên cao chạm vào hai bên cạnh răng trên. Âm đích: /iː/",
-        "targetWord": "see"
+        "targetWord": "see",
+        "audio": {
+          "code": "A9",
+          "cd": 1,
+          "track": "track09.mp3",
+          "label": "Audio gốc Cambridge: Mục A & B (A9)"
+        }
       },
       {
         "letter": "B",
@@ -2140,7 +2188,13 @@ export const PRONUN_UNITS = [
             "en": "Please can you teach me to speak Portuguese?",
             "vi": "Làm ơn dạy tôi nói tiếng Bồ Đào Nha được không?"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A9",
+          "cd": 1,
+          "track": "track09.mp3",
+          "label": "Audio gốc Cambridge: Mục B (A9)"
+        }
       },
       {
         "letter": "C",
@@ -2151,7 +2205,13 @@ export const PRONUN_UNITS = [
         "diagramDesc": "front of tongue up · jaw down (a little)",
         "guideEn": "/ɪ/ is a short sound. Look at the diagram. Listen and then say the sound. Make your mouth a bit less wide than for /iː/. Your tongue is a bit further back in your mouth than for /iː/. Target sound: /ɪ/",
         "guideVi": "/ɪ/ là một nguyên âm ngắn. Hãy quan sát sơ đồ: Miệng mở bớt bè hơn so với /iː/, hạ nhẹ hàm dưới xuống một chút. Lưỡi hơi lùi về phía sau hơn so với khi phát âm /iː/. Âm đích: /ɪ/",
-        "targetWord": "sit"
+        "targetWord": "sit",
+        "audio": {
+          "code": "A10",
+          "cd": 1,
+          "track": "track10.mp3",
+          "label": "Audio gốc Cambridge: Mục C & D (A10)"
+        }
       },
       {
         "letter": "D",
@@ -2251,7 +2311,13 @@ export const PRONUN_UNITS = [
             "tag": "Âm /i/ ở cuối từ",
             "content": "Ở cuối từ trong âm tiết không nhấn, âm /i/ phát âm như /iː/ nhưng ngắn hơn: happy, coffee, busy, sixty."
           }
-        ]
+        ],
+        "audio": {
+          "code": "A10",
+          "cd": 1,
+          "track": "track10.mp3",
+          "label": "Audio gốc Cambridge: Mục D (A10)"
+        }
       }
     ],
     "exercises": [
@@ -2346,7 +2412,13 @@ export const PRONUN_UNITS = [
               }
             ]
           }
-        ]
+        ],
+        "audio": {
+          "code": "A11",
+          "cd": 1,
+          "track": "track11.mp3",
+          "label": "Audio gốc giải bài 2.1 (A11)"
+        }
       },
       {
         "id": "2.2",
@@ -2402,7 +2474,13 @@ export const PRONUN_UNITS = [
             "answer": "litter",
             "hint": "Rác thải (l_____)"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A12",
+          "cd": 1,
+          "track": "track12.mp3",
+          "label": "Audio phát âm đáp án 2.2 (A12)"
+        }
       },
       {
         "id": "2.3",
@@ -2499,7 +2577,13 @@ export const PRONUN_UNITS = [
             "ipa": "/rɪˈpiːt/",
             "note": "Âm tiết 1 là /ɪ/, âm tiết 2 là /iː/!"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A13",
+          "cd": 1,
+          "track": "track13.mp3",
+          "label": "Audio phân loại âm 2.3 (A13)"
+        }
       },
       {
         "id": "2.4",
@@ -2543,7 +2627,13 @@ export const PRONUN_UNITS = [
             "end": "six o'clock.",
             "full": "Let's meet at six o'clock."
           }
-        ]
+        ],
+        "audio": {
+          "code": "A14",
+          "cd": 1,
+          "track": "track14.mp3",
+          "label": "Audio nối câu hoàn chỉnh 2.4 (A14)"
+        }
       },
       {
         "id": "2.5",
@@ -2578,7 +2668,13 @@ export const PRONUN_UNITS = [
             "correct": "letter",
             "pairName": "sound pair 3"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A15",
+          "cd": 1,
+          "track": "track15.mp3",
+          "label": "Audio bài kiểm tra nghe 2.5 (A15)"
+        }
       }
     ]
   },
@@ -2638,7 +2734,13 @@ export const PRONUN_UNITS = [
         "diagramDesc": "back of tongue up · lips rounded · lips forward",
         "guideEn": "/uː/ is a long sound. Look at the diagram. Listen and then say the sound. Make your lips into a tunnel shape. Your tongue is a long way back in your mouth. Target sound: /uː/",
         "guideVi": "/uː/ là một nguyên âm dài. Hãy quan sát sơ đồ: Chu môi tròn hướng về phía trước như hình ống hầm. Nâng phần sau của lưỡi lên cao và lùi sâu về phía vòm họng. Âm đích: /uː/",
-        "targetWord": "too"
+        "targetWord": "too",
+        "audio": {
+          "code": "A16",
+          "cd": 1,
+          "track": "track16.mp3",
+          "label": "Audio Mục A & B (A16)"
+        }
       },
       {
         "letter": "B",
@@ -2738,7 +2840,13 @@ export const PRONUN_UNITS = [
             "en": "fruit juice",
             "vi": "nước ép hoa quả"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A16",
+          "cd": 1,
+          "track": "track16.mp3",
+          "label": "Audio Mục B (A16)"
+        }
       },
       {
         "letter": "C",
@@ -2749,7 +2857,13 @@ export const PRONUN_UNITS = [
         "diagramDesc": "back of tongue up · lips rounded (a little) · lips forward (a little)",
         "guideEn": "/ʊ/ is a short sound. Look at the diagram. Listen and then say the sound. Your tongue is not so far back as for /uː/. Lips rounded a little. Target sound: /ʊ/",
         "guideVi": "/ʊ/ là một nguyên âm ngắn. Hãy quan sát sơ đồ: Môi chỉ hơi tròn và hơi đưa về trước một chút (ít hơn /uː/). Lưỡi không lùi quá sâu như âm /uː/. Âm đích: /ʊ/",
-        "targetWord": "book"
+        "targetWord": "book",
+        "audio": {
+          "code": "A17",
+          "cd": 1,
+          "track": "track17.mp3",
+          "label": "Audio Mục C & D (A17)"
+        }
       },
       {
         "letter": "D",
@@ -2820,7 +2934,13 @@ export const PRONUN_UNITS = [
             "en": "Who's that woman?",
             "vi": "Người phụ nữ đó là ai?"
           }
-        ]
+        ],
+        "audio": {
+          "code": "A17",
+          "cd": 1,
+          "track": "track17.mp3",
+          "label": "Audio Mục D (A17)"
+        }
       }
     ]
   },

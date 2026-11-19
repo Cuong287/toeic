@@ -1168,6 +1168,64 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   }
 }
 
+
+/* Cambridge CD Audio Player Styles */
+.cambridge-player-bar {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.08), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(225, 29, 72, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.cambridge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #E11D48;
+}
+.cambridge-tag-badge {
+  background: #E11D48;
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(225,29,72,0.3);
+}
+.cambridge-audio-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cambridge-seek-bar {
+  flex: 1;
+  min-width: 140px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(225,29,72,0.15);
+  outline: none;
+  cursor: pointer;
+  accent-color: #E11D48;
+}
+.cambridge-time-text {
+  font-size: 11.5px;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 70px;
+}
+
 /* Unit Sections & Cambridge Book Layout */
 .unit-subtab-bar {
   display: flex;
@@ -4067,6 +4125,89 @@ let curIpaFilter = 'all';
 let curSelectedIpaId = 'i_long';
 let curSelectedPairId = 'pair_1';
 let curSelectedSection = 'A';
+let currentCambridgeAudio = null;
+let currentCambridgeTrackKey = null;
+
+function playCambridgeTrack(cdNum, trackName, label, btnEl, playerContainerId) {
+  const trackKey = `cd${cdNum}_${trackName}`;
+  const audioPath = `audio/pronun/cd${cdNum}/${trackName}`;
+  const pContainer = playerContainerId ? document.getElementById(playerContainerId) : null;
+
+  if (currentCambridgeAudio && currentCambridgeTrackKey === trackKey) {
+    if (!currentCambridgeAudio.paused) {
+      currentCambridgeAudio.pause();
+      if (btnEl) btnEl.innerHTML = `▶️ Nghe Audio gốc (${label || trackName})`;
+      return;
+    } else {
+      currentCambridgeAudio.play();
+      if (btnEl) btnEl.innerHTML = `⏸️ Tạm dừng (${label || trackName})`;
+      return;
+    }
+  }
+
+  if (currentCambridgeAudio) {
+    currentCambridgeAudio.pause();
+    currentCambridgeAudio = null;
+    document.querySelectorAll('.cambridge-play-btn').forEach(b => {
+      if (b.dataset.origLabel) b.innerHTML = b.dataset.origLabel;
+    });
+  }
+
+  const audio = new Audio(audioPath);
+  currentCambridgeAudio = audio;
+  currentCambridgeTrackKey = trackKey;
+
+  if (btnEl) {
+    if (!btnEl.dataset.origLabel) btnEl.dataset.origLabel = btnEl.innerHTML;
+    btnEl.innerHTML = `⏳ Đang tải...`;
+  }
+
+  audio.play().then(() => {
+    if (btnEl) btnEl.innerHTML = `⏸️ Tạm dừng (${label || trackName})`;
+  }).catch(err => {
+    console.error('Lỗi phát Cambridge audio:', err);
+    if (btnEl) btnEl.innerHTML = btnEl.dataset.origLabel || `▶️ Nghe Audio gốc`;
+    alert(`Chưa tìm thấy file âm thanh ${audioPath}. Hãy đảm bảo file đã được copy vào thư mục web/audio/pronun/cd${cdNum}/`);
+  });
+
+  audio.ontimeupdate = () => {
+    if (pContainer) {
+      const cur = audio.currentTime;
+      const dur = audio.duration || 0;
+      const timeEl = pContainer.querySelector('.cambridge-time-text');
+      const seekEl = pContainer.querySelector('.cambridge-seek-bar');
+      if (timeEl) {
+        const fmt = s => Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2, '0');
+        timeEl.textContent = `${fmt(cur)} / ${fmt(dur)}`;
+      }
+      if (seekEl && dur > 0) {
+        seekEl.value = (cur / dur) * 100;
+      }
+    }
+  };
+
+  audio.onended = () => {
+    if (btnEl) btnEl.innerHTML = btnEl.dataset.origLabel || `▶️ Nghe Audio gốc`;
+    currentCambridgeAudio = null;
+    currentCambridgeTrackKey = null;
+  };
+}
+
+function seekCambridgeTrack(percent) {
+  if (currentCambridgeAudio && currentCambridgeAudio.duration) {
+    currentCambridgeAudio.currentTime = (percent / 100) * currentCambridgeAudio.duration;
+  }
+}
+
+function skipCambridgeTrack(seconds) {
+  if (currentCambridgeAudio) {
+    currentCambridgeAudio.currentTime = Math.max(0, Math.min(currentCambridgeAudio.duration || 999, currentCambridgeAudio.currentTime + seconds));
+  }
+}
+window.playCambridgeTrack = playCambridgeTrack;
+window.seekCambridgeTrack = seekCambridgeTrack;
+window.skipCambridgeTrack = skipCambridgeTrack;
+
 let curSelectedUnitId = 2;
 let curUnitViewMode = 'sections'; // 'sections' (Mục A-B-C-D) | 'exercises' (Bài tập thực hành) | 'ai_speaking' (Luyện nói AI)
 let unitExState = {}; // { [unitId]: { [exId]: { answers: {}, checked: false, score: 0 } } }
@@ -4504,6 +4645,27 @@ function renderUnitSections(u, box, container) {
               ` : ''}
             </div>
 
+            <!-- Cambridge Official CD Audio Player Bar -->
+            ${(sec.audio && (sec.letter === 'A' || sec.letter === 'C')) ? `
+              <div class="cambridge-player-bar" id="cambridge-player-${u.id}-${sec.letter}">
+                <div class="cambridge-tag">
+                  <span class="cambridge-tag-badge">🎧 ${esc(sec.audio.code)}</span>
+                  <span style="font-size:13.5px">${esc(sec.audio.label || `CD${sec.audio.cd} ${sec.audio.track}`)}</span>
+                </div>
+                <div class="cambridge-audio-ctrls">
+                  <button class="btn primary cambridge-play-btn"
+                    onclick="playCambridgeTrack(${sec.audio.cd}, '${esc(sec.audio.track)}', '${esc(sec.audio.code)}', this, 'cambridge-player-${u.id}-${sec.letter}')"
+                    style="font-size:12.5px;padding:5px 12px;font-weight:700">
+                    ▶️ Nghe Audio gốc (${esc(sec.audio.code)})
+                  </button>
+                  <button class="btn ghost" onclick="skipCambridgeTrack(-5)" title="Tua lùi 5s" style="padding:5px 8px;font-size:12px">⏪ 5s</button>
+                  <button class="btn ghost" onclick="skipCambridgeTrack(5)" title="Tua tới 5s" style="padding:5px 8px;font-size:12px">⏩ 5s</button>
+                  <span class="cambridge-time-text">0:00 / 0:00</span>
+                  <input type="range" class="cambridge-seek-bar" min="0" max="100" value="0" oninput="seekCambridgeTrack(this.value)" />
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Target sound slot if user records -->
             ${sec.targetSound ? `<div id="slot-sec-${u.id}-${sec.letter}" class="rec-slot" style="margin-bottom:12px"></div>` : ''}
 
@@ -4756,8 +4918,28 @@ function renderUnitExercises(u, box, container) {
 function renderSingleExercise(u, ex, exIdx, uState) {
   const st = uState[ex.id] || { answers: {}, checked: false };
 
+  // Cambridge Audio Bar for Exercise
+  const exAudioBar = ex.audio ? `
+    <div class="cambridge-player-bar" id="cambridge-player-ex-${ex.id}" style="margin-top:10px;margin-bottom:12px">
+      <div class="cambridge-tag">
+        <span class="cambridge-tag-badge">🎧 ${esc(ex.audio.code)}</span>
+        <span style="font-size:13px">${esc(ex.audio.label || `CD${ex.audio.cd} ${ex.audio.track}`)}</span>
+      </div>
+      <div class="cambridge-audio-ctrls">
+        <button class="btn primary cambridge-play-btn"
+          onclick="playCambridgeTrack(${ex.audio.cd}, '${esc(ex.audio.track)}', '${esc(ex.audio.code)}', this, 'cambridge-player-ex-${ex.id}')"
+          style="font-size:12px;padding:4px 10px;font-weight:700">
+          ▶️ Nghe Audio gốc (${esc(ex.audio.code)})
+        </button>
+        <button class="btn ghost" onclick="skipCambridgeTrack(-5)" title="Tua lùi 5s" style="padding:4px 6px;font-size:11.5px">⏪ 5s</button>
+        <button class="btn ghost" onclick="skipCambridgeTrack(5)" title="Tua tới 5s" style="padding:4px 6px;font-size:11.5px">⏩ 5s</button>
+        <span class="cambridge-time-text">0:00 / 0:00</span>
+        <input type="range" class="cambridge-seek-bar" min="0" max="100" value="0" oninput="seekCambridgeTrack(this.value)" />
+      </div>
+    </div>
+  ` : '';
+
   if (ex.type === 'fill_dialogue') {
-    // Exercise 2.1
     return `
       <div class="unit-ex-card" id="ex-card-${ex.id}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
@@ -4767,6 +4949,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           </div>
           ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã hoàn thành</span>` : ''}
         </div>
+
+        ${exAudioBar}
 
         <!-- Word Bank Chips -->
         <div style="font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px">Ngân hàng từ vựng (Bấm vào từ để điền nhanh vào ô trống):</div>
@@ -4828,7 +5012,6 @@ function renderSingleExercise(u, ex, exIdx, uState) {
   }
 
   if (ex.type === 'clues') {
-    // Exercise 2.2
     return `
       <div class="unit-ex-card" id="ex-card-${ex.id}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;border-bottom:1px solid var(--line);padding-bottom:10px">
@@ -4838,6 +5021,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           </div>
           ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã kiểm tra</span>` : ''}
         </div>
+
+        ${exAudioBar}
 
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
           ${ex.items.map((it, idx) => {
@@ -4882,7 +5067,6 @@ function renderSingleExercise(u, ex, exIdx, uState) {
   }
 
   if (ex.type === 'sort_sounds') {
-    // Exercise 2.3
     const words = ex.words;
     return `
       <div class="unit-ex-card" id="ex-card-${ex.id}">
@@ -4893,6 +5077,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           </div>
           ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã kiểm tra</span>` : ''}
         </div>
+
+        ${exAudioBar}
 
         <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:8px;margin-bottom:16px">
           ${words.map((w, idx) => {
@@ -4949,7 +5135,6 @@ function renderSingleExercise(u, ex, exIdx, uState) {
   }
 
   if (ex.type === 'match_sentences') {
-    // Exercise 2.4
     const pairs = ex.pairs;
     return `
       <div class="unit-ex-card" id="ex-card-${ex.id}">
@@ -4960,6 +5145,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           </div>
           ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã kiểm tra</span>` : ''}
         </div>
+
+        ${exAudioBar}
 
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
           ${pairs.map((p, idx) => {
@@ -5004,7 +5191,6 @@ function renderSingleExercise(u, ex, exIdx, uState) {
   }
 
   if (ex.type === 'listen_pairs') {
-    // Exercise 2.5
     const drills = ex.drills;
     return `
       <div class="unit-ex-card" id="ex-card-${ex.id}">
@@ -5015,6 +5201,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           </div>
           ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Đã hoàn thành</span>` : ''}
         </div>
+
+        ${exAudioBar}
 
         <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
           ${drills.map((drill, idx) => {
@@ -5066,6 +5254,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
     <div class="unit-ex-card">
       <div style="font-size:16px;font-weight:800;margin-bottom:4px">${esc(ex.title)}</div>
       <div style="font-size:13.5px;color:var(--muted);margin-bottom:12px">${esc(ex.instruction)}</div>
+      ${exAudioBar}
       <div style="background:var(--sunk);padding:12px;border-radius:8px;font-size:13.5px">
         Bài tập thực hành tương tác đang được đồng bộ cho dạng ${esc(ex.type)}.
       </div>
@@ -5079,11 +5268,10 @@ function renderSingleExercise(u, ex, exIdx, uState) {
 function bindAllExerciseEvents(u, box, container) {
   const uState = unitExState[u.id];
 
-  // 1. Fill Dialogue Events
+  // 1. Fill Dialogue Events (Ex 2.1)
   box.querySelectorAll('.unit-word-chip').forEach(chip => {
     chip.onclick = () => {
       const w = chip.dataset.word;
-      // Find focused or first empty blank input in dialogue card
       const inputs = box.querySelectorAll('.unit-blank-input');
       let targetInput = Array.from(inputs).find(inp => document.activeElement === inp);
       if (!targetInput) {
@@ -5124,7 +5312,7 @@ function bindAllExerciseEvents(u, box, container) {
     };
   });
 
-  // 2. Clues Events
+  // 2. Clues Events (Ex 2.2)
   box.querySelectorAll('.btn-show-hint').forEach(b => {
     b.onclick = () => {
       const hintBox = box.querySelector('#' + b.dataset.hintId);
@@ -5143,7 +5331,7 @@ function bindAllExerciseEvents(u, box, container) {
     };
   });
 
-  // 3. Sort Sounds Events
+  // 3. Sort Sounds Events (Ex 2.3)
   box.querySelectorAll('.btn-sort-choice').forEach(b => {
     b.onclick = () => {
       const word = b.dataset.word;
@@ -5166,7 +5354,7 @@ function bindAllExerciseEvents(u, box, container) {
     };
   });
 
-  // 4. Match Sentences Events
+  // 4. Match Sentences Events (Ex 2.4)
   box.querySelectorAll('.match-select').forEach(sel => {
     sel.onchange = () => {
       const pairId = sel.dataset.pairId;
@@ -5186,7 +5374,7 @@ function bindAllExerciseEvents(u, box, container) {
     };
   });
 
-  // 5. Listen Pairs Events
+  // 5. Listen Pairs Events (Ex 2.5)
   box.querySelectorAll('.btn-play-pair').forEach(b => {
     b.onclick = () => {
       const key = b.dataset.drillKey;
@@ -5220,9 +5408,6 @@ function bindAllExerciseEvents(u, box, container) {
   });
 }
 
-// --------------------------------------------------------------------------
-// 3.3. RENDER UNIT AI SPEAKING (PHÒNG LUYỆN NÓI CHUYÊN SÂU CHẤM ĐIỂM AI)
-// --------------------------------------------------------------------------
 function renderUnitAiSpeaking(u, box) {
   const allSentences = [];
   if (u.sections) {

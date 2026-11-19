@@ -2194,7 +2194,9 @@ export const PRONUN_UNITS = [
           "cd": 1,
           "track": "track09.mp3",
           "label": "Audio gốc Cambridge: Mục B (A9)"
-        }
+        },
+        "illustration": "img/pronun/unit2_boat.png",
+        "illustrationCaption": "Can you see the sea?"
       },
       {
         "letter": "C",
@@ -2317,7 +2319,9 @@ export const PRONUN_UNITS = [
           "cd": 1,
           "track": "track10.mp3",
           "label": "Audio gốc Cambridge: Mục D (A10)"
-        }
+        },
+        "illustration": "img/pronun/unit2_56.png",
+        "illustrationCaption": "fifty-six"
       }
     ],
     "exercises": [
@@ -2418,7 +2422,9 @@ export const PRONUN_UNITS = [
           "cd": 1,
           "track": "track11.mp3",
           "label": "Audio gốc giải bài 2.1 (A11)"
-        }
+        },
+        "image": "img/pronun/ex21_tv.png",
+        "imageAlt": "Hình minh họa TV và bể cá vàng (What shall we do?)"
       },
       {
         "id": "2.2",
@@ -2480,7 +2486,9 @@ export const PRONUN_UNITS = [
           "cd": 1,
           "track": "track12.mp3",
           "label": "Audio phát âm đáp án 2.2 (A12)"
-        }
+        },
+        "image": "img/pronun/ex22_clues.png",
+        "imageAlt": "Hình minh họa gợi ý các câu đố (thang máy, từ điển, bánh quy, đồng hồ, gương soi...)"
       },
       {
         "id": "2.3",

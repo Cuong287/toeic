@@ -1,5 +1,5 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v22';
+const V = 'so-tu-toeic-v23';
 const CORE = [
   './',
   './index.html',
@@ -11,7 +11,11 @@ const CORE = [
   './img/pronun/mouth_i_long.png',
   './img/pronun/mouth_i_short.png',
   './img/pronun/mouth_u_long.png',
-  './img/pronun/mouth_u_short.png'
+  './img/pronun/mouth_u_short.png',
+  './img/pronun/ex21_tv.png',
+  './img/pronun/ex22_clues.png',
+  './img/pronun/unit2_boat.png',
+  './img/pronun/unit2_56.png'
 ];
 
 self.addEventListener('install', e => {

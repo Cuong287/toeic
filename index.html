@@ -1169,6 +1169,43 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 }
 
 
+
+/* Exercise Illustrations Styles */
+.unit-ex-with-img-grid {
+  display: grid;
+  grid-template-columns: 1fr 230px;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+@media (max-width: 768px) {
+  .unit-ex-with-img-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.unit-ex-illustration-box {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.unit-ex-illustration-box img {
+  width: 100%;
+  max-width: 210px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+.unit-ex-illustration-caption {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 6px;
+}
+
 /* Cambridge CD Audio Player Styles */
 .cambridge-player-bar {
   background: linear-gradient(135deg, rgba(225, 29, 72, 0.08), rgba(99, 102, 241, 0.08));
@@ -4721,36 +4758,44 @@ function renderUnitSections(u, box, container) {
               </div>
             ` : ''}
 
-            <!-- Sentences or Phrases (if any) -->
+            <!-- Sentences or Phrases (with Book Illustration if available) -->
             ${sec.sentences && sec.sentences.length > 0 ? `
               <div style="margin-top:16px">
                 <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Câu / Cụm từ luyện nói:</div>
-                <div style="display:flex;flex-direction:column;gap:8px">
-                  ${sec.sentences.map((sent, sIdx) => {
-                    const enText = typeof sent === 'string' ? sent : sent.en;
-                    const viText = typeof sent === 'object' ? sent.vi : '';
-                    return `
-                      <div class="sentence-drill-item">
-                        <div class="sentence-top-bar">
-                          <div style="flex:1;min-width:200px">
-                            <div style="font-size:15px;font-weight:700;color:var(--ink)">${sIdx + 1}. "${esc(enText)}"</div>
-                            ${viText ? `<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(viText)}</div>` : ''}
+                <div class="${sec.illustration ? 'unit-ex-with-img-grid' : ''}">
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    ${sec.sentences.map((sent, sIdx) => {
+                      const enText = typeof sent === 'string' ? sent : sent.en;
+                      const viText = typeof sent === 'object' ? sent.vi : '';
+                      return `
+                        <div class="sentence-drill-item">
+                          <div class="sentence-top-bar">
+                            <div style="flex:1;min-width:200px">
+                              <div style="font-size:15px;font-weight:700;color:var(--ink)">${sIdx + 1}. "${esc(enText)}"</div>
+                              ${viText ? `<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(viText)}</div>` : ''}
+                            </div>
+                            <div style="display:flex;gap:6px">
+                              <button class="btn" onclick="speak('${esc(enText)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                                <span>Nghe</span>
+                              </button>
+                              <button class="btn rec-btn" data-rec-text="${esc(enText)}" data-rec-id="u-s-${u.id}-${sec.letter}-${sIdx}" style="padding:5px 10px;font-size:12px">
+                                ${MIC_ICON}
+                                <span>Luyện nói</span>
+                              </button>
+                            </div>
                           </div>
-                          <div style="display:flex;gap:6px">
-                            <button class="btn" onclick="speak('${esc(enText)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                              <span>Nghe</span>
-                            </button>
-                            <button class="btn rec-btn" data-rec-text="${esc(enText)}" data-rec-id="u-s-${u.id}-${sec.letter}-${sIdx}" style="padding:5px 10px;font-size:12px">
-                              ${MIC_ICON}
-                              <span>Luyện nói</span>
-                            </button>
-                          </div>
+                          <div id="slot-u-s-${u.id}-${sec.letter}-${sIdx}" class="rec-slot"></div>
                         </div>
-                        <div id="slot-u-s-${u.id}-${sec.letter}-${sIdx}" class="rec-slot"></div>
-                      </div>
-                    `;
-                  }).join('')}
+                      `;
+                    }).join('')}
+                  </div>
+                  ${sec.illustration ? `
+                    <div class="unit-ex-illustration-box">
+                      <img src="${esc(sec.illustration)}" alt="${esc(sec.illustrationCaption || '')}" />
+                      <div class="unit-ex-illustration-caption">${esc(sec.illustrationCaption || 'Hình minh họa trong sách')}</div>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             ` : ''}
@@ -4793,7 +4838,6 @@ function renderUnitSections(u, box, container) {
       <div style="background:var(--sunk);padding:14px;border-radius:8px;font-size:14px;line-height:1.6;margin-bottom:16px">
         💡 <strong>Quy tắc phát âm:</strong> ${esc(u.rule)}
       </div>
-      <!-- Words grid -->
       <div style="margin-top:14px">
         <div style="font-size:14px;font-weight:800;margin-bottom:8px">Từ vựng trọng tâm:</div>
         <div class="pronun-word-grid">
@@ -4816,7 +4860,6 @@ function renderUnitSections(u, box, container) {
           `).join('')}
         </div>
       </div>
-      <!-- Sentences -->
       <div style="margin-top:20px">
         <div style="font-size:14px;font-weight:800;margin-bottom:8px">Câu luyện nói:</div>
         <div>
@@ -4871,7 +4914,6 @@ function renderUnitExercises(u, box, container) {
     return;
   }
 
-  // Calculate completed exercises count
   const completedCount = exList.filter(ex => uState[ex.id] && uState[ex.id].checked).length;
   const pct = Math.round((completedCount / exList.length) * 100);
 
@@ -4900,7 +4942,6 @@ function renderUnitExercises(u, box, container) {
     </div>
   `;
 
-  // Attach Reset All
   box.querySelector('#btn-reset-exercises').onclick = () => {
     if (confirm('Bạn có chắc muốn làm lại tất cả bài tập của Unit này?')) {
       delete unitExState[u.id];
@@ -4908,7 +4949,6 @@ function renderUnitExercises(u, box, container) {
     }
   };
 
-  // Bind Exercise Interactive Events
   bindAllExerciseEvents(u, box, container);
 }
 
@@ -4918,7 +4958,6 @@ function renderUnitExercises(u, box, container) {
 function renderSingleExercise(u, ex, exIdx, uState) {
   const st = uState[ex.id] || { answers: {}, checked: false };
 
-  // Cambridge Audio Bar for Exercise
   const exAudioBar = ex.audio ? `
     <div class="cambridge-player-bar" id="cambridge-player-ex-${ex.id}" style="margin-top:10px;margin-bottom:12px">
       <div class="cambridge-tag">
@@ -4958,36 +4997,44 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           ${ex.wordBank.map(w => `<button type="button" class="unit-word-chip" data-word="${esc(w)}">${esc(w)}</button>`).join('')}
         </div>
 
-        <!-- Dialogues List -->
-        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
-          ${ex.dialogues.map((diag, dIdx) => `
-            <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-              <div style="font-weight:800;font-size:13px;color:var(--muted);margin-bottom:6px">Đoạn ${dIdx + 1}:</div>
-              ${diag.lines.map((line, lIdx) => `
-                <div style="font-size:14.5px;line-height:2;margin-bottom:4px">
-                  <strong style="color:var(--accent)">${esc(line.speaker)}:</strong>
-                  ${line.parts.map((p, pIdx) => {
-                    if (typeof p === 'string') return esc(p);
-                    const blankKey = `d_${diag.id}_l_${lIdx}_b_${pIdx}`;
-                    const val = st.answers[blankKey] || '';
-                    const isRight = st.checked && (val.trim().toLowerCase() === p.blank.toLowerCase());
-                    const isWrong = st.checked && !isRight;
-                    return `
-                      <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
-                        data-blank-key="${blankKey}"
-                        data-expected="${esc(p.blank)}"
-                        value="${esc(val)}"
-                        placeholder="..."
-                        autocomplete="off"
-                        autocapitalize="none"
-                        style="width:${Math.max(90, p.blank.length * 12)}px" />
-                      ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(p.blank)})</span>` : ''}
-                    `;
-                  }).join('')}
-                </div>
-              `).join('')}
+        <!-- Dialogues List with Book Illustration -->
+        <div class="${ex.image ? 'unit-ex-with-img-grid' : ''}">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            ${ex.dialogues.map((diag, dIdx) => `
+              <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+                <div style="font-weight:800;font-size:13px;color:var(--muted);margin-bottom:6px">Đoạn ${dIdx + 1}:</div>
+                ${diag.lines.map((line, lIdx) => `
+                  <div style="font-size:14.5px;line-height:2;margin-bottom:4px">
+                    <strong style="color:var(--accent)">${esc(line.speaker)}:</strong>
+                    ${line.parts.map((p, pIdx) => {
+                      if (typeof p === 'string') return esc(p);
+                      const blankKey = `d_${diag.id}_l_${lIdx}_b_${pIdx}`;
+                      const val = st.answers[blankKey] || '';
+                      const isRight = st.checked && (val.trim().toLowerCase() === p.blank.toLowerCase());
+                      const isWrong = st.checked && !isRight;
+                      return `
+                        <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
+                          data-blank-key="${blankKey}"
+                          data-expected="${esc(p.blank)}"
+                          value="${esc(val)}"
+                          placeholder="..."
+                          autocomplete="off"
+                          autocapitalize="none"
+                          style="width:${Math.max(90, p.blank.length * 12)}px" />
+                        ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(p.blank)})</span>` : ''}
+                      `;
+                    }).join('')}
+                  </div>
+                `).join('')}
+              </div>
+            `).join('')}
+          </div>
+          ${ex.image ? `
+            <div class="unit-ex-illustration-box">
+              <img src="${esc(ex.image)}" alt="${esc(ex.imageAlt || '')}" />
+              <div class="unit-ex-illustration-caption">Hình vẽ minh họa Exercise 2.1</div>
             </div>
-          `).join('')}
+          ` : ''}
         </div>
 
         <!-- Check Button & Speech Tools -->
@@ -5024,37 +5071,46 @@ function renderSingleExercise(u, ex, exIdx, uState) {
 
         ${exAudioBar}
 
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-          ${ex.items.map((it, idx) => {
-            const val = st.answers[`clue_${it.id}`] || '';
-            const isRight = st.checked && (val.trim().toLowerCase() === it.answer.toLowerCase());
-            const isWrong = st.checked && !isRight;
-            return `
-              <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-                <div style="flex:1;min-width:260px;font-size:14.5px">
-                  <span style="font-weight:800;color:var(--accent)">${it.id}.</span> ${esc(it.clue)}
-                  <div id="hint-box-${ex.id}-${it.id}" style="font-size:12px;color:var(--muted);margin-top:2px;display:none">
-                    💡 Gợi ý: <strong>${esc(it.hint)}</strong>
+        <!-- Clues List with Book Illustration Collage -->
+        <div class="${ex.image ? 'unit-ex-with-img-grid' : ''}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${ex.items.map((it, idx) => {
+              const val = st.answers[`clue_${it.id}`] || '';
+              const isRight = st.checked && (val.trim().toLowerCase() === it.answer.toLowerCase());
+              const isWrong = st.checked && !isRight;
+              return `
+                <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                  <div style="flex:1;min-width:260px;font-size:14.5px">
+                    <span style="font-weight:800;color:var(--accent)">${it.id}.</span> ${esc(it.clue)}
+                    <div id="hint-box-${ex.id}-${it.id}" style="font-size:12px;color:var(--muted);margin-top:2px;display:none">
+                      💡 Gợi ý: <strong>${esc(it.hint)}</strong>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <button type="button" class="btn ghost btn-show-hint" data-hint-id="hint-box-${ex.id}-${it.id}" style="padding:4px 8px;font-size:12px" title="Xem gợi ý">
+                      💡
+                    </button>
+                    <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
+                      data-clue-id="${it.id}"
+                      data-expected="${esc(it.answer)}"
+                      value="${esc(val)}"
+                      placeholder="Điền từ..."
+                      style="width:110px" />
+                    <button class="icon-btn" onclick="speak('${esc(it.answer)}')" title="Nghe phát âm từ này" style="width:30px;height:30px">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    </button>
+                    ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(it.answer)})</span>` : ''}
                   </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px">
-                  <button type="button" class="btn ghost btn-show-hint" data-hint-id="hint-box-${ex.id}-${it.id}" style="padding:4px 8px;font-size:12px" title="Xem gợi ý">
-                    💡
-                  </button>
-                  <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
-                    data-clue-id="${it.id}"
-                    data-expected="${esc(it.answer)}"
-                    value="${esc(val)}"
-                    placeholder="Điền từ..."
-                    style="width:110px" />
-                  <button class="icon-btn" onclick="speak('${esc(it.answer)}')" title="Nghe phát âm từ này" style="width:30px;height:30px">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                  </button>
-                  ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(it.answer)})</span>` : ''}
-                </div>
-              </div>
-            `;
-          }).join('')}
+              `;
+            }).join('')}
+          </div>
+          ${ex.image ? `
+            <div class="unit-ex-illustration-box">
+              <img src="${esc(ex.image)}" alt="${esc(ex.imageAlt || '')}" />
+              <div class="unit-ex-illustration-caption">Gợi ý hình vẽ trong sách Cambridge</div>
+            </div>
+          ` : ''}
         </div>
 
         <div style="display:flex;align-items:center;justify-content:space-between">
@@ -5249,7 +5305,6 @@ function renderSingleExercise(u, ex, exIdx, uState) {
     `;
   }
 
-  // Fallback generic exercise card
   return `
     <div class="unit-ex-card">
       <div style="font-size:16px;font-weight:800;margin-bottom:4px">${esc(ex.title)}</div>

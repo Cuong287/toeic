@@ -1,5 +1,5 @@
 // practice-view.js - Giao diện Reflex Translation & Drills từ 01._Practice.pdf
-import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js?v=36';
+import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js?v=37';
 
 let appStore = null;
 let appEsc = null;
@@ -418,13 +418,13 @@ function renderUnitsSection(container) {
     <!-- Unit Selector Pills -->
     <div class="card" style="margin-bottom:14px;padding:12px 14px">
       <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--muted)">SELECT UNIT:</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="practice-pills-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:none">
         ${PRACTICE_UNITS.map((u, idx) => {
           const st = getPracticeExState(u.id);
           const ansCount = u.items.filter(it => (st.answers || {})[it.id] && String((st.answers || {})[it.id]).trim().length > 0).length;
           const isDone = ansCount === u.items.length;
           return `
-            <button class="btn ${idx === curUnitIdx ? 'primary' : 'ghost'} btn-select-unit" data-idx="${idx}" style="font-size:12px;padding:5px 10px;border-radius:6px">
+            <button class="btn ${idx === curUnitIdx ? 'primary' : 'ghost'} btn-select-unit" data-idx="${idx}" style="font-size:12px;padding:6px 12px;border-radius:6px;flex-shrink:0;white-space:nowrap">
               ${isDone ? '✓ ' : ''}${esc(u.unitTag)}
             </button>
           `;
@@ -485,7 +485,7 @@ function renderUnitsSection(container) {
                 </div>
 
                 <!-- Action Controls -->
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="practice-actions-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                   ${val ? `<button class="btn practice-speak-btn btn-speak-item" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>` : ''}
                   
                   <!-- Voice Recording Button -->
@@ -527,6 +527,11 @@ function renderUnitsSection(container) {
       renderUnitsSection(container);
     };
   });
+
+  const activeUnitPill = container.querySelector('.btn-select-unit.primary');
+  if (activeUnitPill && activeUnitPill.scrollIntoView) {
+    try { activeUnitPill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e){}
+  }
 
 
 function updateUnitStatsUI(container, currentUnit) {
@@ -682,12 +687,12 @@ function renderParasSection(container) {
     <!-- Paragraph Selector Pills -->
     <div class="card" style="margin-bottom:14px;padding:12px 14px">
       <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--muted)">SELECT PASSAGE:</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="practice-pills-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:none">
         ${PRACTICE_PARAGRAPHS.map((p, idx) => {
           const st = getPracticeExState(p.id);
           const hasAns = Object.values(st.answers || {}).some(v => v && String(v).trim().length > 0);
           return `
-            <button class="btn ${idx === curParaIdx ? 'primary' : 'ghost'} btn-select-para" data-idx="${idx}" style="font-size:12px;padding:5px 11px;border-radius:6px">
+            <button class="btn ${idx === curParaIdx ? 'primary' : 'ghost'} btn-select-para" data-idx="${idx}" style="font-size:12px;padding:6px 12px;border-radius:6px;flex-shrink:0;white-space:nowrap">
               ${hasAns ? '✓ ' : ''}Passage ${idx + 1}
             </button>
           `;
@@ -736,7 +741,7 @@ function renderParasSection(container) {
                     ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
                   </span>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="practice-actions-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                   ${val ? `<button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Listen to your translation">Listen</button>` : ''}
                   
                   <!-- Voice Recording -->
@@ -774,6 +779,11 @@ function renderParasSection(container) {
       renderParasSection(container);
     };
   });
+
+  const activeParaPill = container.querySelector('.btn-select-para.primary');
+  if (activeParaPill && activeParaPill.scrollIntoView) {
+    try { activeParaPill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e){}
+  }
 
   // Attach Textarea auto-save events
   container.querySelectorAll('.para-input').forEach(txt => {

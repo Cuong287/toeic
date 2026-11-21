@@ -1,5 +1,5 @@
 // grammar-view.js - Core TOEIC Grammar Module (13 Topics)
-import { GRAMMAR_TOPICS } from './grammar-data.js?v=36';
+import { GRAMMAR_TOPICS } from './grammar-data.js?v=37';
 
 let appStore = null;
 let appEsc = null;
@@ -94,14 +94,14 @@ export function renderGrammar(box) {
       <!-- Topic Selector Carousel / Grid -->
       <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
         <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase">13 GRAMMAR TOPICS:</div>
-        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px">
+        <div class="practice-pills-scroll" style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none">
           ${GRAMMAR_TOPICS.map(t => {
             const st = getGrammarTopicState(t.id);
             const ansNum = Object.keys(st.answers || {}).length;
             const isFinished = ansNum >= t.questions.length && t.questions.length > 0;
             const isActive = t.id === currentTopic.id;
             return `
-              <button class="btn ${isActive ? 'primary' : 'ghost'} btn-select-topic" data-tid="${t.id}" style="font-size:12.5px;padding:7px 12px;border-radius:6px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px">
+              <button class="btn ${isActive ? 'primary' : 'ghost'} btn-select-topic" data-tid="${t.id}" style="font-size:12.5px;padding:7px 12px;border-radius:6px;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:6px">
                 <span>${esc(t.title.split('(')[0].trim())}</span>
                 <span class="badge" style="background:${isActive ? 'rgba(255,255,255,0.22)' : 'var(--sunk)'};color:${isActive ? '#FFF' : 'var(--muted)'};font-size:11px">
                   ${isFinished ? '✓ ' : ''}${ansNum}/${t.questions.length}
@@ -154,6 +154,11 @@ export function renderGrammar(box) {
       renderGrammar(box);
     };
   });
+
+  const activeTopicPill = box.querySelector('.btn-select-topic.primary');
+  if (activeTopicPill && activeTopicPill.scrollIntoView) {
+    try { activeTopicPill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch(e){}
+  }
 
   // Attach Filter events
   box.querySelectorAll('.btn-filter').forEach(btn => {
@@ -282,7 +287,7 @@ function renderQuestionsList(container, topic, box) {
         </div>
 
         <!-- 4 Options Grid -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:8px">
+        <div class="grammar-options-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:8px">
           ${['A', 'B', 'C', 'D'].map(optKey => {
             const optVal = q.options[optKey] || '';
             if (!optVal) return '';

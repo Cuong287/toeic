@@ -8256,6 +8256,7 @@ function renderDashboard(box) {
   const avgScore = scoredCount > 0 ? Math.round(totalBest / scoredCount) : 0;
   const savedWordsCount = store.getReviewList().length;
   const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? (currentUser.displayName || currentUser.email.split('@')[0]) : null;
+  const hasProgress = completedCount > 0 || totalBest > 0 || inProgressCount > 0;
 
   const filteredTopics = topicStats.filter(item => {
     if (dashFilter === 'completed') return item.isCompleted;
@@ -8296,24 +8297,32 @@ function renderDashboard(box) {
       </div>
     </div>
 
-    <div class="stat-grid" style="margin-bottom:4px">
-      <div class="stat-card">
-        <div class="val">${completedCount}<span style="font-size:16px;color:var(--muted);font-weight:600"> / ${TOPICS.length}</span></div>
-        <div class="lbl">Topics Completed</div>
+    ${hasProgress ? `
+      <div class="stat-grid" style="margin-bottom:4px">
+        <div class="stat-card">
+          <div class="val">${completedCount}<span style="font-size:16px;color:var(--muted);font-weight:600"> / ${TOPICS.length}</span></div>
+          <div class="lbl">Topics Completed</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" style="color:var(--good)">${avgScore}%</div>
+          <div class="lbl">Avg. Quiz Score (${scoredCount} topics)</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" style="color:var(--warn)">${savedWordsCount}</div>
+          <div class="lbl">Saved Vocabulary Words</div>
+        </div>
+        <div class="stat-card">
+          <div class="val">${totalBest}</div>
+          <div class="lbl">Total Points Earned</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="val" style="color:var(--good)">${avgScore}%</div>
-        <div class="lbl">Avg. Quiz Score (${scoredCount} topics)</div>
+    ` : `
+      <div class="card dash-welcome-card" style="padding:28px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="font-size:20px;font-weight:800;color:var(--ink)">Welcome to TOEIC Prep Hub!</div>
+        <p style="margin:0;color:var(--muted);font-size:14.5px;max-width:560px;line-height:1.5">You haven't started any topics yet. Begin with your first topic to build high-frequency vocabulary and track your learning progress.</p>
+        <a href="#t1-p1" class="btn primary" id="dash-btn-start-first" style="display:inline-flex;align-items:center;gap:6px;padding:10px 22px;font-size:14.5px;font-weight:700;text-decoration:none;border-radius:8px">Start your first topic →</a>
       </div>
-      <div class="stat-card">
-        <div class="val" style="color:var(--warn)">${savedWordsCount}</div>
-        <div class="lbl">Saved Vocabulary Words</div>
-      </div>
-      <div class="stat-card">
-        <div class="val">${totalBest}</div>
-        <div class="lbl">Total Points Earned</div>
-      </div>
-    </div>
+    `}
 
     <div>
       <div class="row between" style="margin-bottom:10px">
@@ -8405,6 +8414,13 @@ function renderDashboard(box) {
   const contBtn = box.querySelector('#dash-btn-continue');
   if (contBtn) {
     contBtn.onclick = () => go(lastTopic.id, lastPartObj.k);
+  }
+  const startFirstBtn = box.querySelector('#dash-btn-start-first');
+  if (startFirstBtn) {
+    startFirstBtn.onclick = (e) => {
+      e.preventDefault();
+      go(1, 1);
+    };
   }
   box.querySelectorAll('[data-df]').forEach(btn => {
     btn.onclick = () => {

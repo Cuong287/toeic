@@ -1738,14 +1738,20 @@ import { firebaseConfig } from './firebase-config.js';
 import { IPA_DATA, MINIMAL_PAIRS, PRONUN_UNITS } from './pronunciation-data.js';
 import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js';
 import { GRAMMAR_TOPICS } from './grammar-data.js';
-import { initPracticeView, renderPractice, getPracticeExState } from './practice-view.js';
-import { initGrammarView, renderGrammar, getGrammarTopicState } from './grammar-view.js';
+import { initPracticeView, renderPractice, getPracticeExState, resetPracticeExState } from './practice-view.js';
+import { initGrammarView, renderGrammar, getGrammarTopicState, resetGrammarTopicState } from './grammar-view.js';
 
 const TOPICS = DATA.topics, ENR = DATA.enrich, AUD = DATA.audio || {};
 Object.values(ENR).forEach(e => { e.vocab = e.vocab || {}; e.usage = e.usage || []; e.forms = e.forms || []; e.tr = e.tr || {}; e.gap = e.gap || {}; });
 
 // ---------- Storage & Separation by UID ----------
-let currentUid = 'guest';
+let currentUid = (() => {
+  try {
+    return localStorage.getItem('toeic45:_last_uid') || 'guest';
+  } catch (e) {
+    return 'guest';
+  }
+})();
 const LOCAL_ONLY_KEYS = /^(last|rate|qdir|trhide:|_pending_dirty|synced_choice|p0_sub_|p0_filter_|t0_scope|t0_mode|t0_qdir)/;
 
 function migrateLegacyStorage() {
@@ -1767,7 +1773,17 @@ migrateLegacyStorage();
 const store = {
   get(k, d) {
     try {
-      const v = localStorage.getItem(`toeic45:${currentUid}:${k}`);
+      let v = localStorage.getItem(`toeic45:${currentUid}:${k}`);
+      if (v == null && currentUid !== 'guest') {
+        const guestVal = localStorage.getItem(`toeic45:guest:${k}`);
+        if (guestVal != null) {
+          v = guestVal;
+          try {
+            localStorage.setItem(`toeic45:${currentUid}:${k}`, guestVal);
+            markDirty(k);
+          } catch (e) {}
+        }
+      }
       return v == null ? d : JSON.parse(v);
     } catch (e) {
       return d;
@@ -1787,9 +1803,14 @@ const store = {
   },
   setUid(uid) {
     currentUid = uid || 'guest';
+    try {
+      localStorage.setItem('toeic45:_last_uid', currentUid);
+    } catch (e) {}
     if (typeof unitExState === 'object' && unitExState !== null) {
       Object.keys(unitExState).forEach(k => delete unitExState[k]);
     }
+    if (typeof resetPracticeExState === 'function') resetPracticeExState();
+    if (typeof resetGrammarTopicState === 'function') resetGrammarTopicState();
     if (typeof loadPendingDirtyQueue === 'function') loadPendingDirtyQueue();
     updateReviewBadge();
   },
@@ -2439,13 +2460,15 @@ async function initFirebase() {
         await ensureUserProfile(user);
         await checkAdminStatus(user.uid);
         renderAuthBox();
-        // Đẩy ngay các câu trả lời còn tồn đọng lúc offline trước khi kéo cloud về
+        // Auto-merge any local guest data into user account so work is never lost
+        if (hasLocalGuestData()) {
+          await executeMerge('merge', user.uid);
+        } else {
+          await downloadCloudData(user.uid);
+        }
         if (dirtyKeys.size > 0) {
           await flushDirtyKeys();
         }
-        await checkFirstLoginMerge(user.uid);
-        // Luôn kéo dữ liệu mới nhất từ đám mây về máy tính/thiết bị này
-        await downloadCloudData(user.uid);
       } else {
         store.setUid('guest');
         isAdminUser = false;
@@ -2648,12 +2671,18 @@ async function downloadCloudData(uid) {
         if (dirtyKeys.has(storeKey)) return;
         const cloudData = docData.data || {};
         const localData = store.get(storeKey, {});
-        const mergedAnswers = { ...(cloudData.answers || {}), ...(localData.answers || {}) };
+        const mergedAnswers = { ...(cloudData.answers || {}) };
+        Object.entries(localData.answers || {}).forEach(([k, v]) => {
+          if (v && String(v).trim() !== '') mergedAnswers[k] = v;
+        });
         const merged = {
           answers: mergedAnswers,
+          checked: { ...(cloudData.checked || {}), ...(localData.checked || {}) },
+          eval: { ...(cloudData.eval || {}), ...(localData.eval || {}) },
           updatedAt: Math.max(Number(localData.updatedAt)||0, Number(cloudData.updatedAt)||0) || Date.now()
         };
         localStorage.setItem(`toeic45:${uid}:${storeKey}`, JSON.stringify(merged));
+        if (typeof resetPracticeExState === 'function') resetPracticeExState();
         return;
       }
 
@@ -2664,12 +2693,17 @@ async function downloadCloudData(uid) {
         if (dirtyKeys.has(storeKey)) return;
         const cloudData = docData.data || {};
         const localData = store.get(storeKey, {});
-        const mergedAnswers = { ...(cloudData.answers || {}), ...(localData.answers || {}) };
+        const mergedAnswers = { ...(cloudData.answers || {}) };
+        Object.entries(localData.answers || {}).forEach(([k, v]) => {
+          if (v && String(v).trim() !== '') mergedAnswers[k] = v;
+        });
         const merged = {
           answers: mergedAnswers,
+          notes: { ...(cloudData.notes || {}), ...(localData.notes || {}) },
           updatedAt: Math.max(Number(localData.updatedAt)||0, Number(cloudData.updatedAt)||0) || Date.now()
         };
         localStorage.setItem(`toeic45:${uid}:${storeKey}`, JSON.stringify(merged));
+        if (typeof resetGrammarTopicState === 'function') resetGrammarTopicState();
         return;
       }
 
@@ -2790,10 +2824,29 @@ async function executeMerge(mode, uid) {
       } else if (k.startsWith('pronun_ex:')) {
         const currentPronun = store.get(k, {});
         store.set(k, mergePronunUnitEx(val || {}, currentPronun || {}));
-      } else if (k.startsWith('practice_ex:') || k.startsWith('grammar_ex:')) {
+      } else if (k.startsWith('practice_ex:')) {
         const currentData = store.get(k, {});
-        const mergedAnswers = { ...((val && val.answers) || {}), ...((currentData && currentData.answers) || {}) };
-        store.set(k, { answers: mergedAnswers, updatedAt: Date.now() });
+        const mergedAnswers = { ...((currentData && currentData.answers) || {}) };
+        Object.entries((val && val.answers) || {}).forEach(([ak, av]) => {
+          if (av && String(av).trim() !== '') mergedAnswers[ak] = av;
+        });
+        store.set(k, {
+          answers: mergedAnswers,
+          checked: { ...((val && val.checked) || {}), ...((currentData && currentData.checked) || {}) },
+          eval: { ...((val && val.eval) || {}), ...((currentData && currentData.eval) || {}) },
+          updatedAt: Date.now()
+        });
+      } else if (k.startsWith('grammar_ex:')) {
+        const currentData = store.get(k, {});
+        const mergedAnswers = { ...((currentData && currentData.answers) || {}) };
+        Object.entries((val && val.answers) || {}).forEach(([ak, av]) => {
+          if (av && String(av).trim() !== '') mergedAnswers[ak] = av;
+        });
+        store.set(k, {
+          answers: mergedAnswers,
+          notes: { ...((val && val.notes) || {}), ...((currentData && currentData.notes) || {}) },
+          updatedAt: Date.now()
+        });
       } else if (k === 'review') {
         const currentRev = store.get('review', { items: [] });
         const guestItems = (val && val.items) || [];
@@ -3767,17 +3820,39 @@ function part2(t, el){
   if (e && e.usage.length) h += `<h2 class="sec">Usage Notes</h2><div class="usage">${e.usage.map(u=>`<div><b>${esc(u[0])}</b>${esc(u[1])}</div>`).join('')}</div>`;
   if (e && e.forms.length){
     h += `<h2 class="sec">Word Form Drill</h2><p class="hint" style="margin:0">Enter the correct form of the word in parentheses. Press Enter or Check.</p>
-      <div class="forms">${e.forms.map((f,k)=>`<form class="fitem" data-k="${k}" autocomplete="off"><div><div>${esc(f[0]).replace('____','<b>_____</b>')}</div><div class="base">(${esc(f[1])})</div></div><div class="row" style="flex-wrap:nowrap"><input class="field" id="wf-${t.id}-${k}" style="padding:7px 10px;font-size:15px" autocapitalize="off" spellcheck="false"><button class="btn" type="submit">Check</button></div><div class="ans" hidden></div></form>`).join('')}</div>`;
+      <div class="forms">${e.forms.map((f,k)=>{
+        const wfKey = `wf-${t.id}-${k}`;
+        const savedVal = store.get(wfKey, '');
+        const ok = savedVal && f[2].map(norm).includes(norm(savedVal));
+        return `<form class="fitem" data-k="${k}" autocomplete="off"><div><div>${esc(f[0]).replace('____','<b>_____</b>')}</div><div class="base">(${esc(f[1])})</div></div><div class="row" style="flex-wrap:nowrap"><input class="field ${savedVal ? (ok ? 'ok' : 'no') : ''}" id="${wfKey}" data-key="${wfKey}" value="${esc(savedVal)}" style="padding:7px 10px;font-size:15px" autocapitalize="off" spellcheck="false"><button class="btn" type="submit">Check</button></div><div class="ans" ${savedVal ? '' : 'hidden'} style="color:${ok ? 'var(--good)' : 'var(--bad)'}">${savedVal ? (ok ? 'Correct.' : 'Answer: ' + f[2].join(' / ')) : ''}</div></form>`;
+      }).join('')}</div>`;
   }
   el.innerHTML = h;
   if (pairs.length >= 2) matchGame(shuffle(pairs).slice(0,6), el.querySelector('#mg'));
-  if (e && e.forms.length) el.querySelectorAll('.fitem').forEach(f => f.onsubmit = ev => {
-    ev.preventDefault();
-    const it = e.forms[+f.dataset.k], inp = f.querySelector('input'), a = f.querySelector('.ans');
-    const ok = it[2].map(norm).includes(norm(inp.value));
-    inp.classList.remove('ok','no'); inp.classList.add(ok?'ok':'no');
-    a.hidden = false; a.style.color = ok ? 'var(--good)' : 'var(--bad)';
-    a.textContent = ok ? 'Correct.' : 'Answer: ' + it[2].join(' / ');
+  if (e && e.forms.length) el.querySelectorAll('.fitem').forEach(f => {
+    const k = +f.dataset.k;
+    const wfKey = `wf-${t.id}-${k}`;
+    const inp = f.querySelector('input');
+    const a = f.querySelector('.ans');
+    const it = e.forms[k];
+    inp.addEventListener('input', () => {
+      store.set(wfKey, inp.value);
+      inp.classList.remove('ok','no');
+    });
+    inp.addEventListener('blur', () => {
+      store.set(wfKey, inp.value);
+    });
+    inp.addEventListener('change', () => {
+      store.set(wfKey, inp.value);
+    });
+    f.onsubmit = ev => {
+      ev.preventDefault();
+      store.set(wfKey, inp.value);
+      const ok = it[2].map(norm).includes(norm(inp.value));
+      inp.classList.remove('ok','no'); inp.classList.add(ok?'ok':'no');
+      a.hidden = false; a.style.color = ok ? 'var(--good)' : 'var(--bad)';
+      a.textContent = ok ? 'Correct.' : 'Answer: ' + it[2].join(' / ');
+    };
   });
 }
 function matchGame(pairs, box){
@@ -3835,7 +3910,12 @@ function part3(t, el){
       <div class="tscroll"><table class="nwtable"><thead><tr><th>Word / Phrase</th><th>Part of Speech</th><th>Meaning</th><th></th></tr></thead><tbody>${allNw.map(w=>`<tr><td><b>${esc(w[0])}</b></td><td>${esc(w[1])}</td><td>${esc(w[2])}</td><td><button class="icon-btn" data-say="${esc(w[0].replace(/\bsth\b/g,'something'))}" aria-label="Listen">${SPEAK}</button></td></tr>`).join('')}</tbody></table></div>`;
   }
   el.innerHTML = h;
-  el.querySelectorAll('textarea[data-key]').forEach(ta => ta.addEventListener('input', () => store.set(ta.dataset.key, ta.value)));
+  el.querySelectorAll('textarea[data-key]').forEach(ta => {
+    const saveTa = () => store.set(ta.dataset.key, ta.value);
+    ta.addEventListener('input', saveTa);
+    ta.addEventListener('blur', saveTa);
+    ta.addEventListener('change', saveTa);
+  });
   el.querySelectorAll('[data-ref]').forEach(b => b.onclick = () => {
     const r = el.querySelector('#ref-' + b.dataset.ref), nw = el.querySelector('#nw-' + b.dataset.ref);
     const show = r.hidden; r.hidden = !show; if (nw) nw.hidden = !show;
@@ -3913,7 +3993,12 @@ function part4(t, el){
     el.querySelectorAll(`[data-trgrp="${b.dataset.trt}"]`).forEach(w => { w.hidden = hide; if (!hide) w.querySelectorAll('.gtr').forEach(grow); });
     b.textContent = hide ? 'Show Translation Field' : 'Hide Translation Field';
   });
-  el.querySelectorAll('.gin').forEach(inp => inp.addEventListener('input', () => { store.set(inp.dataset.key, inp.value); inp.classList.remove('ok','diff'); }));
+  el.querySelectorAll('.gin').forEach(inp => {
+    const saveGin = () => store.set(inp.dataset.key, inp.value);
+    inp.addEventListener('input', () => { saveGin(); inp.classList.remove('ok','diff'); });
+    inp.addEventListener('blur', saveGin);
+    inp.addEventListener('change', saveGin);
+  });
   el.querySelectorAll('[data-vi]').forEach(b => b.onclick = () => {
     const vs = el.querySelectorAll(`[data-vigrp="${b.dataset.vi}"]`); const show = vs[0] && vs[0].hidden;
     vs.forEach(v => v.hidden = !show); b.textContent = show ? 'Hide Translation' : 'Show Translation';
@@ -4426,12 +4511,12 @@ function renderT0Quiz(container, rawPool) {
 }
 
 function renderReview(box) {
-  const allHardWords = store.getReviewList();
   let activeTab = 'list';
   let filterTopic = 'all';
   let searchQuery = '';
 
   function draw() {
+    const allHardWords = store.getReviewList();
     const filtered = allHardWords.filter(item => {
       if (filterTopic !== 'all' && String(item.topicId) !== filterTopic) return false;
       if (searchQuery) {

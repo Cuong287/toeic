@@ -15,13 +15,25 @@ export function initPracticeView(context) {
   appSpeak = context.speak;
 }
 
+export function resetPracticeExState() {
+  Object.keys(practiceExState).forEach(k => delete practiceExState[k]);
+}
+
 export function getPracticeExState(exId) {
   const key = String(exId);
+  const saved = appStore ? appStore.get('practice_ex:' + key, null) : null;
+  const savedObj = (saved && typeof saved === 'object') ? saved : null;
+
   if (!practiceExState[key]) {
-    const saved = appStore ? appStore.get('practice_ex:' + key, null) : null;
-    practiceExState[key] = (saved && typeof saved === 'object') ? saved : { answers: {}, checked: {}, updatedAt: Date.now() };
+    practiceExState[key] = savedObj || { answers: {}, checked: {}, eval: {}, updatedAt: Date.now() };
     if (!practiceExState[key].answers) practiceExState[key].answers = {};
     if (!practiceExState[key].checked) practiceExState[key].checked = {};
+    if (!practiceExState[key].eval) practiceExState[key].eval = {};
+  } else if (savedObj && savedObj.updatedAt && savedObj.updatedAt > (practiceExState[key].updatedAt || 0)) {
+    practiceExState[key] = savedObj;
+    if (!practiceExState[key].answers) practiceExState[key].answers = {};
+    if (!practiceExState[key].checked) practiceExState[key].checked = {};
+    if (!practiceExState[key].eval) practiceExState[key].eval = {};
   }
   return practiceExState[key];
 }
@@ -428,9 +440,9 @@ function renderUnitsSection(container) {
           <div class="hint" style="font-size:13px">Translate each sentence into English using the target vocabulary</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:13px;font-weight:600">${answeredCount} / ${currentUnit.items.length} questions</span>
+          <span id="unit-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${currentUnit.items.length} questions</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
-            <div style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
+            <div id="unit-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
           </div>
           <button class="btn ghost btn-clear-unit" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Unit</button>
         </div>
@@ -515,6 +527,26 @@ function renderUnitsSection(container) {
       renderUnitsSection(container);
     };
   });
+
+
+function updateUnitStatsUI(container, currentUnit) {
+  if (!container || !currentUnit) return;
+  const uState = getPracticeExState(currentUnit.id);
+  const userAnswers = uState.answers || {};
+  const answeredCount = currentUnit.items.filter(it => userAnswers[it.id] && String(userAnswers[it.id]).trim().length > 0).length;
+  const progressPct = Math.round((answeredCount / currentUnit.items.length) * 100);
+  const isDone = answeredCount === currentUnit.items.length;
+
+  const countEl = container.querySelector('#unit-answered-count');
+  if (countEl) countEl.textContent = `${answeredCount} / ${currentUnit.items.length} questions`;
+  const progEl = container.querySelector('#unit-progress-bar');
+  if (progEl) progEl.style.width = `${progressPct}%`;
+
+  const btnPill = container.querySelector(`.btn-select-unit[data-idx="${curUnitIdx}"]`);
+  if (btnPill) {
+    btnPill.textContent = (isDone ? '✓ ' : '') + currentUnit.unitTag;
+  }
+}
 
   // Attach Input auto-save events
   container.querySelectorAll('.practice-input').forEach(input => {
@@ -871,9 +903,9 @@ function renderTensesSection(container) {
           <div class="hint" style="font-size:13px">Reflex drills across key tenses: Present, Past, Future, and Perfect aspects</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:13px;font-weight:600">${answeredCount} / ${PRACTICE_TENSES.length} questions</span>
+          <span id="tenses-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${PRACTICE_TENSES.length} questions</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
-            <div style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
+            <div id="tenses-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
           </div>
           <button class="btn ghost btn-clear-tenses" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Unit</button>
         </div>

@@ -8,6 +8,10 @@ let curTopicId = 'tenses';
 let curFilter = 'all'; // 'all' | 'unanswered' | 'answered'
 const grammarState = {};
 
+export function resetGrammarTopicState() {
+  Object.keys(grammarState).forEach(k => delete grammarState[k]);
+}
+
 export function initGrammarView(context) {
   appStore = context.store;
   appEsc = context.esc;
@@ -16,9 +20,15 @@ export function initGrammarView(context) {
 
 export function getGrammarTopicState(topicId) {
   const key = String(topicId);
+  const saved = appStore ? appStore.get('grammar_ex:' + key, null) : null;
+  const savedObj = (saved && typeof saved === 'object') ? saved : null;
+
   if (!grammarState[key]) {
-    const saved = appStore ? appStore.get('grammar_ex:' + key, null) : null;
-    grammarState[key] = (saved && typeof saved === 'object') ? saved : { answers: {}, notes: {}, updatedAt: Date.now() };
+    grammarState[key] = savedObj || { answers: {}, notes: {}, updatedAt: Date.now() };
+    if (!grammarState[key].notes) grammarState[key].notes = {};
+    if (!grammarState[key].answers) grammarState[key].answers = {};
+  } else if (savedObj && savedObj.updatedAt && savedObj.updatedAt > (grammarState[key].updatedAt || 0)) {
+    grammarState[key] = savedObj;
     if (!grammarState[key].notes) grammarState[key].notes = {};
     if (!grammarState[key].answers) grammarState[key].answers = {};
   }
@@ -114,16 +124,16 @@ export function renderGrammar(box) {
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <!-- Filter buttons -->
           <div style="display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden">
-            <button class="btn ${curFilter === 'all' ? 'primary' : 'ghost'} btn-filter" data-f="all" style="font-size:12px;padding:4px 10px;border-radius:0">All (${totalQuestions})</button>
-            <button class="btn ${curFilter === 'unanswered' ? 'primary' : 'ghost'} btn-filter" data-f="unanswered" style="font-size:12px;padding:4px 10px;border-radius:0">Unanswered (${totalQuestions - answeredCount})</button>
-            <button class="btn ${curFilter === 'answered' ? 'primary' : 'ghost'} btn-filter" data-f="answered" style="font-size:12px;padding:4px 10px;border-radius:0">Answered (${answeredCount})</button>
+            <button class="btn ${curFilter === 'all' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-all" data-f="all" style="font-size:12px;padding:4px 10px;border-radius:0">All (${totalQuestions})</button>
+            <button class="btn ${curFilter === 'unanswered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-unanswered" data-f="unanswered" style="font-size:12px;padding:4px 10px;border-radius:0">Unanswered (${totalQuestions - answeredCount})</button>
+            <button class="btn ${curFilter === 'answered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-answered" data-f="answered" style="font-size:12px;padding:4px 10px;border-radius:0">Answered (${answeredCount})</button>
           </div>
 
           <!-- Progress stats -->
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:13px;font-weight:700;color:var(--ink)">${answeredCount}/${totalQuestions} completed</span>
+            <span id="grammar-answered-count" style="font-size:13px;font-weight:700;color:var(--ink)">${answeredCount}/${totalQuestions} completed</span>
             <div style="width:80px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden">
-              <div style="width:${progressPct}%;height:100%;background:var(--accent);transition:width 0.2s"></div>
+              <div id="grammar-progress-bar" style="width:${progressPct}%;height:100%;background:var(--accent);transition:width 0.2s"></div>
             </div>
             ${gradedCount > 0 ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ ${correctCount}/${gradedCount} correct</span>` : ''}
           </div>
@@ -167,10 +177,58 @@ export function renderGrammar(box) {
 
   // Render question cards
   const qListContainer = box.querySelector('#grammar-questions-list');
-  renderQuestionsList(qListContainer, currentTopic);
+  renderQuestionsList(qListContainer, currentTopic, box);
 }
 
-function renderQuestionsList(container, topic) {
+
+function updateGrammarStatsUI(box, topic) {
+  if (!box || !topic) return;
+  const tState = getGrammarTopicState(topic.id);
+  const answers = tState.answers || {};
+  const totalQuestions = topic.questions.length;
+  const answeredCount = Object.keys(answers).length;
+  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+  const isFinished = answeredCount >= totalQuestions && totalQuestions > 0;
+
+  let correctCount = 0;
+  let gradedCount = 0;
+  topic.questions.forEach(q => {
+    if (q.answer && answers[q.id]) {
+      gradedCount++;
+      if (answers[q.id] === q.answer) correctCount++;
+    }
+  });
+
+  const countEl = box.querySelector('#grammar-answered-count');
+  if (countEl) countEl.textContent = `${answeredCount}/${totalQuestions} completed`;
+
+  const progEl = box.querySelector('#grammar-progress-bar');
+  if (progEl) progEl.style.width = `${progressPct}%`;
+
+  const corrEl = box.querySelector('#grammar-correct-badge');
+  if (corrEl) {
+    if (gradedCount > 0) {
+      corrEl.textContent = `✓ ${correctCount}/${gradedCount} correct`;
+      corrEl.style.display = 'inline';
+    } else {
+      corrEl.style.display = 'none';
+    }
+  }
+
+  const fAll = box.querySelector('#grammar-filter-all');
+  if (fAll) fAll.textContent = `All (${totalQuestions})`;
+  const fUnans = box.querySelector('#grammar-filter-unanswered');
+  if (fUnans) fUnans.textContent = `Unanswered (${totalQuestions - answeredCount})`;
+  const fAns = box.querySelector('#grammar-filter-answered');
+  if (fAns) fAns.textContent = `Answered (${answeredCount})`;
+
+  const topicBadge = box.querySelector(`.btn-select-topic[data-tid="${topic.id}"] .badge`);
+  if (topicBadge) {
+    topicBadge.textContent = `${isFinished ? '✓ ' : ''}${answeredCount}/${totalQuestions}`;
+  }
+}
+
+function renderQuestionsList(container, topic, box) {
   const esc = appEsc || (s => String(s ?? ''));
   const tState = getGrammarTopicState(topic.id);
   const answers = tState.answers || {};
@@ -282,23 +340,30 @@ function renderQuestionsList(container, topic) {
       const qId = btn.dataset.qid;
       const opt = btn.dataset.opt;
       saveGrammarTopicAnswer(topic.id, qId, opt);
+      updateGrammarStatsUI(box, topic);
       // Re-render questions list to update active card states
-      renderQuestionsList(container, topic);
+      renderQuestionsList(container, topic, box);
     };
   });
 
   // Attach Note typing auto-save
   container.querySelectorAll('.grammar-user-note').forEach(input => {
     let noteTimer = null;
+    const saveNote = () => {
+      const qId = input.dataset.qid;
+      if (!tState.notes) tState.notes = {};
+      tState.notes[qId] = input.value;
+      saveGrammarTopicAnswer(topic.id);
+    };
     input.oninput = () => {
       const qId = input.dataset.qid;
       if (!tState.notes) tState.notes = {};
       tState.notes[qId] = input.value;
       clearTimeout(noteTimer);
-      noteTimer = setTimeout(() => {
-        saveGrammarTopicAnswer(topic.id);
-      }, 400);
+      noteTimer = setTimeout(saveNote, 300);
     };
+    input.onblur = saveNote;
+    input.onchange = saveNote;
   });
 
   // Attach Speak events

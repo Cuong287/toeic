@@ -1,8 +1,8 @@
 {
-  "name": "TOEIC Prep Hub – Luyện thi TOEIC",
+  "name": "TOEIC Prep Hub — Complete TOEIC Learning Platform",
   "short_name": "TOEIC Prep Hub",
-  "description": "Học từ vựng TOEIC theo 45 chủ đề, luyện phát âm, nghe điền từ, dịch câu và ngữ pháp.",
-  "lang": "vi",
+  "description": "Master TOEIC across 45 topics with vocabulary, word families, sentence translations, listening drills, pronunciation, and grammar.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

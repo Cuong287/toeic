@@ -1,5 +1,5 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v37';
+const V = 'so-tu-toeic-v38';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const CORE = [
   './pronunciation-data.js',
   './practice-data.js',
   './grammar-data.js',
+  './vocab-clues.js',
   './practice-view.js',
   './grammar-view.js',
   './manifest.webmanifest',

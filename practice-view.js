@@ -688,6 +688,28 @@ function updateUnitStatsUI(container, currentUnit) {
 // -------------------------------------------------------------
 // 2. RENDER 15 ĐOẠN VĂN THỰC TẾ
 // -------------------------------------------------------------
+function cleanPassageText(s) {
+  if (!s) return '';
+  const lines = String(s).split('\n').map(l => l.trim());
+  const out = [];
+  for (const line of lines) {
+    if (!line) continue;
+    if (out.length === 0) {
+      out.push(line);
+      continue;
+    }
+    const prev = out[out.length - 1];
+    const isPrevEnd = /[.?!:…][”"'\)]*$/.test(prev);
+    const isCurDialogue = /^\s*-\s*/.test(line);
+    if (isPrevEnd || isCurDialogue) {
+      out.push(line);
+    } else {
+      out[out.length - 1] = prev + ' ' + line;
+    }
+  }
+  return out.join('\n').replace(/[ \t]+/g, ' ');
+}
+
 function renderParasSection(container) {
   const esc = appEsc || (s => String(s ?? ''));
   const currentPara = PRACTICE_PARAGRAPHS[curParaIdx] || PRACTICE_PARAGRAPHS[0];
@@ -769,7 +791,7 @@ function renderParasSection(container) {
               </div>
 
               <div style="font-size:14px;line-height:1.6;color:var(--ink);background:var(--sunk);padding:10px 12px;border-radius:6px;margin-bottom:10px;white-space:pre-wrap">
-                ${esc(seg.vi)}
+                ${esc(cleanPassageText(seg.vi))}
               </div>
               <textarea class="para-input" data-seg="${seg.id}" rows="3" placeholder="Type English translation for this section..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;resize:vertical;font-family:inherit;transition:border-color 0.15s,background 0.15s">${esc(val)}</textarea>
 
@@ -944,6 +966,7 @@ function renderTensesSection(container) {
       <div style="display:flex;flex-direction:column;gap:14px">
         ${PRACTICE_TENSES.map(it => {
           const val = userAnswers[it.id] || '';
+          const viClean = String(it.vi || '').replace(/^[\u200B\s]+/, '');
           const isChecked = Boolean(checkedMap[it.id]);
           const prevEval = tState.eval && tState.eval[it.id];
           const recSlotId = `slot-prac-t-${it.id}`;
@@ -968,7 +991,7 @@ function renderTensesSection(container) {
               <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
                 <div style="font-weight:700;font-size:14px;color:var(--ink);display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
                   <span style="color:#059669">${it.id}.</span>
-                  <span>${esc(it.vi)}</span>
+                  <span>${esc(viClean)}</span>
                   <span id="badge-tense-${it.id}" class="item-status-badge">
                     ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
                   </span>
@@ -981,7 +1004,7 @@ function renderTensesSection(container) {
                     <span>Record</span>
                   </button>
 
-                  <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(it.vi)}">
+                  <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(viClean)}">
                     ${isChecked ? 'Hide Answer' : 'Check Answer'}
                   </button>
                 </div>

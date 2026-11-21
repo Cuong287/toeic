@@ -4683,6 +4683,50 @@ function renderT0Flashcards(container, rawPool) {
   let curIdx = 0;
   let isFlipped = false;
 
+  if (window._fcKeyHandler) {
+    window.removeEventListener('keydown', window._fcKeyHandler);
+    window._fcKeyHandler = null;
+  }
+
+  const onKeyDown = (e) => {
+    if (!container.isConnected || !document.querySelector('.fc-card')) {
+      window.removeEventListener('keydown', onKeyDown);
+      window._fcKeyHandler = null;
+      return;
+    }
+    const target = e.target;
+    const tag = target ? target.tagName : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (target && target.isContentEditable)) {
+      return;
+    }
+
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      const cardEl = container.querySelector('#fc-main-card');
+      if (cardEl) {
+        isFlipped = !isFlipped;
+        cardEl.classList.toggle('flipped', isFlipped);
+      }
+    } else if (e.key === 'ArrowLeft') {
+      if (curIdx > 0) {
+        e.preventDefault();
+        curIdx--;
+        isFlipped = false;
+        drawCard();
+      }
+    } else if (e.key === 'ArrowRight') {
+      if (curIdx < pool.length - 1) {
+        e.preventDefault();
+        curIdx++;
+        isFlipped = false;
+        drawCard();
+      }
+    }
+  };
+
+  window._fcKeyHandler = onKeyDown;
+  window.addEventListener('keydown', onKeyDown);
+
   function drawCard() {
     const v = pool[curIdx];
     const topObj = TOPICS.find(t => t.id === v.topicId) || TOPICS[0];

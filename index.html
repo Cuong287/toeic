@@ -882,6 +882,77 @@ button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .app{display:grid;grid-template-columns:280px minmax(0,1fr);min-height:100vh}
+/* Desktop sidebar collapse & toggle */
+.side-collapse-btn{
+  width:30px;
+  height:30px;
+  min-width:30px;
+  border-radius:8px;
+  border:1px solid var(--line);
+  background:var(--sunk);
+  color:var(--muted);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .15s ease;
+  padding:0;
+  flex-shrink:0;
+}
+.side-collapse-btn:hover{
+  background:var(--surface);
+  color:var(--accent);
+  border-color:var(--accent);
+  transform:scale(1.05);
+}
+.side-collapse-btn svg{width:16px;height:16px}
+.desktop-expand-btn{display:none}
+
+@media (min-width:861px){
+  .app.side-collapsed{grid-template-columns:minmax(0,1fr)!important}
+  .app.side-collapsed .side{display:none!important}
+  .app.side-collapsed .main{padding-top:52px}
+  .app.side-collapsed .desktop-expand-btn{
+    display:inline-flex!important;
+    position:fixed;
+    top:12px;
+    left:16px;
+    z-index:100;
+    align-items:center;
+    gap:7px;
+    padding:7px 13px;
+    background:var(--surface);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,0.12);
+    transition:all .2s ease;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  .app.side-collapsed .desktop-expand-btn:hover{
+    background:var(--sunk);
+    border-color:var(--accent);
+    color:var(--accent);
+    transform:translateY(-1px);
+    box-shadow:0 6px 18px rgba(37,99,235,0.18);
+  }
+  .app.side-collapsed .desktop-expand-btn svg{color:var(--accent);flex-shrink:0}
+  .app.side-collapsed .desktop-expand-btn .kbd-hint{
+    font-size:11px;
+    padding:1px 5px;
+    border-radius:4px;
+    background:var(--sunk);
+    border:1px solid var(--line);
+    color:var(--muted);
+    font-family:inherit;
+    font-weight:500;
+  }
+}
+
 /* Mobile drawer & user bar elements */
 .side-mobile-header{display:none}
 .side-backdrop{display:none}
@@ -913,12 +984,17 @@ button{cursor:pointer}
 .thead .en{font-size:16px;color:var(--muted);font-weight:500}
 .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
 .meta .tag{color:var(--good);font-weight:600}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-top:6px}
-.tabs::-webkit-scrollbar{display:none}
-.tab{border:0;background:none;padding:10px 14px 11px;border-bottom:2.5px solid transparent;margin-bottom:-1px;color:var(--muted);font-weight:600;white-space:nowrap;display:flex;gap:8px;align-items:center}
-.tab .k{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--sunk);font-size:11.5px;font-variant-numeric:tabular-nums}
-.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:6px 0 10px}
+.tab{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:8px;color:var(--muted);font-weight:600;font-size:13.5px;white-space:nowrap;display:inline-flex;gap:8px;align-items:center;transition:background .15s,color .15s,border-color .15s,box-shadow .15s}
+.tab:hover{background:var(--sunk);color:var(--ink);border-color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);border-color:rgba(37,99,235,0.3);box-shadow:0 1px 3px rgba(37,99,235,0.1)}
+.tab .k{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--sunk);font-size:11.5px;font-variant-numeric:tabular-nums;flex-shrink:0}
 .tab[aria-selected="true"] .k{background:var(--accent);color:var(--accent-ink)}
+
+@media (max-width:1100px) and (min-width:861px){
+  .tabs{gap:4px;padding:5px 0 8px}
+  .tab{padding:6px 9px;font-size:13px;gap:6px}
+}
 .panel{display:flex;flex-direction:column;gap:18px}
 .seg-sm button{padding:4px 10px!important;font-size:12.5px!important}
 .seg{display:inline-flex;background:var(--sunk);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
@@ -1199,9 +1275,11 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   .thead h1{font-size:24px}
   .thead .en{display:block;font-size:13.5px;margin-top:2px}
   .meta{font-size:12px;gap:4px 10px}
-  .tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:20;margin:0;gap:0;justify-content:space-around;border-bottom:0;border-top:1px solid var(--line);background:var(--surface);padding:0 max(6px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px,env(safe-area-inset-left,0px));overflow:visible;box-shadow:0 -6px 18px -12px rgb(0 0 0 / .3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-  .tab{flex:1 1 0;flex-direction:column;gap:3px;padding:8px 2px 9px;margin:0;border-bottom:0;border-top:2.5px solid transparent;font-size:12px;min-height:58px;justify-content:center}
-  .tab[aria-selected="true"]{border-top-color:var(--accent)}
+  .side-collapse-btn{display:none!important}
+  .desktop-expand-btn{display:none!important}
+  .tabs{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:20;margin:0;gap:0;justify-content:space-around;border-bottom:0;border-top:1px solid var(--line);background:var(--surface);padding:0 max(6px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(6px,env(safe-area-inset-left,0px));overflow:visible;box-shadow:0 -6px 18px -12px rgb(0 0 0 / .3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);flex-wrap:nowrap!important}
+  .tab{flex:1 1 0;flex-direction:column;gap:3px;padding:8px 2px 9px;margin:0;border:0!important;background:none!important;border-radius:0!important;border-top:2.5px solid transparent!important;border-bottom:0!important;font-size:12px;min-height:58px;justify-content:center;box-shadow:none!important}
+  .tab[aria-selected="true"]{border-top-color:var(--accent)!important;color:var(--accent)!important;background:none!important;box-shadow:none!important}
   .tab .k{width:24px;height:24px;font-size:12.5px}
   .tab .full{display:none}
   .tab .short,.seg .short{display:inline}
@@ -1737,8 +1815,11 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .rev-filter{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 
 /* Unified Brand, Soft Badges & Home Dashboard */
-.brand-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.brand-link{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
+.brand-row{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.brand-link{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--ink);min-width:0}
+.brand-link b{font-size:16px;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.brand-actions{display:inline-flex;align-items:center;gap:4px;flex-shrink:0}
+.brand-actions .theme-btn{padding:4px 7px;font-size:11.5px;height:30px;border-radius:8px}
 .brand-logo{width:28px;height:28px;border-radius:7px;background:var(--accent);color:#FFF;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(37,99,235,.28)}
 .brand-logo svg{width:17px;height:17px}
 .snav-item .badge.badge-soft{background:var(--sunk);color:var(--muted);border:1px solid var(--line);font-weight:600;font-size:10.5px;padding:1px 6px}
@@ -1815,16 +1896,21 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
     </div>
     <div class="brand">
       <div class="brand-row">
-        <a href="#home" class="brand-link">
+        <a href="#home" class="brand-link" title="Trang chủ">
           <span class="brand-logo" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
           </span>
           <b>TOEIC Prep Hub</b>
         </a>
-        <button class="theme-btn" id="theme-btn-side" title="Switch Theme">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-          <span>Light Mode</span>
-        </button>
+        <div class="brand-actions">
+          <button class="theme-btn" id="theme-btn-side" title="Switch Theme">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <span>Light Mode</span>
+          </button>
+          <button class="side-collapse-btn" id="btn-collapse-side" title="Ẩn thanh bên (Ctrl+B)" aria-label="Ẩn thanh bên">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="9" y1="3" y2="21"/><path d="m14 9-3 3 3 3"/></svg>
+          </button>
+        </div>
       </div>
       <span>45 Core Vocabulary Topics & Skills</span>
     </div>
@@ -1890,6 +1976,15 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   </aside>
   <div id="side-backdrop" class="side-backdrop" hidden></div>
   <main class="main">
+    <button class="desktop-expand-btn" id="btn-expand-side" title="Hiện thanh bên (Ctrl+B)" aria-label="Hiện thanh bên">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+        <line x1="9" x2="9" y1="3" y2="21"/>
+        <path d="m11 9 3 3-3 3"/>
+      </svg>
+      <span>Mở thanh bên</span>
+      <kbd class="kbd-hint">Ctrl+B</kbd>
+    </button>
     <header class="mobile-top-bar" id="mobile-top-bar">
       <div class="mobile-top-bar-inner">
         <button class="icon-btn nav-btn" id="btn-mobile-menu" aria-label="Open topics menu" title="Menu & 45 Topics">
@@ -3430,6 +3525,59 @@ const mobMenuBtn = $('#btn-mobile-menu');
 const sideBackdrop = $('#side-backdrop');
 const sideEl = $('#side');
 const closeSideBtn = $('#btn-close-side');
+const collapseSideBtn = $('#btn-collapse-side');
+const expandSideBtn = $('#btn-expand-side');
+const appEl = document.querySelector('.app');
+
+function setDesktopSidebarCollapsed(collapsed) {
+  if (window.innerWidth <= 860) return;
+  if (!appEl) return;
+  if (collapsed) {
+    appEl.classList.add('side-collapsed');
+    try { localStorage.setItem('toeic45_side_collapsed', '1'); } catch(e){}
+    if (expandSideBtn) expandSideBtn.focus();
+  } else {
+    appEl.classList.remove('side-collapsed');
+    try { localStorage.setItem('toeic45_side_collapsed', '0'); } catch(e){}
+    if (collapseSideBtn) collapseSideBtn.focus();
+  }
+}
+
+// Restore saved preference for desktop
+try {
+  if (localStorage.getItem('toeic45_side_collapsed') === '1' && window.innerWidth > 860) {
+    if (appEl) appEl.classList.add('side-collapsed');
+  }
+} catch(e){}
+
+if (collapseSideBtn) {
+  collapseSideBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    setDesktopSidebarCollapsed(true);
+  });
+}
+
+if (expandSideBtn) {
+  expandSideBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    setDesktopSidebarCollapsed(false);
+  });
+}
+
+// Keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) {
+      return;
+    }
+    if (window.innerWidth > 860 && appEl) {
+      e.preventDefault();
+      const isCollapsed = appEl.classList.contains('side-collapsed');
+      setDesktopSidebarCollapsed(!isCollapsed);
+    }
+  }
+});
 
 function openSideDrawer() {
   if (sideEl) sideEl.classList.add('mobile-open');

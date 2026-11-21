@@ -1916,6 +1916,26 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-seg button[disabled]{opacity:0.4;cursor:not-allowed}
 .sl-start-actions{margin-top:8px}
 .sl-btn-start{min-width:140px}
+.sl-stepper{display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.85rem;color:var(--muted);font-weight:600;margin-bottom:8px;flex-wrap:wrap}
+.sl-step{padding:2px 8px;border-radius:12px;transition:background .15s,color .15s}
+.sl-step.active{background:var(--accent);color:#fff}
+.sl-step-sep{opacity:0.5}
+.sl-chips-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0}
+.sl-chip{display:inline-flex;align-items:center;padding:6px 14px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;font-size:1.6rem;font-weight:700;color:var(--ink);letter-spacing:0.02em}
+.sl-chip-space{display:inline-block;width:12px}
+.sl-trouble{background:rgba(239,68,68,0.18);color:var(--ink);border-bottom:2px solid var(--accent);border-radius:3px;padding:0 2px}
+.sl-trouble-notes{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;margin-top:4px}
+.sl-trouble-label{font-size:0.8rem;color:var(--muted);font-weight:600}
+.sl-trouble-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:var(--sunk);border:1px solid var(--line);font-size:0.8rem;color:var(--ink)}
+.sl-word-meta{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.sl-spell-display{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;padding:12px 0;margin:8px 0}
+.sl-letter{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:42px;padding:0 4px;font-size:1.6rem;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);transition:all .15s}
+.sl-letter.space{border:none;background:transparent;min-width:14px}
+.sl-letter.sl-letter-active{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.1)}
+.sl-audio-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:12px 0}
+.sl-btn-audio{display:inline-flex;align-items:center;gap:6px;padding:8px 16px}
+.sl-btn-audio svg{width:18px;height:18px}
+.sl-icon{width:18px;height:18px}
 </style>
 
 <div class="app">
@@ -4492,6 +4512,218 @@ function getSpellLog(topicId) {
   return { words: {} };
 }
 
+const SPELL_PREFIXES = ['inter', 'under', 'over', 'mis', 'dis', 'pre', 'un', 're'];
+const SPELL_SUFFIXES = ['ance', 'ence', 'able', 'ible', 'tion', 'sion', 'ment', 'ness', 'less', 'ity', 'ive', 'ous', 'ize', 'ise', 'ful', 'ant', 'ent', 'ly'];
+
+function trouble(target) {
+  const list = [];
+  const doubleRe = /([a-z])\1/gi;
+  let m;
+  while ((m = doubleRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + 2, note: 'double letter' });
+    doubleRe.lastIndex = m.index + 1;
+  }
+
+  const ieRe = /ie|ei/gi;
+  while ((m = ieRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + 2, note: 'ie / ei' });
+  }
+
+  const tionRe = /(?:tion|sion)\b/gi;
+  while ((m = tionRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + m[0].length, note: '-tion / -sion' });
+  }
+
+  const anceRe = /(?:ance|ence|ant|ent)\b/gi;
+  while ((m = anceRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + m[0].length, note: '-ance / -ence' });
+  }
+
+  const ableRe = /(?:able|ible)\b/gi;
+  while ((m = ableRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + m[0].length, note: '-able / -ible' });
+  }
+
+  const silentStartRe = /\b(?:kn|wr)/gi;
+  while ((m = silentStartRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + 2, note: 'silent letter' });
+  }
+  const mbRe = /mb\b/gi;
+  while ((m = mbRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + 2, note: 'silent letter' });
+  }
+  const ghRe = /gh/gi;
+  while ((m = ghRe.exec(target)) !== null) {
+    list.push({ start: m.index, end: m.index + 2, note: 'silent letter' });
+  }
+
+  list.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  const merged = [];
+  for (const item of list) {
+    if (!merged.length) {
+      merged.push(item);
+    } else {
+      const prev = merged[merged.length - 1];
+      if (item.start >= prev.end) {
+        merged.push(item);
+      } else if (item.start === prev.start && item.end === prev.end) {
+        if (!prev.note.includes(item.note)) prev.note += ', ' + item.note;
+      }
+    }
+  }
+  return merged;
+}
+window.trouble = trouble;
+
+function getWordChipsWithOffsets(target) {
+  const result = [];
+  let pos = 0;
+  const words = target.split(/(\s+)/);
+  for (const token of words) {
+    if (/^\s+$/.test(token)) {
+      result.push({ text: token, isSpace: true, start: pos, end: pos + token.length });
+      pos += token.length;
+      continue;
+    }
+    const low = token.toLowerCase();
+    let pMatch = null;
+    for (const p of SPELL_PREFIXES) {
+      if (low.startsWith(p) && low.length >= p.length + 2) {
+        pMatch = p;
+        break;
+      }
+    }
+    let sMatch = null;
+    for (const s of SPELL_SUFFIXES) {
+      if (low.endsWith(s) && low.length >= s.length + 2) {
+        sMatch = s;
+        break;
+      }
+    }
+    let chips = [];
+    if (pMatch && sMatch && low.length >= pMatch.length + sMatch.length + 1) {
+      chips = [
+        token.slice(0, pMatch.length),
+        token.slice(pMatch.length, token.length - sMatch.length),
+        token.slice(token.length - sMatch.length)
+      ];
+    } else if (pMatch) {
+      chips = [token.slice(0, pMatch.length), token.slice(pMatch.length)];
+    } else if (sMatch) {
+      chips = [token.slice(0, token.length - sMatch.length), token.slice(token.length - sMatch.length)];
+    } else {
+      chips = [token];
+    }
+
+    let wPos = pos;
+    for (const ch of chips) {
+      result.push({ text: ch, isSpace: false, start: wPos, end: wPos + ch.length });
+      wPos += ch.length;
+    }
+    pos += token.length;
+  }
+  return result;
+}
+
+function renderChipsHtml(target, troubles) {
+  const chips = getWordChipsWithOffsets(target);
+  return chips.map(chip => {
+    if (chip.isSpace) return '<span class="sl-chip-space"> </span>';
+    let out = '';
+    let i = chip.start;
+    while (i < chip.end) {
+      const tr = troubles.find(t => t.start <= i && i < t.end);
+      if (tr) {
+        const segEnd = Math.min(chip.end, tr.end);
+        out += `<mark class="sl-trouble" title="${esc(tr.note)}">${esc(chip.text.slice(i - chip.start, segEnd - chip.start))}</mark>`;
+        i = segEnd;
+      } else {
+        let nextTrStart = chip.end;
+        for (const t of troubles) {
+          if (t.start > i && t.start < nextTrStart) nextTrStart = t.start;
+        }
+        out += esc(chip.text.slice(i - chip.start, nextTrStart - chip.start));
+        i = nextTrStart;
+      }
+    }
+    return `<span class="sl-chip">${out}</span>`;
+  }).join('');
+}
+
+function speakSlow(text, onDone) {
+  try {
+    const s = window.speechSynthesis;
+    if (!s) { if (onDone) onDone(); return; }
+    s.cancel();
+    if (s.paused) s.resume();
+    const clean = cleanWord(text);
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = 'en-US';
+    u.rate = 0.6;
+    u.onend = () => { if (onDone) onDone(); };
+    u.onerror = () => { if (onDone) onDone(); };
+    s.speak(u);
+  } catch (err) {
+    if (onDone) onDone();
+  }
+}
+
+let curSpellCancel = null;
+function spellLetters(target, onHighlight, onDone) {
+  try {
+    const s = window.speechSynthesis;
+    if (!s) { if (onDone) onDone(); return; }
+    if (curSpellCancel) curSpellCancel();
+    s.cancel();
+    if (s.paused) s.resume();
+
+    let cancelled = false;
+    curSpellCancel = () => {
+      cancelled = true;
+      s.cancel();
+      if (onHighlight) onHighlight(-1);
+    };
+
+    const chars = target.split('');
+    let idx = 0;
+
+    function playNext() {
+      if (cancelled || idx >= chars.length) {
+        if (!cancelled && onHighlight) onHighlight(-1);
+        curSpellCancel = null;
+        if (onDone) onDone();
+        return;
+      }
+      const curIdx = idx;
+      const ch = chars[curIdx];
+      const spoken = ch === ' ' ? 'space' : ch.toUpperCase();
+      if (onHighlight) onHighlight(curIdx);
+
+      const u = new SpeechSynthesisUtterance(spoken);
+      u.lang = 'en-US';
+      u.rate = 0.85;
+      u.onend = () => {
+        if (!cancelled) {
+          idx++;
+          playNext();
+        }
+      };
+      u.onerror = () => {
+        if (!cancelled) {
+          idx++;
+          playNext();
+        }
+      };
+      s.speak(u);
+    }
+
+    playNext();
+  } catch (e) {
+    if (onDone) onDone();
+  }
+}
+
 function spellLab(t, box) {
   const pool = t.vocab.filter(v => v.vi);
   if (!pool.length) {
@@ -4508,6 +4740,141 @@ function spellLab(t, box) {
 
   let activeSource = poolNew.length ? 'new' : (poolWrong.length ? 'wrong' : 'random');
   let activeCount = 5;
+
+  let sessionWords = [];
+  let curWordIdx = 0;
+  let currentStep = 'look'; // 'look' | 'listen' | 'cover' | 'check' | 'log'
+  let score = 0;
+  let mistakes = [];
+
+  function renderStepper(step) {
+    return `<nav class="sl-stepper" aria-label="Spelling steps">
+      <span class="sl-step ${step==='look'?'active':''}" ${step==='look'?'aria-current="step"':''}>Look</span>
+      <span class="sl-step-sep">·</span>
+      <span class="sl-step ${step==='listen'?'active':''}" ${step==='listen'?'aria-current="step"':''}>Listen</span>
+      <span class="sl-step-sep">·</span>
+      <span class="sl-step ${step==='cover'?'active':''}" ${step==='cover'?'aria-current="step"':''}>Cover &amp; Write</span>
+      <span class="sl-step-sep">·</span>
+      <span class="sl-step ${step==='check'?'active':''}" ${step==='check'?'aria-current="step"':''}>Check</span>
+      <span class="sl-step-sep">·</span>
+      <span class="sl-step ${step==='log'?'active':''}" ${step==='log'?'aria-current="step"':''}>Log</span>
+    </nav>`;
+  }
+
+  function renderLookStep() {
+    const v = sessionWords[curWordIdx];
+    const target = v.target;
+    const troubles = trouble(target);
+    const e = enr(t.id), ev = e ? e.vocab : {};
+    const x = ev[v.w];
+
+    box.innerHTML = `<div class="card sl-card">
+      <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
+      ${renderStepper('look')}
+      <div class="row between">
+        <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
+        ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
+      </div>
+
+      <div class="sl-chips-row" aria-label="Word breakdown">
+        ${renderChipsHtml(target, troubles)}
+      </div>
+
+      ${troubles.length ? `
+        <div class="sl-trouble-notes" aria-label="Key spelling patterns">
+          <span class="sl-trouble-label">Patterns:</span>
+          ${troubles.map(tr => `<span class="sl-trouble-tag" title="${esc(tr.note)}"><b>${esc(target.slice(tr.start, tr.end))}</b>: ${esc(tr.note)}</span>`).join('')}
+        </div>
+      ` : ''}
+
+      <div class="sl-word-meta">
+        ${x ? `<span class="ipa">${esc(x[0])}</span>` : ''}
+        <span class="vi">${esc(formatVi(v.vi, v.pos))}</span>
+      </div>
+
+      ${x && x[1] ? `<div class="ex">${highlightOne(x[1], v.w)}<span class="vi">${esc(x[2])}</span></div>` : ''}
+
+      <div class="row between" style="margin-top:12px">
+        <button class="btn ghost" id="sl-btn-quick-listen" type="button" aria-label="Listen to pronunciation">${SPEAK} <span>Listen</span></button>
+        <button class="btn primary" id="sl-btn-to-listen" type="button">Next: Listen →</button>
+      </div>
+    </div>`;
+
+    box.querySelector('#sl-btn-quick-listen').onclick = () => speak(target);
+    box.querySelector('#sl-btn-to-listen').onclick = () => {
+      currentStep = 'listen';
+      renderListenStep();
+    };
+  }
+
+  function renderListenStep() {
+    const v = sessionWords[curWordIdx];
+    const target = v.target;
+    const hasTTS = typeof window !== 'undefined' && 'speechSynthesis' in window && !!window.speechSynthesis;
+
+    box.innerHTML = `<div class="card sl-card">
+      <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
+      ${renderStepper('listen')}
+      <div class="row between">
+        <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
+        ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
+      </div>
+
+      <p class="hint" style="text-align:center;margin:4px 0">Listen carefully to the pronunciation and letter spelling.</p>
+
+      <div class="sl-spell-display" id="sl-spell-display" aria-label="Letter spelling visualizer">
+        ${target.split('').map((c, i) => `<span class="sl-letter ${c === ' ' ? 'space' : ''}" data-idx="${i}">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('')}
+      </div>
+
+      <div class="sl-word-meta">
+        <span class="vi">${esc(formatVi(v.vi, v.pos))}</span>
+      </div>
+
+      <div class="sl-audio-btns">
+        <button class="btn ghost sl-btn-audio" id="sl-btn-speak-word" type="button" aria-label="Listen to whole word">${SPEAK} <span>Word</span></button>
+        ${hasTTS ? `
+          <button class="btn ghost sl-btn-audio" id="sl-btn-speak-slow" type="button" aria-label="Listen slowly at 0.6x speed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sl-icon" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span>Slow</span></button>
+          <button class="btn ghost sl-btn-audio" id="sl-btn-speak-spell" type="button" aria-label="Listen to word spelled letter by letter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sl-icon" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg> <span>Spell it</span></button>
+        ` : ''}
+      </div>
+
+      <div class="row" style="justify-content:center;margin-top:12px">
+        <button class="btn primary" id="sl-btn-cover" type="button">I've got it → Cover</button>
+      </div>
+    </div>`;
+
+    box.querySelector('#sl-btn-speak-word').onclick = () => {
+      if (curSpellCancel) curSpellCancel();
+      speak(target);
+    };
+
+    if (hasTTS) {
+      box.querySelector('#sl-btn-speak-slow').onclick = () => {
+        if (curSpellCancel) curSpellCancel();
+        speakSlow(target);
+      };
+
+      box.querySelector('#sl-btn-speak-spell').onclick = () => {
+        const letters = box.querySelectorAll('#sl-spell-display .sl-letter');
+        spellLetters(target, (activeIdx) => {
+          letters.forEach((el, idx) => {
+            if (idx === activeIdx) el.classList.add('sl-letter-active');
+            else el.classList.remove('sl-letter-active');
+          });
+        });
+      };
+    }
+
+    box.querySelector('#sl-btn-cover').onclick = () => {
+      if (curSpellCancel) curSpellCancel();
+      currentStep = 'cover';
+      renderCoverStep();
+    };
+  }
+
+  function renderCoverStep() {
+    box.innerHTML = `<div class="card sl-card"><div class="eyebrow">Cover &amp; Write</div><p>Cover &amp; Write step...</p></div>`;
+  }
 
   function renderStart() {
     const newCount = poolNew.length;
@@ -4560,14 +4927,14 @@ function spellLab(t, box) {
       startBtn.onclick = () => {
         let selectedPool = activeSource === 'new' ? poolNew : (activeSource === 'wrong' ? poolWrong : poolRandom);
         if (!selectedPool.length) selectedPool = poolRandom;
-        const sessionWords = shuffle(selectedPool).slice(0, Math.min(activeCount, selectedPool.length));
-        startSession(sessionWords);
+        sessionWords = shuffle(selectedPool).slice(0, Math.min(activeCount, selectedPool.length));
+        curWordIdx = 0;
+        score = 0;
+        mistakes = [];
+        currentStep = 'look';
+        renderLookStep();
       };
     }
-  }
-
-  function startSession(sessionWords) {
-    box.innerHTML = `<div class="card sl-card"><div class="eyebrow">Word 1/${sessionWords.length}</div><h2 class="sl-target">${esc(sessionWords[0].target)}</h2><p class="vi">${esc(sessionWords[0].vi)}</p></div>`;
   }
 
   renderStart();

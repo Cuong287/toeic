@@ -1544,6 +1544,16 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
         <span class="nm">Luyện phát âm & Tập nói</span>
         <span class="badge" style="background:#2563EB;color:#FFF">Cambridge</span>
       </a>
+      <a href="#practice" class="snav-item" id="snav-practice">
+        <span class="icon">📝</span>
+        <span class="nm">Luyện dịch & Phản xạ</span>
+        <span class="badge" style="background:#059669;color:#FFF">31 bài</span>
+      </a>
+      <a href="#grammar" class="snav-item" id="snav-grammar">
+        <span class="icon">📚</span>
+        <span class="nm">Ngữ pháp TOEIC</span>
+        <span class="badge" style="background:#7C3AED;color:#FFF">13 CĐ</span>
+      </a>
       <a href="#review" class="snav-item" id="snav-review">
         <span class="icon">⭐</span>
         <span class="nm">Từ khó cần ôn</span>
@@ -1598,6 +1608,10 @@ const DATA = {"topics":[{"id":1,"title":"ĐẶT HÀNG - ORDER","vocab":[{"w":"Ac
 // scratch/full_app_script.mjs
 import { firebaseConfig } from './firebase-config.js';
 import { IPA_DATA, MINIMAL_PAIRS, PRONUN_UNITS } from './pronunciation-data.js';
+import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js';
+import { GRAMMAR_TOPICS } from './grammar-data.js';
+import { initPracticeView, renderPractice, getPracticeExState } from './practice-view.js';
+import { initGrammarView, renderGrammar, getGrammarTopicState } from './grammar-view.js';
 
 const TOPICS = DATA.topics, ENR = DATA.enrich, AUD = DATA.audio || {};
 Object.values(ENR).forEach(e => { e.vocab = e.vocab || {}; e.usage = e.usage || []; e.forms = e.forms || []; e.tr = e.tr || {}; e.gap = e.gap || {}; });
@@ -1804,6 +1818,8 @@ function fallbackBrowserSpeech(clean, onDone) {
   }
 }
 window.speak = speak;
+initPracticeView({ store, esc, speak });
+initGrammarView({ store, esc, speak });
 
 function srcLabel(src){
   const m = String(src).match(/(\d+)\s*-\s*(\d+)\s*ETS\s*(\d{4})\.(\d+)/i);
@@ -1825,6 +1841,8 @@ function readHash(){
   const h = location.hash || '';
   if (h === '#topic-0' || h === '#t0' || h === '#t0-p1' || h === '#hub') { currentRoute = 'topic0'; return true; }
   if (h === '#pronun' || h === '#pronunciation' || h === '#phat-am' || h === '#speaking') { currentRoute = 'pronun'; return true; }
+  if (h === '#practice' || h.startsWith('#practice-')) { currentRoute = 'practice'; return true; }
+  if (h === '#grammar' || h.startsWith('#grammar-')) { currentRoute = 'grammar'; return true; }
   if (h === '#review') { currentRoute = 'review'; return true; }
   if (h === '#leaderboard') { currentRoute = 'leaderboard'; return true; }
   if (h === '#profile') { currentRoute = 'profile'; return true; }
@@ -2023,6 +2041,8 @@ async function flushDirtyKeys() {
     const answerUpdates = {};
     const progressUpdates = {};
     const pronunUpdates = {};
+    const practiceUpdates = {};
+    const grammarUpdates = {};
     let reviewUpdate = null;
 
     for (const k of keys) {
@@ -2037,6 +2057,12 @@ async function flushDirtyKeys() {
       } else if (k.startsWith('pronun_ex:')) {
         const uId = k.slice('pronun_ex:'.length);
         if (uId) pronunUpdates[uId] = val || {};
+      } else if (k.startsWith('practice_ex:')) {
+        const exId = k.slice('practice_ex:'.length);
+        if (exId) practiceUpdates[exId] = val || {};
+      } else if (k.startsWith('grammar_ex:')) {
+        const topId = k.slice('grammar_ex:'.length);
+        if (topId) grammarUpdates[topId] = val || {};
       } else if (k.startsWith('completedManual:')) {
         const tId = k.split(':')[1];
         if (tId) {
@@ -2082,6 +2108,18 @@ async function flushDirtyKeys() {
     for (const [uId, exMap] of Object.entries(pronunUpdates)) {
       const ref = firestoreModules.doc(fbDb, 'users', currentUid, 'answers', 'pronun_' + uId);
       batch.set(ref, { unitId: Number(uId), exercises: exMap, updatedAt: firestoreModules.serverTimestamp() }, { merge: true });
+      count++;
+    }
+
+    for (const [exId, pState] of Object.entries(practiceUpdates)) {
+      const ref = firestoreModules.doc(fbDb, 'users', currentUid, 'answers', 'practice_' + exId);
+      batch.set(ref, { exId, data: pState, updatedAt: firestoreModules.serverTimestamp() }, { merge: true });
+      count++;
+    }
+
+    for (const [topId, gState] of Object.entries(grammarUpdates)) {
+      const ref = firestoreModules.doc(fbDb, 'users', currentUid, 'answers', 'grammar_' + topId);
+      batch.set(ref, { topicId: topId, data: gState, updatedAt: firestoreModules.serverTimestamp() }, { merge: true });
       count++;
     }
 
@@ -2473,7 +2511,39 @@ async function downloadCloudData(uid) {
         return;
       }
 
-      // 2b. Bài tập TOEIC theo chủ đề
+      // 2b. Bài tập Luyện dịch Practice (practice_{exId})
+      if (d.id.startsWith('practice_')) {
+        const exId = d.id.slice('practice_'.length);
+        const storeKey = 'practice_ex:' + exId;
+        if (dirtyKeys.has(storeKey)) return;
+        const cloudData = docData.data || {};
+        const localData = store.get(storeKey, {});
+        const mergedAnswers = { ...(cloudData.answers || {}), ...(localData.answers || {}) };
+        const merged = {
+          answers: mergedAnswers,
+          updatedAt: Math.max(Number(localData.updatedAt)||0, Number(cloudData.updatedAt)||0) || Date.now()
+        };
+        localStorage.setItem(`toeic45:${uid}:${storeKey}`, JSON.stringify(merged));
+        return;
+      }
+
+      // 2c. Bài tập Ngữ pháp Grammar (grammar_{topicId})
+      if (d.id.startsWith('grammar_')) {
+        const topId = d.id.slice('grammar_'.length);
+        const storeKey = 'grammar_ex:' + topId;
+        if (dirtyKeys.has(storeKey)) return;
+        const cloudData = docData.data || {};
+        const localData = store.get(storeKey, {});
+        const mergedAnswers = { ...(cloudData.answers || {}), ...(localData.answers || {}) };
+        const merged = {
+          answers: mergedAnswers,
+          updatedAt: Math.max(Number(localData.updatedAt)||0, Number(cloudData.updatedAt)||0) || Date.now()
+        };
+        localStorage.setItem(`toeic45:${uid}:${storeKey}`, JSON.stringify(merged));
+        return;
+      }
+
+      // 2d. Bài tập TOEIC theo chủ đề
       const answers = docData.data || {};
       Object.entries(answers).forEach(([k, val]) => {
         if (dirtyKeys.has(k)) return; // Bảo vệ câu trả lời người dùng vừa gõ chưa kịp đẩy
@@ -2523,6 +2593,12 @@ async function downloadCloudData(uid) {
       } else if (currentRoute === 'pronun') {
         const p = $('#panel');
         if (p) renderPronunciation(p);
+      } else if (currentRoute === 'practice') {
+        const p = $('#panel');
+        if (p) renderPractice(p);
+      } else if (currentRoute === 'grammar') {
+        const p = $('#panel');
+        if (p) renderGrammar(p);
       }
     }
   } catch (e) {
@@ -2584,6 +2660,10 @@ async function executeMerge(mode, uid) {
       } else if (k.startsWith('pronun_ex:')) {
         const currentPronun = store.get(k, {});
         store.set(k, mergePronunUnitEx(val || {}, currentPronun || {}));
+      } else if (k.startsWith('practice_ex:') || k.startsWith('grammar_ex:')) {
+        const currentData = store.get(k, {});
+        const mergedAnswers = { ...((val && val.answers) || {}), ...((currentData && currentData.answers) || {}) };
+        store.set(k, { answers: mergedAnswers, updatedAt: Date.now() });
       } else if (k === 'review') {
         const currentRev = store.get('review', { items: [] });
         const guestItems = (val && val.items) || [];
@@ -3023,6 +3103,10 @@ function renderSide(){
   const rItem = $('#snav-review');
   const prItem = $('#snav-pronun');
   if (prItem) prItem.setAttribute('aria-current', String(currentRoute === 'pronun'));
+  const pracItem = $('#snav-practice');
+  if (pracItem) pracItem.setAttribute('aria-current', String(currentRoute === 'practice'));
+  const gramItem = $('#snav-grammar');
+  if (gramItem) gramItem.setAttribute('aria-current', String(currentRoute === 'grammar'));
   if (rItem) rItem.setAttribute('aria-current', String(currentRoute === 'review'));
   const lItem = $('#snav-lb');
   if (lItem) lItem.setAttribute('aria-current', String(currentRoute === 'leaderboard'));
@@ -6852,6 +6936,8 @@ async function openAdminUserInspector(targetUid, userName) {
     const progress = {};
     const answers = {};
     const pronunAnswers = {};
+    const practiceAnswers = {};
+    const grammarAnswers = {};
     let review = null;
     let teacherNote = null;
 
@@ -6868,6 +6954,12 @@ async function openAdminUserInspector(targetUid, userName) {
         if (d.id.startsWith('pronun_')) {
           const uId = Number(d.id.slice('pronun_'.length));
           pronunAnswers[uId] = d.data();
+        } else if (d.id.startsWith('practice_')) {
+          const exId = d.id.slice('practice_'.length);
+          practiceAnswers[exId] = d.data();
+        } else if (d.id.startsWith('grammar_')) {
+          const topId = d.id.slice('grammar_'.length);
+          grammarAnswers[topId] = d.data();
         } else {
           answers[Number(d.id)] = d.data();
         }
@@ -6878,19 +6970,25 @@ async function openAdminUserInspector(targetUid, userName) {
 
     const inspBody = $('#inspector-body');
     const pronunUnitIds = Object.keys(pronunAnswers).map(Number).sort((a, b) => a - b);
+    const practiceExIds = Object.keys(practiceAnswers).sort();
+    const grammarTopicIds = Object.keys(grammarAnswers).sort();
     const workedTopicIds = TOPICS.filter(t => progress[t.id] || (answers[t.id] && Object.keys(answers[t.id].data || {}).length > 0)).map(t => t.id);
 
     let activeTab = workedTopicIds.length === 0 && pronunUnitIds.length > 0 ? 'pronun' : 'toeic';
     let selTopicId = workedTopicIds[0] || 1;
     let selPronunUnitId = pronunUnitIds[0] || 2;
+    let selPracticeExId = practiceExIds[0] || 'unit_ex_1';
+    let selGrammarTopicId = grammarTopicIds[0] || 'tenses';
 
     function renderInspector() {
       const activeReviewItems = (review && Array.isArray(review.items)) ? review.items.filter(x => !x.deleted) : [];
 
       inspBody.innerHTML = `
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
-          <button class="btn ${activeTab === 'toeic' ? 'primary' : 'ghost'}" data-itab="toeic" style="font-size:13px">📚 TOEIC (${workedTopicIds.length} chủ đề)</button>
+          <button class="btn ${activeTab === 'toeic' ? 'primary' : 'ghost'}" data-itab="toeic" style="font-size:13px">📚 TOEIC (${workedTopicIds.length} CĐ)</button>
           <button class="btn ${activeTab === 'pronun' ? 'primary' : 'ghost'}" data-itab="pronun" style="font-size:13px">🎙️ Phát âm (${pronunUnitIds.length} Unit)</button>
+          <button class="btn ${activeTab === 'practice' ? 'primary' : 'ghost'}" data-itab="practice" style="font-size:13px">📝 Luyện dịch (${practiceExIds.length} bài)</button>
+          <button class="btn ${activeTab === 'grammar' ? 'primary' : 'ghost'}" data-itab="grammar" style="font-size:13px">📚 Ngữ pháp (${grammarTopicIds.length} CĐ)</button>
           <button class="btn ${activeTab === 'feedback' ? 'primary' : 'ghost'}" data-itab="feedback" style="font-size:13px">💬 Nhận xét & Từ khó (${activeReviewItems.length})</button>
         </div>
         <div id="insp-tab-content"></div>
@@ -7028,6 +7126,125 @@ async function openAdminUserInspector(targetUid, userName) {
           selPronunUnitId = Number(e.target.value);
           renderInspector();
         };
+      } else if (activeTab === 'practice') {
+        if (practiceExIds.length === 0) {
+          tabBox.innerHTML = '<div class="hint" style="text-align:center;padding:24px;background:var(--sunk);border-radius:8px">Học viên này chưa làm bài tập Luyện dịch Practice nào.</div>';
+          return;
+        }
+        const pDoc = practiceAnswers[selPracticeExId] || {};
+        const pData = pDoc.data || {};
+        const pAnswers = pData.answers || {};
+        const pUnit = PRACTICE_UNITS.find(u => u.id === selPracticeExId);
+        const pPara = PRACTICE_PARAGRAPHS.find(p => p.id === selPracticeExId);
+        const isTenses = selPracticeExId === 'practice_tenses_30';
+
+        tabBox.innerHTML = `
+          <div class="row between" style="margin-bottom:14px;background:var(--sunk);padding:10px 14px;border-radius:8px;flex-wrap:wrap;gap:8px">
+            <div>
+              <b>Chọn bài tập Practice:</b>
+              <select id="insp-practice-sel" style="margin-left:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+                ${practiceExIds.map(exId => {
+                  const u = PRACTICE_UNITS.find(x => x.id === exId);
+                  const p = PRACTICE_PARAGRAPHS.find(x => x.id === exId);
+                  const label = u ? u.title : (p ? p.title : (exId === 'practice_tenses_30' ? '30 Câu luyện thì' : exId));
+                  return `<option value="${exId}" ${exId === selPracticeExId ? 'selected' : ''}>${esc(label)}</option>`;
+                }).join('')}
+              </select>
+            </div>
+            <div class="hint" style="font-size:12.5px">
+              Cập nhật: ${pDoc.updatedAt && pDoc.updatedAt.toDate ? pDoc.updatedAt.toDate().toLocaleString('vi-VN') : '—'}
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${pUnit ? pUnit.items.map(it => `
+              <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+                <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">
+                  <span style="color:#059669">${it.id}.</span> ${esc(it.vi)}
+                </div>
+                <div style="font-size:14px;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">
+                  ${pAnswers[it.id] ? esc(pAnswers[it.id]) : '<i style="color:var(--muted)">Chưa điền</i>'}
+                </div>
+              </div>
+            `).join('') : (pPara ? pPara.segments.map(seg => `
+              <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+                <div class="hint" style="font-size:12px;margin-bottom:4px;font-weight:700;color:#059669">Phần ${seg.id}:</div>
+                <div style="font-size:13px;line-height:1.5;margin-bottom:6px">${esc(seg.vi)}</div>
+                <div style="font-size:14px;padding:8px 10px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">
+                  ${pAnswers[seg.id] ? esc(pAnswers[seg.id]) : '<i style="color:var(--muted)">Chưa điền</i>'}
+                </div>
+              </div>
+            `).join('') : (isTenses ? PRACTICE_TENSES.map(it => `
+              <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+                <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">
+                  <span style="color:#059669">${it.id}.</span> ${esc(it.vi)}
+                </div>
+                <div style="font-size:14px;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">
+                  ${pAnswers[it.id] ? esc(pAnswers[it.id]) : '<i style="color:var(--muted)">Chưa điền</i>'}
+                </div>
+              </div>
+            `).join('') : ''))}
+          </div>
+        `;
+
+        tabBox.querySelector('#insp-practice-sel').onchange = (e) => {
+          selPracticeExId = e.target.value;
+          renderInspector();
+        };
+      } else if (activeTab === 'grammar') {
+        if (grammarTopicIds.length === 0) {
+          tabBox.innerHTML = '<div class="hint" style="text-align:center;padding:24px;background:var(--sunk);border-radius:8px">Học viên này chưa làm bài tập Ngữ pháp nào.</div>';
+          return;
+        }
+        const gDoc = grammarAnswers[selGrammarTopicId] || {};
+        const gData = gDoc.data || {};
+        const gAnswers = gData.answers || {};
+        const gTopic = GRAMMAR_TOPICS.find(t => t.id === selGrammarTopicId);
+
+        tabBox.innerHTML = `
+          <div class="row between" style="margin-bottom:14px;background:var(--sunk);padding:10px 14px;border-radius:8px;flex-wrap:wrap;gap:8px">
+            <div>
+              <b>Chọn chuyên đề Ngữ pháp:</b>
+              <select id="insp-grammar-sel" style="margin-left:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+                ${grammarTopicIds.map(topId => {
+                  const t = GRAMMAR_TOPICS.find(x => x.id === topId);
+                  return `<option value="${topId}" ${topId === selGrammarTopicId ? 'selected' : ''}>${t ? t.icon + ' ' + esc(t.title) : topId}</option>`;
+                }).join('')}
+              </select>
+            </div>
+            <div class="hint" style="font-size:12.5px">
+              Đã làm: <b>${Object.keys(gAnswers).length}</b> / ${gTopic ? gTopic.questions.length : '—'} câu
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">
+            ${gTopic ? gTopic.questions.filter(q => gAnswers[q.id]).map(q => {
+              const choice = gAnswers[q.id];
+              const choiceText = q.options[choice] || '';
+              const isCorrect = q.answer && choice === q.answer;
+              const isWrong = q.answer && choice !== q.answer;
+              return `
+                <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span style="font-weight:700;font-size:13px">Câu ${q.num}</span>
+                    <span class="badge" style="background:${isCorrect ? 'var(--good-soft)' : (isWrong ? 'var(--bad-soft)' : 'var(--sunk)')};color:${isCorrect ? 'var(--good)' : (isWrong ? 'var(--bad)' : 'var(--ink)')}">
+                      Đã chọn: (${choice})
+                    </span>
+                  </div>
+                  <div class="hint" style="font-size:12px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(q.stem)}</div>
+                  <div style="font-size:13px;font-weight:600">
+                    ${esc(choiceText)}
+                  </div>
+                </div>
+              `;
+            }).join('') : ''}
+          </div>
+        `;
+
+        tabBox.querySelector('#insp-grammar-sel').onchange = (e) => {
+          selGrammarTopicId = e.target.value;
+          renderInspector();
+        };
       } else {
         tabBox.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:16px">
@@ -7106,7 +7323,9 @@ function render(){
     if (tabs) tabs.hidden = true;
     if (mobPick) mobPick.hidden = true;
     if (currentRoute === 'topic0') renderTopic0(panel);
-  else if (currentRoute === 'pronun') renderPronunciation(panel);
+    else if (currentRoute === 'pronun') renderPronunciation(panel);
+    else if (currentRoute === 'practice') renderPractice(panel);
+    else if (currentRoute === 'grammar') renderGrammar(panel);
     else if (currentRoute === 'review') renderReview(panel);
     else if (currentRoute === 'leaderboard') renderLeaderboard(panel);
     else if (currentRoute === 'profile') renderProfile(panel);

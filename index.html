@@ -2941,6 +2941,42 @@ function showToast(msg) {
   }, 2500);
 }
 
+let undoToastTimer = null;
+function showUndoToast(msg, onUndo, durationMs = 5000) {
+  let toast = $('#global-undo-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'global-undo-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E293B;color:#F8FAFC;border:1.5px solid #38BDF8;padding:10px 18px;border-radius:24px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.55);z-index:9999999;transition:opacity 0.25s,transform 0.25s;display:flex;align-items:center;gap:8px;pointer-events:auto;opacity:0';
+    document.body.appendChild(toast);
+  }
+  if (undoToastTimer) clearTimeout(undoToastTimer);
+
+  toast.innerHTML = `
+    <span>${esc(msg)}</span>
+    <span style="opacity:0.6">·</span>
+    <button id="btn-toast-undo" style="background:none;border:none;color:#38BDF8;font-weight:700;font-size:13.5px;cursor:pointer;padding:0;text-decoration:underline">Undo</button>
+  `;
+
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateX(-50%) translateY(0)';
+
+  const undoBtn = toast.querySelector('#btn-toast-undo');
+  if (undoBtn) {
+    undoBtn.onclick = () => {
+      clearTimeout(undoToastTimer);
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
+      if (onUndo) onUndo();
+    };
+  }
+
+  undoToastTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(10px)';
+  }, durationMs);
+}
+
 async function manualSyncCloud() {
   if (!currentUser || currentUid === 'guest') {
     openAuthModal('login');
@@ -5200,6 +5236,12 @@ function renderReview(box) {
 
   function draw() {
     const allHardWords = store.getReviewList();
+    const savedTopicIds = new Set(allHardWords.map(item => String(item.topicId)).filter(Boolean));
+    const availableTopics = TOPICS.filter(t => savedTopicIds.has(String(t.id)));
+    if (filterTopic !== 'all' && !savedTopicIds.has(filterTopic)) {
+      filterTopic = 'all';
+    }
+
     const filtered = allHardWords.filter(item => {
       if (filterTopic !== 'all' && String(item.topicId) !== filterTopic) return false;
       if (searchQuery) {
@@ -5246,10 +5288,10 @@ function renderReview(box) {
 
     cBox.innerHTML = `
       <div class="rev-filter">
-        <input class="search" id="rev-search" style="max-width:280px;margin-bottom:0" placeholder="Search saved words…" value="${esc(searchQuery)}">
-        <select class="field" id="rev-topic-sel" style="padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)">
+        <input class="search" id="rev-search" style="flex:1 1 240px;max-width:320px;width:100%;min-width:0;margin-bottom:0;box-sizing:border-box" placeholder="Search saved words…" value="${esc(searchQuery)}">
+        <select class="field" id="rev-topic-sel" style="flex:1 1 240px;max-width:320px;width:100%;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);box-sizing:border-box">
           <option value="all">All Topics</option>
-          ${TOPICS.map(t => `<option value="${t.id}" ${filterTopic===String(t.id)?'selected':''}>Topic ${t.id}: ${esc(splitTitle(t).main)}</option>`).join('')}
+          ${availableTopics.map(t => `<option value="${t.id}" ${filterTopic===String(t.id)?'selected':''}>Topic ${t.id}: ${esc(splitTitle(t).main)}</option>`).join('')}
         </select>
       </div>
       ${filtered.length === 0 ? `
@@ -5284,15 +5326,29 @@ function renderReview(box) {
 
     cBox.querySelectorAll('[data-say]').forEach(b => b.addEventListener('click', () => speak(b.dataset.say)));
     cBox.querySelectorAll('[data-unstar]').forEach(b => b.addEventListener('click', () => {
-      store.removeReviewWord(b.dataset.unstar);
+      const targetW = b.dataset.unstar;
+      const itemToRestore = allHardWords.find(x => x.w === targetW);
+      store.removeReviewWord(targetW);
       draw();
+      showUndoToast('Removed', () => {
+        if (itemToRestore) {
+          store.addReviewWord(itemToRestore, itemToRestore.topicId, itemToRestore.source || 'star');
+          draw();
+        }
+      }, 5000);
     }));
 
     const searchInp = cBox.querySelector('#rev-search');
     if (searchInp) {
       searchInp.oninput = (e) => {
         searchQuery = e.target.value;
+        const cursor = e.target.selectionStart;
         draw();
+        const nextInp = cBox.querySelector('#rev-search');
+        if (nextInp) {
+          nextInp.focus();
+          try { nextInp.setSelectionRange(cursor, cursor); } catch(_) {}
+        }
       };
     }
     const topicSel = cBox.querySelector('#rev-topic-sel');

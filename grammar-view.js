@@ -4,6 +4,8 @@ import { GRAMMAR_TOPICS } from './grammar-data.js?v=38';
 let appStore = null;
 let appEsc = null;
 let appSpeak = null;
+let appConfirmModal = null;
+let appShowToast = null;
 let curTopicId = 'tenses';
 let curFilter = 'all'; // 'all' | 'unanswered' | 'answered'
 const grammarState = {};
@@ -16,6 +18,8 @@ export function initGrammarView(context) {
   appStore = context.store;
   appEsc = context.esc;
   appSpeak = context.speak;
+  appConfirmModal = context.confirmModal;
+  appShowToast = context.showToast;
 }
 
 export function getGrammarTopicState(topicId) {
@@ -47,7 +51,7 @@ export function saveGrammarTopicAnswer(topicId, qId, val) {
   }
   const badge = document.querySelector('#grammar-autosave-badge');
   if (badge) {
-    badge.textContent = '✓ Auto-saved at ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    badge.textContent = '✓ Tự động lưu lúc ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     badge.style.color = 'var(--good)';
   }
 }
@@ -79,21 +83,21 @@ export function renderGrammar(box) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
           <div style="display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);padding:4px 10px;border-radius:6px;font-size:11.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px">
-            COMPREHENSIVE TOEIC GRAMMAR
+            NGỮ PHÁP TOEIC TRỌNG TÂM
           </div>
-          <h1 style="font-size:22px;font-weight:800;margin:0 0 6px;letter-spacing:-0.01em;color:var(--ink)">Core TOEIC Grammar</h1>
+          <h1 style="font-size:22px;font-weight:800;margin:0 0 6px;letter-spacing:-0.01em;color:var(--ink)">Ngữ pháp TOEIC (13 chuyên đề)</h1>
           <p class="hint" style="margin:0;font-size:13.5px;color:var(--muted)">
-            13 Topics · 974 ETS TOEIC aligned practice questions with instant grading and notes
+            13 chuyên đề · 974 câu trắc nghiệm sát đề ETS TOEIC có chấm điểm tức thì và ghi chú cá nhân
           </p>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <span id="grammar-autosave-badge" style="font-size:12px;color:var(--muted);font-weight:600">Auto-save active</span>
+          <span id="grammar-autosave-badge" style="font-size:12px;color:var(--muted);font-weight:600">Tự động lưu</span>
         </div>
       </div>
 
       <!-- Topic Selector Carousel / Grid -->
       <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
-        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase">13 GRAMMAR TOPICS:</div>
+        <div style="font-weight:700;font-size:12px;margin-bottom:10px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase">CHỌN CHUYÊN ĐỀ NGỮ PHÁP:</div>
         <div class="practice-pills-scroll" style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;scrollbar-width:none">
           ${GRAMMAR_TOPICS.map(t => {
             const st = getGrammarTopicState(t.id);
@@ -124,21 +128,21 @@ export function renderGrammar(box) {
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <!-- Filter buttons -->
           <div style="display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden">
-            <button class="btn ${curFilter === 'all' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-all" data-f="all" style="font-size:12px;padding:4px 10px;border-radius:0">All (${totalQuestions})</button>
-            <button class="btn ${curFilter === 'unanswered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-unanswered" data-f="unanswered" style="font-size:12px;padding:4px 10px;border-radius:0">Unanswered (${totalQuestions - answeredCount})</button>
-            <button class="btn ${curFilter === 'answered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-answered" data-f="answered" style="font-size:12px;padding:4px 10px;border-radius:0">Answered (${answeredCount})</button>
+            <button class="btn ${curFilter === 'all' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-all" data-f="all" style="font-size:12px;padding:4px 10px;border-radius:0">Tất cả (${totalQuestions})</button>
+            <button class="btn ${curFilter === 'unanswered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-unanswered" data-f="unanswered" style="font-size:12px;padding:4px 10px;border-radius:0">Chưa làm (${totalQuestions - answeredCount})</button>
+            <button class="btn ${curFilter === 'answered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-answered" data-f="answered" style="font-size:12px;padding:4px 10px;border-radius:0">Đã làm (${answeredCount})</button>
           </div>
 
           <!-- Progress stats -->
           <div style="display:flex;align-items:center;gap:8px">
-            <span id="grammar-answered-count" style="font-size:13px;font-weight:700;color:var(--ink)">${answeredCount}/${totalQuestions} completed</span>
+            <span id="grammar-answered-count" style="font-size:13px;font-weight:700;color:var(--ink)">${answeredCount}/${totalQuestions} đã làm</span>
             <div style="width:80px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden">
               <div id="grammar-progress-bar" style="width:${progressPct}%;height:100%;background:var(--accent);transition:width 0.2s"></div>
             </div>
-            ${gradedCount > 0 ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ ${correctCount}/${gradedCount} correct</span>` : ''}
+            ${gradedCount > 0 ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ ${correctCount}/${gradedCount} đúng</span>` : ''}
           </div>
 
-          <button class="btn ghost btn-reset-topic" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Topic</button>
+          <button class="btn ghost btn-reset-topic" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Làm lại chủ đề</button>
         </div>
       </div>
     </div>
@@ -171,11 +175,21 @@ export function renderGrammar(box) {
   // Reset Topic
   const resetBtn = box.querySelector('.btn-reset-topic');
   if (resetBtn) {
-    resetBtn.onclick = () => {
-      if (confirm(`Are you sure you want to reset all answers for "${currentTopic.title}"?`)) {
+    resetBtn.onclick = async () => {
+      const ok = appConfirmModal
+        ? await appConfirmModal({
+            title: 'Làm lại chuyên đề?',
+            message: `Bạn có chắc muốn xóa toàn bộ câu trả lời của "${currentTopic.title}" không?`,
+            confirmText: 'Xóa làm lại',
+            cancelText: 'Hủy',
+            danger: true
+          })
+        : true;
+      if (ok) {
         tState.answers = {};
         if (appStore) appStore.set('grammar_ex:' + currentTopic.id, tState);
         renderGrammar(box);
+        if (appShowToast) appShowToast('Đã đặt lại chuyên đề ngữ pháp.');
       }
     };
   }
@@ -205,7 +219,7 @@ function updateGrammarStatsUI(box, topic) {
   });
 
   const countEl = box.querySelector('#grammar-answered-count');
-  if (countEl) countEl.textContent = `${answeredCount}/${totalQuestions} completed`;
+  if (countEl) countEl.textContent = `${answeredCount}/${totalQuestions} đã làm`;
 
   const progEl = box.querySelector('#grammar-progress-bar');
   if (progEl) progEl.style.width = `${progressPct}%`;
@@ -213,7 +227,7 @@ function updateGrammarStatsUI(box, topic) {
   const corrEl = box.querySelector('#grammar-correct-badge');
   if (corrEl) {
     if (gradedCount > 0) {
-      corrEl.textContent = `✓ ${correctCount}/${gradedCount} correct`;
+      corrEl.textContent = `✓ ${correctCount}/${gradedCount} đúng`;
       corrEl.style.display = 'inline';
     } else {
       corrEl.style.display = 'none';
@@ -221,11 +235,11 @@ function updateGrammarStatsUI(box, topic) {
   }
 
   const fAll = box.querySelector('#grammar-filter-all');
-  if (fAll) fAll.textContent = `All (${totalQuestions})`;
+  if (fAll) fAll.textContent = `Tất cả (${totalQuestions})`;
   const fUnans = box.querySelector('#grammar-filter-unanswered');
-  if (fUnans) fUnans.textContent = `Unanswered (${totalQuestions - answeredCount})`;
+  if (fUnans) fUnans.textContent = `Chưa làm (${totalQuestions - answeredCount})`;
   const fAns = box.querySelector('#grammar-filter-answered');
-  if (fAns) fAns.textContent = `Answered (${answeredCount})`;
+  if (fAns) fAns.textContent = `Đã làm (${answeredCount})`;
 
   const topicBadge = box.querySelector(`.btn-select-topic[data-tid="${topic.id}"] .badge`);
   if (topicBadge) {
@@ -250,8 +264,8 @@ function renderQuestionsList(container, topic, box) {
   if (displayQuestions.length === 0) {
     container.innerHTML = `
       <div class="card" style="text-align:center;padding:40px 20px">
-        <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:var(--ink)">No questions found in this filter</div>
-        <div class="hint" style="color:var(--muted);font-size:13px">Select 'All' or switch to another topic.</div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:var(--ink)">Không có câu hỏi nào trong bộ lọc này</div>
+        <div class="hint" style="color:var(--muted);font-size:13px">Hãy chọn "Tất cả" hoặc chuyển sang chuyên đề khác.</div>
       </div>
     `;
     return;
@@ -271,12 +285,12 @@ function renderQuestionsList(container, topic, box) {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-weight:700;font-size:13px;background:var(--sunk);padding:2px 8px;border-radius:4px;color:var(--ink)">
-              Question ${q.num}
+              Câu ${q.num}
             </span>
-            ${isCorrect ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ Correct</span>` : ''}
-            ${isWrong ? `<span style="font-size:12px;color:var(--bad);font-weight:700">✕ Incorrect, try again!</span>` : ''}
+            ${isCorrect ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ Chính xác</span>` : ''}
+            ${isWrong ? `<span style="font-size:12px;color:var(--bad);font-weight:700">✕ Chưa đúng, thử lại nhé!</span>` : ''}
           </div>
-          <button class="btn icon-btn btn-speak-q" data-stem="${esc(q.stem)}" title="Listen to question" aria-label="Listen" style="padding:4px 8px;display:inline-flex;align-items:center;justify-content:center">
+          <button class="btn icon-btn btn-speak-q" data-stem="${esc(q.stem)}" title="Nghe câu hỏi" aria-label="Nghe" style="padding:4px 8px;display:inline-flex;align-items:center;justify-content:center">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
           </button>
         </div>
@@ -326,14 +340,14 @@ function renderQuestionsList(container, topic, box) {
         <!-- Explanation if available (Only shown when answered correctly) -->
         ${(isCorrect && q.explanation) ? `
           <div style="margin-top:12px;padding:8px 12px;background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:4px;font-size:13px;color:var(--ink)">
-            <span style="font-weight:700;color:var(--warn)">Grammar Note:</span> ${esc(q.explanation)}
+            <span style="font-weight:700;color:var(--warn)">Giải thích ngữ pháp:</span> ${esc(q.explanation)}
           </div>
         ` : ''}
 
         <!-- User Note Field -->
         <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600">Note:</span>
-          <input type="text" class="grammar-user-note" data-qid="${esc(q.id)}" value="${esc(notes[q.id] || '')}" placeholder="Add personal notes for this question (auto-saved)..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px dashed var(--line);background:var(--bg);color:var(--ink);font-size:13px;outline:none" />
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600">Ghi chú:</span>
+          <input type="text" class="grammar-user-note" data-qid="${esc(q.id)}" value="${esc(notes[q.id] || '')}" placeholder="Thêm ghi chú cá nhân cho câu này (tự động lưu)..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px dashed var(--line);background:var(--bg);color:var(--ink);font-size:13px;outline:none" />
         </div>
       </div>
     `;

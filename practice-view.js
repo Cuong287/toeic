@@ -4,6 +4,8 @@ import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice
 let appStore = null;
 let appEsc = null;
 let appSpeak = null;
+let appConfirmModal = null;
+let appShowToast = null;
 let curTab = 'units'; // 'units' | 'paragraphs' | 'tenses'
 let curUnitIdx = 0;
 let curParaIdx = 0;
@@ -13,6 +15,8 @@ export function initPracticeView(context) {
   appStore = context.store;
   appEsc = context.esc;
   appSpeak = context.speak;
+  appConfirmModal = context.confirmModal;
+  appShowToast = context.showToast;
 }
 
 export function resetPracticeExState() {
@@ -47,7 +51,7 @@ export function savePracticeExState(exId) {
   }
   const badge = document.querySelector('#practice-autosave-badge');
   if (badge) {
-    badge.textContent = '✓ Auto-saved at ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    badge.textContent = '✓ Đã tự động lưu lúc ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     badge.style.color = 'var(--good)';
   }
 }
@@ -155,8 +159,8 @@ async function evaluateTranslation(userText, refText, viPrompt) {
     return {
       score: 0,
       verdict: 'empty',
-      verdictText: 'No translation entered',
-      feedback: 'Please enter your English translation.',
+      verdictText: 'Chưa nhập bản dịch',
+      feedback: 'Vui lòng nhập câu dịch tiếng Anh của bạn.',
       userMeaning: '',
       synonymsFound: []
     };
@@ -170,8 +174,8 @@ async function evaluateTranslation(userText, refText, viPrompt) {
     return {
       score: 100,
       verdict: 'correct',
-      verdictText: '✓ Exact match',
-      feedback: 'Excellent! Your translation perfectly matches the reference answer.',
+      verdictText: '✓ Khớp chính xác',
+      feedback: 'Xuất sắc! Bản dịch của bạn khớp hoàn toàn với đáp án chuẩn.',
       userMeaning: viPrompt,
       synonymsFound: []
     };
@@ -218,21 +222,21 @@ async function evaluateTranslation(userText, refText, viPrompt) {
   const finalScore = Math.max(tokenScore, Math.round(tokenScore * 0.6 + viOverlapScore * 0.4));
 
   let verdict = 'wrong';
-  let verdictText = '✕ Needs revision';
-  let feedback = 'The translation does not closely match the prompt. Review the reference answer below.';
+  let verdictText = '✕ Cần xem lại';
+  let feedback = 'Bản dịch chưa sát với câu gốc. Hãy tham khảo đáp án mẫu bên dưới nhé.';
 
   if (finalScore >= 75 || (matchedCount === rWords.length && rWords.length > 0)) {
     verdict = 'correct';
-    verdictText = '✓ Meaning matched';
+    verdictText = '✓ Đúng ý nghĩa';
     if (synonymsFound.length > 0) {
-      feedback: 'Outstanding! Your translation accurately conveys the meaning with natural vocabulary.';
+      feedback = 'Rất tốt! Bản dịch truyền đạt đúng ý nghĩa với cách dùng từ tự nhiên.';
     } else {
-      feedback: 'Great job! Your translation accurately conveys the target sentence meaning.';
+      feedback = 'Làm tốt lắm! Bản dịch truyền đạt chính xác ý nghĩa câu gốc.';
     }
   } else if (finalScore >= 50) {
     verdict = 'partial';
-    verdictText = '~ Close attempt';
-    feedback: 'You captured the core idea. Review the reference answer below to refine vocabulary and structure.';
+    verdictText = '~ Gần đúng';
+    feedback = 'Bạn đã nắm được ý chính. Hãy đối chiếu với đáp án mẫu bên dưới để hoàn thiện từ vựng và cấu trúc nhé.';
   }
 
   return {
@@ -251,14 +255,14 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
     return `
       <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
         <div style="color:var(--muted);margin-bottom:8px;font-size:13px">
-          Please enter your English translation or review the reference answer below:
+          Vui lòng nhập câu dịch tiếng Anh của bạn hoặc xem đáp án tham khảo bên dưới:
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-          ${refText ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(refText)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+          <span style="font-weight:700;color:#059669">ĐÁP ÁN THAM KHẢO:</span>
+          ${refText ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(refText)}" title="Nghe đáp án mẫu" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Nghe</button>` : ''}
         </div>
         <div style="font-size:15px;font-weight:700;color:var(--ink)">
-          ${esc(refText || 'Reference answer being updated')}
+          ${esc(refText || 'Đang cập nhật đáp án tham khảo')}
         </div>
       </div>
     `;
@@ -291,7 +295,7 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
         <div style="flex:1">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
             <span style="font-size:14.5px;font-weight:800;color:${bannerColor}">
-              ${esc(verdictText)} · <span style="font-size:13px">${score}% Match</span>
+              ${esc(verdictText)} · <span style="font-size:13px">Độ khớp ${score}%</span>
             </span>
           </div>
           <div style="font-size:12.5px;color:var(--ink);margin-top:3px;line-height:1.4">
@@ -303,7 +307,7 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
       <!-- 2. Matched Synonyms -->
       ${synonymsFound && synonymsFound.length ? `
         <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.2);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-size:12px">
-          <b style="color:#2563EB">Matched Synonyms:</b>
+          <b style="color:#2563EB">Từ đồng nghĩa ghi nhận:</b>
           ${synonymsFound.map(p => `<span style="display:inline-block;margin-left:6px;padding:1px 6px;background:var(--bg);border-radius:4px;border:1px solid var(--line);font-weight:600;color:var(--ink)">${esc(p.user)} ⇄ ${esc(p.ref)}</span>`).join('')}
         </div>
       ` : ''}
@@ -312,22 +316,22 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
       <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
         <div style="margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-            <span style="font-size:12px;font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-            ${refText ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(refText)}" title="Listen to reference" style="height:24px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+            <span style="font-size:12px;font-weight:700;color:#059669">ĐÁP ÁN THAM KHẢO:</span>
+            ${refText ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(refText)}" title="Nghe đáp án mẫu" style="height:24px !important;padding:2px 8px !important;font-size:11.5px !important">Nghe</button>` : ''}
           </div>
           <div style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.4">
-            ${esc(refText || 'Reference answer being updated')}
+            ${esc(refText || 'Đang cập nhật đáp án tham khảo')}
           </div>
         </div>
 
         <div style="border-top:1px dashed var(--line);padding-top:8px">
-          <span style="font-size:12px;font-weight:700;color:var(--muted)">YOUR INPUT:</span>
+          <span style="font-size:12px;font-weight:700;color:var(--muted)">BÀI LÀM CỦA BẠN:</span>
           <div style="font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.4;margin-top:2px">
             "${esc(userVal)}"
           </div>
           ${userMeaning ? `
             <div style="font-size:12px;color:var(--muted);margin-top:3px">
-              Vietnamese meaning of your input: <b style="color:var(--ink)">"${esc(userMeaning)}"</b>
+              Nghĩa tiếng Việt câu bạn viết: <b style="color:var(--ink)">"${esc(userMeaning)}"</b>
             </div>
           ` : ''}
         </div>
@@ -357,28 +361,28 @@ export function renderPractice(box) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
           <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(5,150,105,0.12);color:#059669;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px">
-            <span>PRACTICE WORKBOOK</span>
+            <span>BÀI TẬP THỰC HÀNH</span>
           </div>
-          <h1 style="font-size:24px;margin:2px 0 6px">Reflex Translation & Drills</h1>
+          <h1 style="font-size:24px;margin:2px 0 6px">Luyện dịch phản xạ & Thực hành</h1>
           <p class="hint" style="margin:0;font-size:13.5px">
-            16 Unit Drills · 15 Real Passages · 30 Tense Drills with Voice & Real-time Evaluation
+            16 Bài tập theo Unit · 15 Đoạn văn thực tế · 30 Câu luyện thì có Thu âm & Chấm điểm tự động
           </p>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
-          <span id="practice-autosave-badge" style="font-size:12px;color:var(--muted);font-weight:600">Auto-save active</span>
+          <span id="practice-autosave-badge" style="font-size:12px;color:var(--muted);font-weight:600">Tự động lưu</span>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
       <div style="display:flex;gap:8px;margin-top:16px;border-bottom:1px solid var(--line);padding-bottom:12px;overflow-x:auto">
         <button class="btn ${curTab === 'units' ? 'primary' : 'ghost'}" id="btn-ptab-units" style="font-size:13px;white-space:nowrap">
-          16 Unit Drills (${PRACTICE_UNITS.length})
+          16 Bài tập Unit (${PRACTICE_UNITS.length})
         </button>
         <button class="btn ${curTab === 'paragraphs' ? 'primary' : 'ghost'}" id="btn-ptab-paras" style="font-size:13px;white-space:nowrap">
-          15 Real Passages (${PRACTICE_PARAGRAPHS.length})
+          15 Đoạn văn thực tế (${PRACTICE_PARAGRAPHS.length})
         </button>
         <button class="btn ${curTab === 'tenses' ? 'primary' : 'ghost'}" id="btn-ptab-tenses" style="font-size:13px;white-space:nowrap">
-          30 Tense Drills (${PRACTICE_TENSES.length})
+          30 Câu luyện thì (${PRACTICE_TENSES.length})
         </button>
       </div>
     </div>
@@ -417,7 +421,7 @@ function renderUnitsSection(container) {
   container.innerHTML = `
     <!-- Unit Selector Pills -->
     <div class="card" style="margin-bottom:14px;padding:12px 14px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--muted)">SELECT UNIT:</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--muted)">CHỌN BÀI TẬP (UNIT):</div>
       <div class="practice-pills-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:none">
         ${PRACTICE_UNITS.map((u, idx) => {
           const st = getPracticeExState(u.id);
@@ -437,14 +441,14 @@ function renderUnitsSection(container) {
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div>
           <h2 style="margin:0 0 4px;font-size:19px">${esc(currentUnit.title)}</h2>
-          <div class="hint" style="font-size:13px">Translate each sentence into English using the target vocabulary</div>
+          <div class="hint" style="font-size:13px">Dịch từng câu sang tiếng Anh sử dụng các từ vựng mục tiêu của bài</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span id="unit-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${currentUnit.items.length} questions</span>
+          <span id="unit-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${currentUnit.items.length} câu</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
             <div id="unit-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
           </div>
-          <button class="btn ghost btn-clear-unit" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Unit</button>
+          <button class="btn ghost btn-clear-unit" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Làm lại bài</button>
         </div>
       </div>
 
@@ -480,30 +484,30 @@ function renderUnitsSection(container) {
                   <span style="color:#059669">${it.id}.</span>
                   <span>${esc(it.vi)}</span>
                   <span id="badge-item-${it.id}" class="item-status-badge">
-                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
+                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Đúng</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Gần đúng</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Cần xem lại</span>`)) : ''}
                   </span>
                 </div>
 
                 <!-- Action Controls -->
                 <div class="practice-actions-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  ${val ? `<button class="btn practice-speak-btn btn-speak-item" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>` : ''}
+                  ${val ? `<button class="btn practice-speak-btn btn-speak-item" data-id="${it.id}" title="Nghe câu dịch của bạn" aria-label="Nghe">Nghe</button>` : ''}
                   
                   <!-- Voice Recording Button -->
-                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-u-${currentUnit.id}-${it.id}" title="Record your speech in English">
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-u-${currentUnit.id}-${it.id}" title="Thu âm giọng đọc tiếng Anh của bạn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                    <span>Record</span>
+                    <span>Thu âm</span>
                   </button>
 
                   <!-- Check Answer Button -->
                   <button class="btn practice-check-btn btn-check-item" data-id="${it.id}" data-vi="${esc(it.vi)}" data-ref="${esc(refText)}">
-                    ${isChecked ? 'Hide Answer' : 'Check Answer'}
+                    ${isChecked ? 'Ẩn đáp án' : 'Kiểm tra đáp án'}
                   </button>
                 </div>
               </div>
 
               <!-- English Input -->
               <div>
-                <input type="text" class="practice-input" data-item="${it.id}" value="${esc(val)}" placeholder="Type your English translation..." style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s" />
+                <input type="text" class="practice-input" data-item="${it.id}" value="${esc(val)}" placeholder="Nhập câu dịch tiếng Anh của bạn..." style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s" />
               </div>
 
               <!-- Voice Recording Evaluation Slot -->
@@ -543,7 +547,7 @@ function updateUnitStatsUI(container, currentUnit) {
   const isDone = answeredCount === currentUnit.items.length;
 
   const countEl = container.querySelector('#unit-answered-count');
-  if (countEl) countEl.textContent = `${answeredCount} / ${currentUnit.items.length} questions`;
+  if (countEl) countEl.textContent = `${answeredCount} / ${currentUnit.items.length} câu`;
   const progEl = container.querySelector('#unit-progress-bar');
   if (progEl) progEl.style.width = `${progressPct}%`;
 
@@ -597,15 +601,15 @@ function updateUnitStatsUI(container, currentUnit) {
       const willOpen = chkBox.style.display === 'none';
       if (!willOpen) {
         chkBox.style.display = 'none';
-        btn.textContent = 'Check Answer';
+        btn.textContent = 'Kiểm tra đáp án';
         uState.checked[itemId] = false;
         savePracticeExState(currentUnit.id);
         return;
       }
 
       chkBox.style.display = 'block';
-      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Analyzing and evaluating translation...</div>';
-      btn.textContent = 'Hide Answer';
+      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Đang phân tích và chấm điểm câu dịch...</div>';
+      btn.textContent = 'Ẩn đáp án';
       uState.checked[itemId] = true;
 
       if (!ref) {
@@ -640,11 +644,11 @@ function updateUnitStatsUI(container, currentUnit) {
       const badgeEl = container.querySelector(`#badge-item-${itemId}`);
       if (badgeEl) {
         if (evalRes.verdict === 'correct') {
-          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Đúng</span>`;
         } else if (evalRes.verdict === 'partial') {
-          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Gần đúng</span>`;
         } else if (evalRes.verdict === 'wrong') {
-          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Cần xem lại</span>`;
         } else {
           badgeEl.innerHTML = '';
         }
@@ -662,12 +666,20 @@ function updateUnitStatsUI(container, currentUnit) {
   // Clear unit
   const clearBtn = container.querySelector('.btn-clear-unit');
   if (clearBtn) {
-    clearBtn.onclick = () => {
-      if (confirm('Are you sure you want to reset all answers for ' + currentUnit.title + '?')) {
+    clearBtn.onclick = async () => {
+      const ok = appConfirmModal ? await appConfirmModal({
+        title: 'Làm lại bài tập?',
+        message: 'Bạn có chắc muốn xóa toàn bộ câu dịch của bài "' + currentUnit.title + '" không?',
+        confirmText: 'Xóa làm lại',
+        cancelText: 'Hủy',
+        danger: true
+      }) : true;
+      if (ok) {
         uState.answers = {};
         uState.checked = {};
         savePracticeExState(currentUnit.id);
         renderUnitsSection(container);
+        if (appShowToast) appShowToast('Đã đặt lại bài tập ' + currentUnit.unitTag);
       }
     };
   }
@@ -686,14 +698,14 @@ function renderParasSection(container) {
   container.innerHTML = `
     <!-- Paragraph Selector Pills -->
     <div class="card" style="margin-bottom:14px;padding:12px 14px">
-      <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--muted)">SELECT PASSAGE:</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--muted)">CHỌN ĐOẠN VĂN:</div>
       <div class="practice-pills-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:none">
         ${PRACTICE_PARAGRAPHS.map((p, idx) => {
           const st = getPracticeExState(p.id);
           const hasAns = Object.values(st.answers || {}).some(v => v && String(v).trim().length > 0);
           return `
             <button class="btn ${idx === curParaIdx ? 'primary' : 'ghost'} btn-select-para" data-idx="${idx}" style="font-size:12px;padding:6px 12px;border-radius:6px;flex-shrink:0;white-space:nowrap">
-              ${hasAns ? '✓ ' : ''}Passage ${idx + 1}
+              ${hasAns ? '✓ ' : ''}Đoạn ${idx + 1}
             </button>
           `;
         }).join('')}
@@ -705,9 +717,9 @@ function renderParasSection(container) {
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div>
           <h2 style="margin:0 0 4px;font-size:19px">${esc(currentPara.title)}</h2>
-          <div class="hint" style="font-size:13px">Authentic Passages, Emails & Dialogues — Translate each section into English</div>
+          <div class="hint" style="font-size:13px">Đoạn văn, Email & Hội thoại thực tế — Dịch từng phần sang tiếng Anh</div>
         </div>
-        <button class="btn ghost btn-clear-para" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Passage</button>
+        <button class="btn ghost btn-clear-para" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Làm lại đoạn văn</button>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:14px">
@@ -736,22 +748,22 @@ function renderParasSection(container) {
             <div style="padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
                 <div style="font-weight:700;font-size:13.5px;color:#059669;display:inline-flex;align-items:center;gap:6px">
-                  <span>Part ${seg.id}</span>
+                  <span>Phần ${seg.id}</span>
                   <span id="badge-para-${seg.id}" class="item-status-badge">
-                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
+                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Đúng</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Gần đúng</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Cần xem lại</span>`)) : ''}
                   </span>
                 </div>
                 <div class="practice-actions-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  ${val ? `<button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Listen to your translation">Listen</button>` : ''}
+                  ${val ? `<button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Nghe bản dịch của bạn">Nghe</button>` : ''}
                   
                   <!-- Voice Recording -->
-                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Record your speech in English">
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Thu âm giọng đọc tiếng Anh của bạn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                    <span>Record</span>
+                    <span>Thu âm</span>
                   </button>
 
                   <button class="btn practice-check-btn btn-check-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}">
-                    ${isChecked ? 'Hide Answer' : 'Check Answer'}
+                    ${isChecked ? 'Ẩn đáp án' : 'Kiểm tra đáp án'}
                   </button>
                 </div>
               </div>
@@ -759,7 +771,7 @@ function renderParasSection(container) {
               <div style="font-size:14px;line-height:1.6;color:var(--ink);background:var(--sunk);padding:10px 12px;border-radius:6px;margin-bottom:10px;white-space:pre-wrap">
                 ${esc(seg.vi)}
               </div>
-              <textarea class="para-input" data-seg="${seg.id}" rows="3" placeholder="Type English translation for this section..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;resize:vertical;font-family:inherit;transition:border-color 0.15s,background 0.15s">${esc(val)}</textarea>
+              <textarea class="para-input" data-seg="${seg.id}" rows="3" placeholder="Nhập bản dịch tiếng Anh cho phần này..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;resize:vertical;font-family:inherit;transition:border-color 0.15s,background 0.15s">${esc(val)}</textarea>
 
               <div id="${recSlotId}" class="rec-slot" style="margin-top:8px"></div>
               <div id="check-para-box-${seg.id}" class="practice-check-box" style="margin-top:8px;display:${isChecked ? 'block' : 'none'}">
@@ -822,15 +834,15 @@ function renderParasSection(container) {
       const willOpen = chkBox.style.display === 'none';
       if (!willOpen) {
         chkBox.style.display = 'none';
-        btn.textContent = 'Check Answer';
+        btn.textContent = 'Kiểm tra đáp án';
         pState.checked[segId] = false;
         savePracticeExState(currentPara.id);
         return;
       }
 
       chkBox.style.display = 'block';
-      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Analyzing and evaluating translation...</div>';
-      btn.textContent = 'Hide Answer';
+      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Đang phân tích và chấm điểm bản dịch...</div>';
+      btn.textContent = 'Ẩn đáp án';
       pState.checked[segId] = true;
 
       const ref = await fetchSuggestedTranslation(viText);
@@ -860,11 +872,11 @@ function renderParasSection(container) {
       const badgeEl = container.querySelector(`#badge-para-${segId}`);
       if (badgeEl) {
         if (evalRes.verdict === 'correct') {
-          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Đúng</span>`;
         } else if (evalRes.verdict === 'partial') {
-          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Gần đúng</span>`;
         } else if (evalRes.verdict === 'wrong') {
-          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Cần xem lại</span>`;
         } else {
           badgeEl.innerHTML = '';
         }
@@ -882,12 +894,20 @@ function renderParasSection(container) {
   // Clear paragraph
   const clearBtn = container.querySelector('.btn-clear-para');
   if (clearBtn) {
-    clearBtn.onclick = () => {
-      if (confirm('Are you sure you want to reset ' + currentPara.title + '?')) {
+    clearBtn.onclick = async () => {
+      const ok = appConfirmModal ? await appConfirmModal({
+        title: 'Làm lại đoạn văn?',
+        message: 'Bạn có chắc muốn xóa toàn bộ bản dịch của "' + currentPara.title + '" không?',
+        confirmText: 'Xóa làm lại',
+        cancelText: 'Hủy',
+        danger: true
+      }) : true;
+      if (ok) {
         pState.answers = {};
         pState.checked = {};
         savePracticeExState(currentPara.id);
         renderParasSection(container);
+        if (appShowToast) appShowToast('Đã đặt lại đoạn văn');
       }
     };
   }
@@ -909,15 +929,15 @@ function renderTensesSection(container) {
     <div class="card" style="margin-bottom:16px;padding:18px 20px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div>
-          <h2 style="margin:0 0 4px;font-size:19px">30 Tense & Structure Drills</h2>
-          <div class="hint" style="font-size:13px">Reflex drills across key tenses: Present, Past, Future, and Perfect aspects</div>
+          <h2 style="margin:0 0 4px;font-size:19px">30 Câu luyện thì & Cấu trúc</h2>
+          <div class="hint" style="font-size:13px">Luyện dịch phản xạ các thì trọng tâm: Hiện tại, Quá khứ, Tương lai và Hoàn thành</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span id="tenses-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${PRACTICE_TENSES.length} questions</span>
+          <span id="tenses-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${PRACTICE_TENSES.length} câu</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
             <div id="tenses-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
           </div>
-          <button class="btn ghost btn-clear-tenses" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Unit</button>
+          <button class="btn ghost btn-clear-tenses" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Làm lại bài</button>
         </div>
       </div>
 
@@ -950,23 +970,23 @@ function renderTensesSection(container) {
                   <span style="color:#059669">${it.id}.</span>
                   <span>${esc(it.vi)}</span>
                   <span id="badge-tense-${it.id}" class="item-status-badge">
-                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
+                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Đúng</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Gần đúng</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Cần xem lại</span>`)) : ''}
                   </span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  ${val ? `<button class="btn practice-speak-btn btn-speak-tense" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>` : ''}
+                  ${val ? `<button class="btn practice-speak-btn btn-speak-tense" data-id="${it.id}" title="Nghe câu dịch của bạn" aria-label="Nghe">Nghe</button>` : ''}
                   
-                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-t-${it.id}" title="Record your speech in English">
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-t-${it.id}" title="Thu âm giọng đọc tiếng Anh của bạn">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                    <span>Record</span>
+                    <span>Thu âm</span>
                   </button>
 
                   <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(it.vi)}">
-                    ${isChecked ? 'Hide Answer' : 'Check Answer'}
+                    ${isChecked ? 'Ẩn đáp án' : 'Kiểm tra đáp án'}
                   </button>
                 </div>
               </div>
-              <input type="text" class="tense-input" data-item="${it.id}" value="${esc(val)}" placeholder="Type English translation..." style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s" />
+              <input type="text" class="tense-input" data-item="${it.id}" value="${esc(val)}" placeholder="Nhập câu dịch tiếng Anh..." style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;transition:border-color 0.15s,background 0.15s" />
 
               <div id="${recSlotId}" class="rec-slot" style="margin-top:8px"></div>
               <div id="check-tense-box-${it.id}" class="practice-check-box" style="margin-top:8px;display:${isChecked ? 'block' : 'none'}">
@@ -1022,15 +1042,15 @@ function renderTensesSection(container) {
       const willOpen = chkBox.style.display === 'none';
       if (!willOpen) {
         chkBox.style.display = 'none';
-        btn.textContent = 'Check Answer';
+        btn.textContent = 'Kiểm tra đáp án';
         tState.checked[itemId] = false;
         savePracticeExState('practice_tenses_30');
         return;
       }
 
       chkBox.style.display = 'block';
-      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Analyzing and evaluating translation...</div>';
-      btn.textContent = 'Hide Answer';
+      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Đang phân tích và chấm điểm câu dịch...</div>';
+      btn.textContent = 'Ẩn đáp án';
       tState.checked[itemId] = true;
 
       const ref = await fetchSuggestedTranslation(viText);
@@ -1060,11 +1080,11 @@ function renderTensesSection(container) {
       const badgeEl = container.querySelector(`#badge-tense-${itemId}`);
       if (badgeEl) {
         if (evalRes.verdict === 'correct') {
-          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Đúng</span>`;
         } else if (evalRes.verdict === 'partial') {
-          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Gần đúng</span>`;
         } else if (evalRes.verdict === 'wrong') {
-          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
+          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Cần xem lại</span>`;
         } else {
           badgeEl.innerHTML = '';
         }
@@ -1082,12 +1102,20 @@ function renderTensesSection(container) {
   // Clear
   const clearBtn = container.querySelector('.btn-clear-tenses');
   if (clearBtn) {
-    clearBtn.onclick = () => {
-      if (confirm('Are you sure you want to reset all 30 tense drills?')) {
+    clearBtn.onclick = async () => {
+      const ok = appConfirmModal ? await appConfirmModal({
+        title: 'Làm lại 30 câu luyện thì?',
+        message: 'Bạn có chắc muốn xóa toàn bộ câu trả lời của 30 câu luyện thì không?',
+        confirmText: 'Xóa làm lại',
+        cancelText: 'Hủy',
+        danger: true
+      }) : true;
+      if (ok) {
         tState.answers = {};
         tState.checked = {};
         savePracticeExState('practice_tenses_30');
         renderTensesSection(container);
+        if (appShowToast) appShowToast('Đã đặt lại 30 câu luyện thì');
       }
     };
   }

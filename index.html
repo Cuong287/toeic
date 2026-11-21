@@ -2010,7 +2010,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
       <section class="panel" id="panel" aria-live="polite"></section>
     </div>
   </main>
-  <div id="modal-container" hidden></div>
+  <div id="modal-container" role="dialog" aria-modal="true" hidden></div>
 </div>
 
 <script>
@@ -2447,11 +2447,16 @@ function updateReviewBadge() {
 }
 
 // ---------- Modal Helpers ----------
-function openModal(contentHtml) {
+let activeModalCloseHandler = null;
+
+function openModal(contentHtml, onClose = null) {
   const mc = $('#modal-container');
   if (!mc) return;
+  activeModalCloseHandler = onClose;
   mc.innerHTML = contentHtml;
   mc.hidden = false;
+  mc.setAttribute('role', 'dialog');
+  mc.setAttribute('aria-modal', 'true');
   const closeBtn = mc.querySelector('.modal-close');
   if (closeBtn) closeBtn.onclick = closeModal;
   const backdrop = mc.querySelector('.modal-backdrop');
@@ -2460,6 +2465,8 @@ function openModal(contentHtml) {
       if (e.target === backdrop) closeModal();
     };
   }
+  const firstInput = mc.querySelector('input:not([type="hidden"]):not([disabled]), textarea:not([disabled])');
+  if (firstInput) setTimeout(() => firstInput.focus(), 20);
 }
 
 function closeModal() {
@@ -2468,11 +2475,27 @@ function closeModal() {
     mc.innerHTML = '';
     mc.hidden = true;
   }
+  if (activeModalCloseHandler) {
+    const fn = activeModalCloseHandler;
+    activeModalCloseHandler = null;
+    fn();
+  }
 }
 window.closeModal = closeModal;
 
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const mc = $('#modal-container');
+    if (mc && !mc.hidden) {
+      closeModal();
+    }
+  }
+});
+
 function confirmModal({ title = 'Confirm', message = '', confirmText = 'Confirm', cancelText = 'Cancel', danger = false } = {}) {
   return new Promise(resolve => {
+    let settled = false;
+    const finish = val => { if (!settled) { settled = true; closeModal(); resolve(val); } };
     openModal(`
       <div class="modal-backdrop">
         <div class="modal-box" style="max-width:380px">
@@ -2484,9 +2507,8 @@ function confirmModal({ title = 'Confirm', message = '', confirmText = 'Confirm'
           </div>
         </div>
       </div>
-    `);
+    `, () => { if (!settled) { settled = true; resolve(false); } });
     const mc = $('#modal-container');
-    const finish = val => { closeModal(); resolve(val); };
     const cancelBtn = mc.querySelector('#cm-cancel');
     const okBtn = mc.querySelector('#cm-ok');
     if (cancelBtn) cancelBtn.onclick = () => finish(false);
@@ -2498,6 +2520,8 @@ function confirmModal({ title = 'Confirm', message = '', confirmText = 'Confirm'
 
 function promptModal({ title = 'Enter Information', message = '', placeholder = '', defaultValue = '', inputType = 'text', confirmText = 'Submit', cancelText = 'Cancel' } = {}) {
   return new Promise(resolve => {
+    let settled = false;
+    const finish = val => { if (!settled) { settled = true; closeModal(); resolve(val); } };
     openModal(`
       <div class="modal-backdrop">
         <div class="modal-box" style="max-width:400px">
@@ -2512,10 +2536,9 @@ function promptModal({ title = 'Enter Information', message = '', placeholder = 
           </form>
         </div>
       </div>
-    `);
+    `, () => { if (!settled) { settled = true; resolve(null); } });
     const mc = $('#modal-container');
     const inp = mc.querySelector('#pm-input');
-    const finish = val => { closeModal(); resolve(val); };
     if (inp) setTimeout(() => inp.focus(), 20);
     mc.querySelector('#pm-cancel').onclick = () => finish(null);
     mc.querySelector('#pm-form').onsubmit = e => {
@@ -3677,7 +3700,7 @@ function openAuthModal(defaultTab = 'login') {
               </div>
               <div class="form-grp">
                 <label for="au-pass">Password</label>
-                <input class="form-input" id="au-pass" type="password" required placeholder="••••••••">
+                <input class="form-input" id="au-pass" type="password" required placeholder="Password">
               </div>
               <div class="row between" style="margin-bottom:14px">
                 <button class="btn primary" type="submit" style="flex:1">Sign In</button>
@@ -3707,7 +3730,7 @@ function openAuthModal(defaultTab = 'login') {
               </div>
               <div class="form-grp">
                 <label for="au-pass2">Confirm Password</label>
-                <input class="form-input" id="au-pass2" type="password" required minlength="6" placeholder="••••••••">
+                <input class="form-input" id="au-pass2" type="password" required minlength="6" placeholder="Password">
               </div>
               <button class="btn primary" type="submit" style="width:100%;margin-top:6px">Create Account</button>
             </form>

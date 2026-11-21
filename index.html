@@ -2176,6 +2176,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
 const norm = s => String(s).toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9' -]/g,' ').replace(/\s+/g,' ').trim();
+const stripVN = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 const VN = /[À-ỹđĐ]/;
 const POS_OK = /^(n|v|a|adj|adv|prep)(,(n|v|a|adj|adv|prep))*$/;
 const SPEAK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>';
@@ -3846,29 +3847,53 @@ function openAuthModal(defaultTab = 'login') {
 
 // ---------- Sidebar ----------
 function renderSide(){
-  const q = norm($('#search').value || '');
+  const rawQ = ($('#search').value || '').trim();
   const list = $('#tlist'); list.innerHTML = '';
+  const qLower = rawQ.toLowerCase();
+  const qPlain = stripVN(rawQ);
 
-  
+  let visibleCount = 0;
 
   TOPICS.forEach(t => {
     const st = splitTitle(t);
     let hits = 0;
-    if (q){
-      const inTitle = norm(t.title).includes(q) || st.main.toLowerCase().includes(q) || (st.sub && st.sub.toLowerCase().includes(q));
-      hits = t.vocab.filter(v => norm(v.w).includes(q) || v.vi.toLowerCase().includes(q)).length;
+    if (rawQ){
+      const tTitleLower = t.title.toLowerCase();
+      const tTitlePlain = stripVN(t.title);
+      const stMainLower = st.main.toLowerCase();
+      const stMainPlain = stripVN(st.main);
+      const stSubLower = st.sub ? st.sub.toLowerCase() : '';
+      const stSubPlain = st.sub ? stripVN(st.sub) : '';
+
+      const inTitle = tTitleLower.includes(qLower) || tTitlePlain.includes(qPlain)
+        || stMainLower.includes(qLower) || stMainPlain.includes(qPlain)
+        || (st.sub && (stSubLower.includes(qLower) || stSubPlain.includes(qPlain)));
+
+      hits = t.vocab.filter(v => {
+        const wLower = (v.w || '').toLowerCase();
+        const wPlain = stripVN(v.w);
+        const viLower = (v.vi || '').toLowerCase();
+        const viPlain = stripVN(v.vi);
+        return wLower.includes(qLower) || wPlain.includes(qPlain) || viLower.includes(qLower) || viPlain.includes(qPlain);
+      }).length;
+
       if (!inTitle && !hits) return;
     }
+    visibleCount++;
     const best = store.get('best:' + t.id, null);
     const completedManual = store.get('completedManual:' + t.id, false);
     const isCompleted = completedManual || (best != null && best >= 80);
     const isCurrent = currentRoute === 'topic' && t.id === S.t;
 
     const li = document.createElement('li');
-    li.innerHTML = `<a href="#t${t.id}-p1" ${isCurrent ? 'aria-current="true"' : ''} class="${isCompleted ? 'is-done' : ''}" title="${esc(st.main)}${st.sub ? ' · ' + esc(st.sub) : ''}"><span class="n">${String(t.id).padStart(2,'0')}</span><span class="nm">${isCompleted ? '<span class="done-check" title="Completed">✓</span> ' : ''}${esc(st.main)}</span>${hits ? `<span class="hit">${hits} words</span>` : (best != null ? `<span class="sc" title="Highest quiz score">${best}%</span>` : '<span></span>')}</a>`;
+    li.innerHTML = `<a href="#t${t.id}-p1" ${isCurrent ? 'aria-current="true"' : ''} class="${isCompleted ? 'is-done' : ''}" title="${esc(st.main)}${st.sub ? ' · ' + esc(st.sub) : ''}"><span class="n">${String(t.id).padStart(2,'0')}</span><span class="nm">${isCompleted ? '<span class="done-check" title="Completed">✓</span> ' : ''}${esc(st.main)}</span>${hits ? `<span class="hit">${hits} ${hits === 1 ? 'word' : 'words'}</span>` : (best != null ? `<span class="sc" title="Highest quiz score">${best}%</span>` : '<span></span>')}</a>`;
     li.querySelector('a').addEventListener('click', e => { e.preventDefault(); go(t.id, 1); window.scrollTo({top:0}); });
     list.appendChild(li);
   });
+
+  if (rawQ && visibleCount === 0) {
+    list.innerHTML = '<li class="no-results" style="padding:16px 12px;text-align:center;color:var(--muted);font-size:13px">No results</li>';
+  }
   const sel = $('#tselect');
   if (!sel.options.length) TOPICS.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = String(t.id).padStart(2,'0') + '. ' + splitTitle(t).main; sel.appendChild(o); });
   sel.value = S.t;

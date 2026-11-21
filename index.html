@@ -1431,7 +1431,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 }
 .pronun-word-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -1441,9 +1441,16 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   border-radius: 8px;
   padding: 10px 12px;
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.pronun-word-card-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
 }
 .pair-box {
   background: var(--surface);
@@ -5657,7 +5664,18 @@ function renderIpaTab(container) {
       <button class="btn ${curIpaFilter === 'voiced' ? 'primary' : 'ghost'}" data-f="voiced">Voiced Consonants (15)</button>
     </div>
 
-    <div class="ipa-detail-box" id="ipa-detail-view">
+    <div style="font-size:14px;font-weight:700;margin:16px 0 10px">Select an IPA sound below for details and pronunciation drills:</div>
+    <div class="ipa-grid">
+      ${filtered.map(it => `
+        <div class="ipa-card ${it.id === curIpa.id ? 'active' : ''}" data-id="${it.id}">
+          <div class="ipa-sym">${esc(it.ipa)}</div>
+          <div class="ipa-sample">${esc(it.sample)}</div>
+          <div class="ipa-name">${esc(it.name)}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="ipa-detail-box" id="ipa-detail-view" style="margin-top:20px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;border-bottom:1px solid var(--line);padding-bottom:14px">
         <div style="display:flex;align-items:center;gap:16px">
           <div style="font-size:38px;font-weight:800;color:var(--accent);min-width:65px;text-align:center;background:var(--sunk);border:1.5px solid var(--accent);border-radius:12px;padding:6px 12px">${esc(curIpa.ipa)}</div>
@@ -5667,11 +5685,11 @@ function renderIpaTab(container) {
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <button class="btn" id="btn-spk-sample" style="display:inline-flex;align-items:center;gap:6px">
+          <button class="btn" id="btn-spk-sample" aria-label="Play sample ${esc(curIpa.sample)}" style="display:inline-flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
             <span>Listen Sample</span>
           </button>
-          <button class="icon-btn rec-btn" data-rec-text="${esc(curIpa.sample)}" data-rec-id="ipa-main-${curIpa.id}" title="Practice sample word ${esc(curIpa.sample)}" style="width:40px;height:40px">
+          <button class="icon-btn rec-btn" data-rec-text="${esc(curIpa.sample)}" data-rec-id="ipa-main-${curIpa.id}" title="Practice sample word ${esc(curIpa.sample)}" aria-label="Record sample ${esc(curIpa.sample)}" style="width:40px;height:40px">
             ${MIC_ICON}
           </button>
         </div>
@@ -5687,35 +5705,26 @@ function renderIpaTab(container) {
         <div class="pronun-word-grid">
           ${curIpa.words.map((w, idx) => `
             <div class="pronun-word-card">
-              <div>
-                <div style="font-size:15px;font-weight:700">${esc(w)}</div>
-                <div style="font-size:12px;color:var(--muted)">${esc(curIpa.ipa)}</div>
+              <div class="pronun-word-card-top">
+                <div>
+                  <div style="font-size:15px;font-weight:700">${esc(w)}</div>
+                  <div style="font-size:12px;color:var(--muted)">${esc(curIpa.ipa)}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <button class="icon-btn" onclick="speak('${esc(w)}')" title="Listen to pronunciation" aria-label="Play ${esc(w)}" style="width:34px;height:34px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  </button>
+                  <button class="icon-btn rec-btn" data-rec-text="${esc(w)}" data-rec-id="ipa-w-${curIpa.id}-${idx}" title="Practice speaking ${esc(w)}" aria-label="Record ${esc(w)}" style="width:34px;height:34px">
+                    ${MIC_ICON}
+                  </button>
+                </div>
               </div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <button class="icon-btn" onclick="speak('${esc(w)}')" title="Listen to pronunciation" style="width:34px;height:34px">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                </button>
-                <button class="icon-btn rec-btn" data-rec-text="${esc(w)}" data-rec-id="ipa-w-${curIpa.id}-${idx}" title="Practice speaking ${esc(w)}" style="width:34px;height:34px">
-                  ${MIC_ICON}
-                </button>
-              </div>
+              <div id="slot-ipa-w-${curIpa.id}-${idx}" class="rec-slot" style="width:100%"></div>
             </div>
-            <div id="slot-ipa-w-${curIpa.id}-${idx}" class="rec-slot" style="grid-column:1/-1;margin-top:-4px"></div>
           `).join('')}
         </div>
       </div>
       <div id="slot-ipa-main-${curIpa.id}" class="rec-slot" style="margin-top:8px"></div>
-    </div>
-
-    <div style="font-size:14px;font-weight:700;margin:16px 0 10px">Select an IPA sound below for details and pronunciation drills:</div>
-    <div class="ipa-grid">
-      ${filtered.map(it => `
-        <div class="ipa-card ${it.id === curIpa.id ? 'active' : ''}" data-id="${it.id}">
-          <div class="ipa-sym">${esc(it.ipa)}</div>
-          <div class="ipa-sample">${esc(it.sample)}</div>
-          <div class="ipa-name">${esc(it.name)}</div>
-        </div>
-      `).join('')}
     </div>
   `;
 
@@ -5787,10 +5796,10 @@ function renderPairsTab(container) {
               <div style="font-size:12px;color:var(--muted)">${esc(it.ipa1)} · ${esc(it.vi1)}</div>
             </div>
             <div style="display:flex;gap:4px">
-              <button class="icon-btn" onclick="speak('${esc(it.w1)}')" title="Nghe ${esc(it.w1)}" style="width:34px;height:34px">
+              <button class="icon-btn" onclick="speak('${esc(it.w1)}')" title="Listen to ${esc(it.w1)}" aria-label="Play ${esc(it.w1)}" style="width:34px;height:34px">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               </button>
-              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w1)}" data-rec-id="pair-${curPair.id}-${idx}-1" title="Practice speaking ${esc(it.w1)}" style="width:34px;height:34px">
+              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w1)}" data-rec-id="pair-${curPair.id}-${idx}-1" title="Practice speaking ${esc(it.w1)}" aria-label="Record ${esc(it.w1)}" style="width:34px;height:34px">
                 ${MIC_ICON}
               </button>
             </div>
@@ -5810,10 +5819,10 @@ function renderPairsTab(container) {
               <div style="font-size:12px;color:var(--muted)">${esc(it.ipa2)} · ${esc(it.vi2)}</div>
             </div>
             <div style="display:flex;gap:4px">
-              <button class="icon-btn" onclick="speak('${esc(it.w2)}')" title="Nghe ${esc(it.w2)}" style="width:34px;height:34px">
+              <button class="icon-btn" onclick="speak('${esc(it.w2)}')" title="Listen to ${esc(it.w2)}" aria-label="Play ${esc(it.w2)}" style="width:34px;height:34px">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               </button>
-              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w2)}" data-rec-id="pair-${curPair.id}-${idx}-2" title="Practice speaking ${esc(it.w2)}" style="width:34px;height:34px">
+              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w2)}" data-rec-id="pair-${curPair.id}-${idx}-2" title="Practice speaking ${esc(it.w2)}" aria-label="Record ${esc(it.w2)}" style="width:34px;height:34px">
                 ${MIC_ICON}
               </button>
             </div>
@@ -6108,10 +6117,10 @@ function renderUnitSections(u, box, container) {
                           <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px">
                             <span style="font-weight:800;font-size:14px">${esc(w.w)}</span>
                             <span style="font-size:12px;color:var(--muted)">${esc(w.ipa)}</span>
-                            <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Nghe ${esc(w.w)}" style="width:26px;height:26px">
+                            <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Listen to ${esc(w.w)}" aria-label="Play ${esc(w.w)}" style="width:26px;height:26px">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                             </button>
-                            <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${sec.letter}-${gIdx}-${wIdx}" title="Practice speaking" style="width:26px;height:26px">
+                            <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${sec.letter}-${gIdx}-${wIdx}" title="Practice speaking ${esc(w.w)}" aria-label="Record ${esc(w.w)}" style="width:26px;height:26px">
                               ${MIC_ICON}
                             </button>
                           </div>
@@ -6225,20 +6234,22 @@ function renderUnitSections(u, box, container) {
         <div class="pronun-word-grid">
           ${u.words.map((w, idx) => `
             <div class="pronun-word-card">
-              <div>
-                <div style="font-size:15px;font-weight:800">${esc(w.w)}</div>
-                <div style="font-size:12px;color:var(--muted)">${esc(w.ipa)} · ${esc(w.vi)}</div>
+              <div class="pronun-word-card-top">
+                <div>
+                  <div style="font-size:15px;font-weight:800">${esc(w.w)}</div>
+                  <div style="font-size:12px;color:var(--muted)">${esc(w.ipa)} · ${esc(w.vi)}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px">
+                  <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Listen to ${esc(w.w)}" aria-label="Play ${esc(w.w)}" style="width:34px;height:34px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  </button>
+                  <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${idx}" title="Practice speaking ${esc(w.w)}" aria-label="Record ${esc(w.w)}" style="width:34px;height:34px">
+                    ${MIC_ICON}
+                  </button>
+                </div>
               </div>
-              <div style="display:flex;align-items:center;gap:4px">
-                <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Listen to pronunciation" style="width:34px;height:34px">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                </button>
-                <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${idx}" title="Practice speaking" style="width:34px;height:34px">
-                  ${MIC_ICON}
-                </button>
-              </div>
+              <div id="slot-u-w-${u.id}-${idx}" class="rec-slot" style="width:100%"></div>
             </div>
-            <div id="slot-u-w-${u.id}-${idx}" class="rec-slot" style="grid-column:1/-1"></div>
           `).join('')}
         </div>
       </div>
@@ -7024,20 +7035,22 @@ function renderRulesTab(container) {
       <div class="pronun-word-grid">
         ${sWords.map((item, idx) => `
           <div class="pronun-word-card">
-            <div>
-              <div style="font-size:15px;font-weight:800">${esc(item.w)}</div>
-              <div style="font-size:12px;color:var(--muted)">${esc(item.ipa)} · ${esc(item.note)}</div>
+            <div class="pronun-word-card-top">
+              <div>
+                <div style="font-size:15px;font-weight:800">${esc(item.w)}</div>
+                <div style="font-size:12px;color:var(--muted)">${esc(item.ipa)} · ${esc(item.note)}</div>
+              </div>
+              <div style="display:flex;gap:4px">
+                <button class="icon-btn" onclick="speak('${esc(item.w)}')" title="Listen to ${esc(item.w)}" aria-label="Play ${esc(item.w)}" style="width:34px;height:34px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+                <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-s-${idx}" title="Practice speaking ${esc(item.w)}" aria-label="Record ${esc(item.w)}" style="width:34px;height:34px">
+                  ${MIC_ICON}
+                </button>
+              </div>
             </div>
-            <div style="display:flex;gap:4px">
-              <button class="icon-btn" onclick="speak('${esc(item.w)}')" title="Listen sample" style="width:34px;height:34px">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              </button>
-              <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-s-${idx}" title="Practice speaking ${esc(item.w)}" style="width:34px;height:34px">
-                ${MIC_ICON}
-              </button>
-            </div>
+            <div id="slot-rule-s-${idx}" class="rec-slot" style="width:100%"></div>
           </div>
-          <div id="slot-rule-s-${idx}" class="rec-slot" style="grid-column:1/-1;margin-top:-4px"></div>
         `).join('')}
       </div>
     </div>
@@ -7072,20 +7085,22 @@ function renderRulesTab(container) {
       <div class="pronun-word-grid">
         ${edWords.map((item, idx) => `
           <div class="pronun-word-card">
-            <div>
-              <div style="font-size:15px;font-weight:800">${esc(item.w)}</div>
-              <div style="font-size:12px;color:var(--muted)">${esc(item.ipa)} · ${esc(item.note)}</div>
+            <div class="pronun-word-card-top">
+              <div>
+                <div style="font-size:15px;font-weight:800">${esc(item.w)}</div>
+                <div style="font-size:12px;color:var(--muted)">${esc(item.ipa)} · ${esc(item.note)}</div>
+              </div>
+              <div style="display:flex;gap:4px">
+                <button class="icon-btn" onclick="speak('${esc(item.w)}')" title="Listen to ${esc(item.w)}" aria-label="Play ${esc(item.w)}" style="width:34px;height:34px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+                <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-ed-${idx}" title="Practice speaking ${esc(item.w)}" aria-label="Record ${esc(item.w)}" style="width:34px;height:34px">
+                  ${MIC_ICON}
+                </button>
+              </div>
             </div>
-            <div style="display:flex;gap:4px">
-              <button class="icon-btn" onclick="speak('${esc(item.w)}')" title="Listen sample" style="width:34px;height:34px">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              </button>
-              <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-ed-${idx}" title="Practice speaking ${esc(item.w)}" style="width:34px;height:34px">
-                ${MIC_ICON}
-              </button>
-            </div>
+            <div id="slot-rule-ed-${idx}" class="rec-slot" style="width:100%"></div>
           </div>
-          <div id="slot-rule-ed-${idx}" class="rec-slot" style="grid-column:1/-1;margin-top:-4px"></div>
         `).join('')}
       </div>
     </div>

@@ -102,8 +102,19 @@ Chỉ những tài khoản được bạn thêm vào danh sách này mới có t
      + Value: `admin`
    - Bấm **Save**.
 5. Quay lại trang web và tải lại trang (F5):
-   - Bạn sẽ thấy nút **Quản trị viên** xuất hiện ở thanh menu bên trái.
-   - Tại đây bạn có thể xem danh sách tất cả học viên, tổng điểm, số chủ đề đã học và bấm **Xem bài** để xem từng câu dịch, ô điền từ và từ khó của họ!
+   - Bạn sẽ thấy nút **👨‍🏫 Quản lý lớp học** xuất hiện ở thanh menu bên trái.
+   - Tại đây bạn có thể xem danh sách tất cả học viên, tổng điểm TOEIC, bài tập Phát âm Cambridge, xuất báo cáo Excel (CSV), gửi nhận xét cho học viên và cấp quyền cho Giáo viên (Thầy)!
+
+### BƯỚC 6B: CẤP QUYỀN CHO THẦY (GIÁO VIÊN)
+
+Sau khi đã cập nhật [firestore.rules](firestore.rules) (Bước 5) và có tài khoản Admin (Bước 6):
+
+- **Cách 1 (Nhanh nhất - làm ngay trên Web):**
+  1. Gửi link web cho Thầy và mời Thầy bấm **Đăng nhập** bằng Google/Email.
+  2. Bạn đăng nhập tài khoản Admin > vào mục **👨‍🏫 Quản lý lớp học** > bấm nút **🔑 Cấp quyền cho Thầy** > bấm **Cấp quyền Giáo viên** ngay cạnh tên của Thầy.
+  3. Thầy tải lại trang (F5) là sẽ thấy ngay mục **👨‍🏫 Quản lý lớp học** để theo dõi bài làm của tất cả học viên và gửi nhận xét!
+- **Cách 2 (Thêm trực tiếp trong Firebase Console):**
+  - Vào **Firestore Database** > **Data** > tạo collection `teachers` > thêm Document có **Document ID** là `User UID` của Thầy (có thể xem ngay trong trang Hồ sơ cá nhân của Thầy) > Field `role` = `teacher` > **Save**.
 
 ---
 

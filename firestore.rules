@@ -15,6 +15,10 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    function isTeacher() {
+      return isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid)));
+    }
+
     // Default deny all
     match /{document=**} {
       allow read, write: if false;
@@ -26,6 +30,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Teachers collection (Giáo viên / Thầy quản lý lớp học):
+    // Chính chủ, giáo viên, hoặc admin đọc được; Admin có thể thêm/xóa giáo viên ngay trên web
+    match /teachers/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isTeacher());
+      allow create, update, delete: if isAdmin();
+    }
+
     // Bảng xếp hạng: công khai để mọi người xem, người dùng tự cập nhật tổng điểm của chính mình
     match /leaderboard/{uid} {
       allow read: if true;
@@ -34,12 +45,12 @@ service cloud.firestore {
         && request.resource.data.uid == uid
         && request.resource.data.totalBest is number && request.resource.data.totalBest >= 0 && request.resource.data.totalBest <= 4500
         && request.resource.data.completedCount is number && request.resource.data.completedCount >= 0 && request.resource.data.completedCount <= 45;
-      allow delete: if isOwner(uid);
+      allow delete: if isOwner(uid) || isAdmin();
     }
 
     // Dữ liệu người dùng
     match /users/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isTeacher();
 
       allow create: if isOwner(uid)
         && request.resource.data.keys().hasOnly(['displayName', 'photoURL', 'email', 'hidden', 'createdAt', 'updatedAt'])
@@ -60,7 +71,7 @@ service cloud.firestore {
 
       // Tiến độ học theo chủ đề (điểm best 0-100, completed, completedManual)
       match /progress/{topicId} {
-        allow read: if isOwner(uid) || isAdmin();
+        allow read: if isOwner(uid) || isTeacher();
         allow create, update: if isOwner(uid)
           && (request.resource.data.best == null || (request.resource.data.best is number && request.resource.data.best >= 0 && request.resource.data.best <= 100))
           && (request.resource.data.completed == null || request.resource.data.completed is bool)
@@ -68,16 +79,16 @@ service cloud.firestore {
         allow delete: if isOwner(uid);
       }
 
-      // Câu trả lời và bản dịch của người dùng
+      // Câu trả lời, bản dịch TOEIC và bài tập Phát âm (pronun_{unitId})
       match /answers/{topicId} {
-        allow read: if isOwner(uid) || isAdmin();
+        allow read: if isOwner(uid) || isTeacher();
         allow create, update, delete: if isOwner(uid);
       }
 
-      // Metadata (từ khó cần ôn review...)
+      // Metadata (từ khó cần ôn review, summary tiến độ, teacher_note nhận xét của thầy...)
       match /meta/{docId} {
-        allow read: if isOwner(uid) || isAdmin();
-        allow create, update, delete: if isOwner(uid);
+        allow read: if isOwner(uid) || isTeacher();
+        allow create, update, delete: if isOwner(uid) || (isTeacher() && docId == 'teacher_note');
       }
     }
   }

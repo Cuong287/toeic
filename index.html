@@ -1554,8 +1554,8 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
         <span class="nm">Bảng xếp hạng</span>
       </a>
       <a href="#admin" class="snav-item" id="snav-admin" hidden>
-        <span class="icon">⚙️</span>
-        <span class="nm">Quản trị viên</span>
+        <span class="icon">👨‍🏫</span>
+        <span class="nm">Quản lý lớp học</span>
       </a>
     </nav>
 
@@ -1604,7 +1604,7 @@ Object.values(ENR).forEach(e => { e.vocab = e.vocab || {}; e.usage = e.usage || 
 
 // ---------- Storage & Separation by UID ----------
 let currentUid = 'guest';
-const LOCAL_ONLY_KEYS = /^(last|rate|qdir|trhide:)/;
+const LOCAL_ONLY_KEYS = /^(last|rate|qdir|trhide:|_pending_dirty|synced_choice|p0_sub_|p0_filter_|t0_scope|t0_mode|t0_qdir)/;
 
 function migrateLegacyStorage() {
   try {
@@ -1645,6 +1645,10 @@ const store = {
   },
   setUid(uid) {
     currentUid = uid || 'guest';
+    if (typeof unitExState === 'object' && unitExState !== null) {
+      Object.keys(unitExState).forEach(k => delete unitExState[k]);
+    }
+    if (typeof loadPendingDirtyQueue === 'function') loadPendingDirtyQueue();
     updateReviewBadge();
   },
   getReviewList() {
@@ -1892,6 +1896,7 @@ let fbAuth = null;
 let fbDb = null;
 let currentUser = null;
 let isAdminUser = false;
+let isTeacherUser = false;
 let authModules = null;
 let firestoreModules = null;
 
@@ -1905,22 +1910,119 @@ const isConfigured = Boolean(
 
 const dirtyKeys = new Set();
 let debounceTimer = null;
+let isFlushingDirty = false;
+let lastCloudPullAt = 0;
+const CLOUD_PULL_COOLDOWN_MS = 5 * 60 * 1000; // 5 phút mới tự động kéo cloud 1 lần để tiết kiệm băng thông & quota khi đông người dùng
+
+function isUserActivelyTyping() {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = (el.tagName || '').toUpperCase();
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+function setSyncStatusUI(text, color) {
+  const el = $('#sync-status-txt');
+  if (el) {
+    el.textContent = text;
+    el.style.color = color || '';
+  }
+}
+
+function savePendingDirtyQueue() {
+  if (!currentUid || currentUid === 'guest') return;
+  try {
+    if (dirtyKeys.size > 0) {
+      localStorage.setItem(`toeic45:${currentUid}:_pending_dirty`, JSON.stringify(Array.from(dirtyKeys)));
+    } else {
+      localStorage.removeItem(`toeic45:${currentUid}:_pending_dirty`);
+    }
+  } catch (e) {}
+}
+
+function loadPendingDirtyQueue() {
+  dirtyKeys.clear();
+  if (!currentUid || currentUid === 'guest') return;
+  try {
+    const raw = localStorage.getItem(`toeic45:${currentUid}:_pending_dirty`);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) arr.forEach(k => { if (typeof k === 'string') dirtyKeys.add(k); });
+    }
+  } catch (e) {}
+}
+
+function computeLocalUserSummary() {
+  let totalBest = 0;
+  let completedCount = 0;
+  let topicsAttempted = 0;
+  TOPICS.forEach(t => {
+    const best = store.get('best:' + t.id, null);
+    const completedManual = store.get('completedManual:' + t.id, false);
+    if (best != null && typeof best === 'number') {
+      totalBest += best;
+      topicsAttempted++;
+    } else if (completedManual) {
+      topicsAttempted++;
+    }
+    if (completedManual || (best != null && best >= 80)) completedCount++;
+  });
+
+  let pronunUnitsDone = 0;
+  let pronunExChecked = 0;
+  let pronunExFilled = 0;
+  try {
+    const prefix = `toeic45:${currentUid}:pronun_ex:`;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) {
+        const uObj = JSON.parse(localStorage.getItem(k) || '{}');
+        const exVals = Object.values(uObj || {});
+        let unitHasAny = false;
+        exVals.forEach(ex => {
+          if (!ex || typeof ex !== 'object') return;
+          const ansCount = Object.values(ex.answers || {}).filter(v => String(v || '').trim() !== '').length;
+          if (ansCount > 0) { pronunExFilled++; unitHasAny = true; }
+          if (ex.checked) { pronunExChecked++; unitHasAny = true; }
+        });
+        if (unitHasAny) pronunUnitsDone++;
+      }
+    }
+  } catch (e) {}
+
+  return {
+    totalBest,
+    completedCount,
+    topicsAttempted,
+    pronunUnitsDone,
+    pronunExChecked,
+    pronunExFilled
+  };
+}
 
 function markDirty(k) {
-  if (!currentUser || currentUid === 'guest') return;
   if (LOCAL_ONLY_KEYS.test(k)) return;
+  if (!currentUser || currentUid === 'guest') return;
   dirtyKeys.add(k);
+  savePendingDirtyQueue();
+  setSyncStatusUI(navigator.onLine ? 'Đã lưu máy · Đang đồng bộ…' : 'Đã lưu máy (Offline)', '');
   if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(flushDirtyKeys, 1500);
+  debounceTimer = setTimeout(flushDirtyKeys, 2500);
 }
 
 async function flushDirtyKeys() {
-  if (!currentUser || currentUid === 'guest' || !fbDb || dirtyKeys.size === 0) return;
+  if (!currentUser || currentUid === 'guest' || !fbDb || dirtyKeys.size === 0 || isFlushingDirty) return;
+  if (!navigator.onLine) {
+    setSyncStatusUI('Đã lưu máy (Offline)', '');
+    return;
+  }
+  isFlushingDirty = true;
   const keys = Array.from(dirtyKeys);
   dirtyKeys.clear();
   try {
     const answerUpdates = {};
     const progressUpdates = {};
+    const pronunUpdates = {};
     let reviewUpdate = null;
 
     for (const k of keys) {
@@ -1928,28 +2030,41 @@ async function flushDirtyKeys() {
       if (k.startsWith('tr:') || k.startsWith('g-') || k.startsWith('gt-')) {
         const parts = k.startsWith('tr:') ? k.split(':') : k.split('-');
         const tId = parts[1];
-        answerUpdates[tId] = answerUpdates[tId] || {};
-        answerUpdates[tId][k] = val;
+        if (tId) {
+          answerUpdates[tId] = answerUpdates[tId] || {};
+          answerUpdates[tId][k] = val;
+        }
+      } else if (k.startsWith('pronun_ex:')) {
+        const uId = k.slice('pronun_ex:'.length);
+        if (uId) pronunUpdates[uId] = val || {};
       } else if (k.startsWith('completedManual:')) {
         const tId = k.split(':')[1];
-        progressUpdates[tId] = progressUpdates[tId] || {};
-        progressUpdates[tId].completedManual = Boolean(val);
+        if (tId) {
+          progressUpdates[tId] = progressUpdates[tId] || {};
+          progressUpdates[tId].completedManual = Boolean(val);
+        }
       } else if (k.startsWith('best:')) {
         const tId = k.split(':')[1];
-        progressUpdates[tId] = progressUpdates[tId] || {};
-        progressUpdates[tId].best = Number(val) || 0;
-        progressUpdates[tId].completed = (Number(val) || 0) >= 80;
+        if (tId) {
+          progressUpdates[tId] = progressUpdates[tId] || {};
+          progressUpdates[tId].best = Number(val) || 0;
+          progressUpdates[tId].completed = (Number(val) || 0) >= 80;
+        }
       } else if (k.startsWith('p0_best:')) {
         const tId = k.split(':')[1];
-        progressUpdates[tId] = progressUpdates[tId] || {};
-        const curBest = Number(progressUpdates[tId].best) || Number(store.get('best:' + tId, 0)) || 0;
-        progressUpdates[tId].best = Math.max(Number(val) || 0, curBest);
-        progressUpdates[tId].completed = progressUpdates[tId].best >= 80;
+        if (tId) {
+          progressUpdates[tId] = progressUpdates[tId] || {};
+          const curBest = Number(progressUpdates[tId].best) || Number(store.get('best:' + tId, 0)) || 0;
+          progressUpdates[tId].best = Math.max(Number(val) || 0, curBest);
+          progressUpdates[tId].completed = progressUpdates[tId].best >= 80;
+        }
       } else if (k.startsWith('wf-')) {
         const parts = k.split('-');
         const tId = parts[1];
-        answerUpdates[tId] = answerUpdates[tId] || {};
-        answerUpdates[tId][k] = val;
+        if (tId) {
+          answerUpdates[tId] = answerUpdates[tId] || {};
+          answerUpdates[tId][k] = val;
+        }
       } else if (k === 'review') {
         reviewUpdate = val;
       }
@@ -1961,6 +2076,12 @@ async function flushDirtyKeys() {
     for (const [tId, data] of Object.entries(answerUpdates)) {
       const ref = firestoreModules.doc(fbDb, 'users', currentUid, 'answers', tId);
       batch.set(ref, { data, updatedAt: firestoreModules.serverTimestamp() }, { merge: true });
+      count++;
+    }
+
+    for (const [uId, exMap] of Object.entries(pronunUpdates)) {
+      const ref = firestoreModules.doc(fbDb, 'users', currentUid, 'answers', 'pronun_' + uId);
+      batch.set(ref, { unitId: Number(uId), exercises: exMap, updatedAt: firestoreModules.serverTimestamp() }, { merge: true });
       count++;
     }
 
@@ -1977,31 +2098,69 @@ async function flushDirtyKeys() {
     }
 
     if (count > 0) {
+      // Lưu luôn bản tóm tắt tiến độ (1 document duy nhất) để trang Giáo viên đọc siêu nhanh & tiết kiệm quota
+      const summary = computeLocalUserSummary();
+      const summaryRef = firestoreModules.doc(fbDb, 'users', currentUid, 'meta', 'summary');
+      batch.set(summaryRef, { ...summary, updatedAt: firestoreModules.serverTimestamp() }, { merge: true });
+
       await batch.commit();
+      savePendingDirtyQueue();
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setSyncStatusUI('Đã lưu & đồng bộ ' + nowStr, '');
       if (Object.keys(progressUpdates).length > 0) {
         syncLeaderboardFromClient(currentUid);
       }
+    } else {
+      savePendingDirtyQueue();
     }
   } catch (err) {
     console.error('Lỗi khi đồng bộ dữ liệu lên Firestore:', err);
     keys.forEach(k => dirtyKeys.add(k));
+    savePendingDirtyQueue();
+    setSyncStatusUI('Đã lưu máy · Chờ mạng…', '');
+  } finally {
+    isFlushingDirty = false;
+    if (dirtyKeys.size > 0 && navigator.onLine) {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(flushDirtyKeys, 4000);
+    }
   }
 }
 
-window.addEventListener('beforeunload', () => flushDirtyKeys());
-window.addEventListener('pagehide', () => flushDirtyKeys());
+window.addEventListener('beforeunload', () => {
+  savePendingDirtyQueue();
+  flushDirtyKeys();
+});
+window.addEventListener('pagehide', () => {
+  savePendingDirtyQueue();
+  flushDirtyKeys();
+});
+window.addEventListener('online', () => {
+  if (dirtyKeys.size > 0) {
+    setSyncStatusUI('Có mạng lại · Đang đồng bộ…', '');
+    flushDirtyKeys();
+  }
+});
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
+    savePendingDirtyQueue();
     flushDirtyKeys();
   } else if (document.visibilityState === 'visible' && currentUser && currentUid !== 'guest') {
-    // Tự động kéo tiến độ mới nhất về khi người dùng quay lại tab trình duyệt
-    downloadCloudData(currentUser.uid).then(() => {
-      renderSide();
-      if (currentRoute === 'topic') {
-        const t = TOPICS[S.t - 1];
-        if (t) renderHead(t);
-      }
-    });
+    if (dirtyKeys.size > 0) {
+      flushDirtyKeys();
+      return;
+    }
+    // Chỉ kéo dữ liệu từ đám mây tối đa 5 phút/lần và KHÔNG làm gián đoạn khi người dùng đang gõ
+    const now = Date.now();
+    if (now - lastCloudPullAt > CLOUD_PULL_COOLDOWN_MS && !isUserActivelyTyping()) {
+      downloadCloudData(currentUser.uid).then(() => {
+        renderSide();
+        if (currentRoute === 'topic' && !isUserActivelyTyping()) {
+          const t = TOPICS[S.t - 1];
+          if (t) renderHead(t);
+        }
+      });
+    }
   }
 });
 
@@ -2112,18 +2271,24 @@ async function initFirebase() {
         await ensureUserProfile(user);
         await checkAdminStatus(user.uid);
         renderAuthBox();
+        // Đẩy ngay các câu trả lời còn tồn đọng lúc offline trước khi kéo cloud về
+        if (dirtyKeys.size > 0) {
+          await flushDirtyKeys();
+        }
         await checkFirstLoginMerge(user.uid);
         // Luôn kéo dữ liệu mới nhất từ đám mây về máy tính/thiết bị này
         await downloadCloudData(user.uid);
       } else {
         store.setUid('guest');
         isAdminUser = false;
+        isTeacherUser = false;
         renderAuthBox();
         const sAdmin = $('#snav-admin');
         if (sAdmin) sAdmin.hidden = true;
       }
       renderSide();
-      if (currentRoute === 'topic') render();
+      if (currentRoute === 'topic' && !isUserActivelyTyping()) render();
+      if (currentRoute === 'pronun' && !isUserActivelyTyping()) renderPronunciation($('#panel'));
       if (currentRoute === 'leaderboard') renderLeaderboard($('#panel'));
       if (currentRoute === 'profile') renderProfile($('#panel'));
       if (currentRoute === 'admin') renderAdmin($('#panel'));
@@ -2162,14 +2327,19 @@ async function ensureUserProfile(user) {
 }
 
 async function checkAdminStatus(uid) {
-  if (!fbDb || !uid) { isAdminUser = false; return; }
+  if (!fbDb || !uid) { isAdminUser = false; isTeacherUser = false; return; }
   try {
-    const adminDoc = await firestoreModules.getDoc(firestoreModules.doc(fbDb, 'admins', uid));
-    isAdminUser = adminDoc.exists();
+    const [adminDoc, teacherDoc] = await Promise.all([
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'admins', uid)).catch(() => null),
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'teachers', uid)).catch(() => null)
+    ]);
+    isAdminUser = Boolean(adminDoc && adminDoc.exists());
+    isTeacherUser = isAdminUser || Boolean(teacherDoc && teacherDoc.exists());
     const sAdmin = $('#snav-admin');
-    if (sAdmin) sAdmin.hidden = !isAdminUser;
+    if (sAdmin) sAdmin.hidden = !isTeacherUser;
   } catch (e) {
     isAdminUser = false;
+    isTeacherUser = false;
   }
 }
 
@@ -2229,9 +2399,46 @@ function showMergeModal(uid) {
   $('#m-cloud').onclick = async () => { closeModal(); await executeMerge('cloud', uid); };
 }
 
+function mergePronunUnitEx(localUnit, cloudUnit) {
+  const out = {};
+  const allExIds = new Set([
+    ...Object.keys(cloudUnit || {}),
+    ...Object.keys(localUnit || {})
+  ]);
+  allExIds.forEach(exId => {
+    const loc = (localUnit && localUnit[exId]) || null;
+    const cld = (cloudUnit && cloudUnit[exId]) || null;
+    if (!loc) { out[exId] = cld; return; }
+    if (!cld) { out[exId] = loc; return; }
+    const locTs = Number(loc.updatedAt) || 0;
+    const cldTs = Number(cld.updatedAt) || 0;
+    const mergedAnswers = {};
+    const ansKeys = new Set([
+      ...Object.keys(cld.answers || {}),
+      ...Object.keys(loc.answers || {})
+    ]);
+    ansKeys.forEach(ak => {
+      const lv = (loc.answers || {})[ak];
+      const cv = (cld.answers || {})[ak];
+      const lEmpty = lv == null || String(lv).trim() === '';
+      const cEmpty = cv == null || String(cv).trim() === '';
+      if (!lEmpty && cEmpty) mergedAnswers[ak] = lv;
+      else if (lEmpty && !cEmpty) mergedAnswers[ak] = cv;
+      else if (!lEmpty && !cEmpty) mergedAnswers[ak] = locTs >= cldTs ? lv : cv;
+    });
+    out[exId] = {
+      answers: mergedAnswers,
+      checked: Boolean(loc.checked || cld.checked),
+      updatedAt: Math.max(locTs, cldTs) || Date.now()
+    };
+  });
+  return out;
+}
+
 async function downloadCloudData(uid) {
   if (!fbDb || !uid || !firestoreModules) return;
   try {
+    lastCloudPullAt = Date.now();
     // 1. Đồng bộ điểm trắc nghiệm & trạng thái hoàn thành
     const progSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', uid, 'progress'));
     progSnap.forEach(d => {
@@ -2247,25 +2454,44 @@ async function downloadCloudData(uid) {
       }
     });
 
-    // 2. Đồng bộ các bài làm (dịch câu, điền từ, dạng từ)
+    // 2. Đồng bộ các bài làm (TOEIC dịch câu, điền từ, dạng từ + Bài tập Phát âm Cambridge)
     const ansSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', uid, 'answers'));
     ansSnap.forEach(d => {
-      const answers = d.data().data || {};
-      Object.entries(answers).forEach(([k, val]) => {
-        const localVal = store.get(k, null);
-        if (localVal == null || localVal === '') {
-          localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify(val));
-        } else if (val && typeof val === 'object' && typeof localVal === 'object') {
-          localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify({ ...localVal, ...val }));
-        } else if (val != null && val !== '') {
-          localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify(val));
+      const docData = d.data() || {};
+      // 2a. Bài tập Phát âm Cambridge (pronun_{unitId})
+      if (d.id.startsWith('pronun_')) {
+        const uId = d.id.slice('pronun_'.length);
+        const storeKey = 'pronun_ex:' + uId;
+        if (dirtyKeys.has(storeKey)) return; // Không bao giờ ghi đè dữ liệu cục bộ chưa đẩy xong
+        const cloudEx = docData.exercises || {};
+        const localEx = store.get(storeKey, {});
+        const merged = mergePronunUnitEx(localEx, cloudEx);
+        localStorage.setItem(`toeic45:${uid}:${storeKey}`, JSON.stringify(merged));
+        if (typeof unitExState === 'object' && unitExState !== null) {
+          unitExState[uId] = merged;
         }
+        return;
+      }
+
+      // 2b. Bài tập TOEIC theo chủ đề
+      const answers = docData.data || {};
+      Object.entries(answers).forEach(([k, val]) => {
+        if (dirtyKeys.has(k)) return; // Bảo vệ câu trả lời người dùng vừa gõ chưa kịp đẩy
+        const localVal = store.get(k, null);
+        const localEmpty = localVal == null || (typeof localVal === 'string' && localVal.trim() === '');
+        const cloudEmpty = val == null || (typeof val === 'string' && val.trim() === '');
+        if (localEmpty && !cloudEmpty) {
+          localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify(val));
+        } else if (val && typeof val === 'object' && localVal && typeof localVal === 'object') {
+          localStorage.setItem(`toeic45:${uid}:${k}`, JSON.stringify({ ...val, ...localVal }));
+        }
+        // Nếu cả local và cloud đều có chữ, ưu tiên giữ local (không ghi đè làm mất bài đang điền)
       });
     });
 
     // 3. Đồng bộ danh sách từ khó (gộp chung cả 2 thiết bị)
     const revDoc = await firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', uid, 'meta', 'review'));
-    if (revDoc.exists() && revDoc.data().items) {
+    if (revDoc.exists() && revDoc.data().items && !dirtyKeys.has('review')) {
       const cloudItems = revDoc.data().items || [];
       const localRev = store.get('review', { items: [] });
       const localItems = (localRev && Array.isArray(localRev.items)) ? localRev.items : [];
@@ -2286,13 +2512,18 @@ async function downloadCloudData(uid) {
       updateReviewBadge();
     }
 
-    // Làm mới giao diện để hiển thị ngay lập tức
+    // Làm mới giao diện an toàn (KHÔNG render lại nếu người dùng đang gõ trong ô input/textarea)
     renderSide();
-    if (currentRoute === 'topic') {
-      render();
-    } else if (currentRoute === 'topic0') {
-      const p = $('#panel');
-      if (p) renderTopic0(p);
+    if (!isUserActivelyTyping()) {
+      if (currentRoute === 'topic') {
+        render();
+      } else if (currentRoute === 'topic0') {
+        const p = $('#panel');
+        if (p) renderTopic0(p);
+      } else if (currentRoute === 'pronun') {
+        const p = $('#panel');
+        if (p) renderPronunciation(p);
+      }
     }
   } catch (e) {
     console.error('Lỗi downloadCloudData:', e);
@@ -2302,38 +2533,25 @@ async function downloadCloudData(uid) {
 let lastAutoSyncTime = 0;
 async function autoSyncCloud(force = false) {
   if (!currentUser || currentUid === 'guest' || !fbDb) return;
+  if (!force && isUserActivelyTyping()) return;
   const now = Date.now();
-  if (!force && now - lastAutoSyncTime < 15000) return;
+  if (!force && now - lastAutoSyncTime < CLOUD_PULL_COOLDOWN_MS) {
+    // Nếu có dữ liệu cục bộ chưa đẩy thì chỉ đẩy lên, không tải lại toàn bộ cloud
+    if (dirtyKeys.size > 0) await flushDirtyKeys();
+    return;
+  }
   lastAutoSyncTime = now;
 
   try {
-    const syncTxt = $('#sync-status-txt');
-    if (syncTxt) syncTxt.textContent = 'Đang đồng bộ...';
+    setSyncStatusUI('Đang đồng bộ…', '');
     await flushDirtyKeys();
     await downloadCloudData(currentUser.uid);
     const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    if (syncTxt) syncTxt.textContent = 'Đã đồng bộ ' + nowStr;
+    setSyncStatusUI('Đã lưu & đồng bộ ' + nowStr, '');
   } catch (e) {
     console.warn('Lỗi autoSyncCloud:', e);
   }
 }
-
-// Tự động kéo dữ liệu khi người dùng quay lại tab trình duyệt
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && currentUser && fbDb) {
-    autoSyncCloud();
-  }
-});
-window.addEventListener('focus', () => {
-  if (currentUser && fbDb) {
-    autoSyncCloud();
-  }
-});
-window.addEventListener('online', () => {
-  if (currentUser && fbDb) {
-    autoSyncCloud(true);
-  }
-});
 
 async function executeMerge(mode, uid) {
   const guestData = {};
@@ -2363,6 +2581,9 @@ async function executeMerge(mode, uid) {
         store.set(k, Math.max(Number(val) || 0, currentBest));
       } else if (k.startsWith('completedManual:')) {
         if (val) store.set(k, true);
+      } else if (k.startsWith('pronun_ex:')) {
+        const currentPronun = store.get(k, {});
+        store.set(k, mergePronunUnitEx(val || {}, currentPronun || {}));
       } else if (k === 'review') {
         const currentRev = store.get('review', { items: [] });
         const guestItems = (val && val.items) || [];
@@ -4344,7 +4565,30 @@ window.skipCambridgeTrack = skipCambridgeTrack;
 
 let curSelectedUnitId = 2;
 let curUnitViewMode = 'sections'; // 'sections' (Mục A-B-C-D) | 'exercises' (Bài tập thực hành) | 'ai_speaking' (Luyện nói AI)
-let unitExState = {}; // { [unitId]: { [exId]: { answers: {}, checked: false, score: 0 } } }
+let unitExState = {}; // { [unitId]: { [exId]: { answers: {}, checked: false, updatedAt: ms } } }
+
+function getUnitExState(unitId) {
+  const key = String(unitId);
+  if (!unitExState[key]) {
+    const saved = store.get('pronun_ex:' + key, null);
+    unitExState[key] = (saved && typeof saved === 'object') ? saved : {};
+  }
+  return unitExState[key];
+}
+
+function saveUnitExState(unitId, exId) {
+  const key = String(unitId);
+  const uState = getUnitExState(key);
+  if (exId && uState[exId]) {
+    uState[exId].updatedAt = Date.now();
+  }
+  store.set('pronun_ex:' + key, uState);
+  const badge = document.querySelector('#pronun-autosave-badge');
+  if (badge) {
+    badge.textContent = '✓ Đã tự động lưu ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    badge.style.color = 'var(--good)';
+  }
+}
 let listenPairsPlayed = {}; // stores randomly played word per drill
 let earQuizWord = null;
 let earQuizPair = null;
@@ -5040,10 +5284,7 @@ function renderUnitSections(u, box, container) {
 }
 
 function renderUnitExercises(u, box, container) {
-  if (!unitExState[u.id]) {
-    unitExState[u.id] = {};
-  }
-  const uState = unitExState[u.id];
+  const uState = getUnitExState(u.id);
 
   const exList = u.exercises || [];
   if (exList.length === 0) {
@@ -5070,9 +5311,12 @@ function renderUnitExercises(u, box, container) {
     <!-- Exercise Progress Bar -->
     <div style="background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
       <div style="flex:1;min-width:200px">
-        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;font-size:13px;font-weight:700;margin-bottom:6px">
           <span>Tiến độ làm bài tập Unit ${u.id}:</span>
-          <span style="color:var(--accent)">${completedCount}/${exList.length} bài (${pct}%)</span>
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <span id="pronun-autosave-badge" style="font-size:11.5px;font-weight:600;color:var(--good)">✓ Đáp án tự động lưu</span>
+            <span style="color:var(--accent)">${completedCount}/${exList.length} bài (${pct}%)</span>
+          </span>
         </div>
         <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:linear-gradient(90deg, #E11D48, #6366F1);border-radius:4px;transition:width 0.3s"></div>
@@ -5092,8 +5336,9 @@ function renderUnitExercises(u, box, container) {
   `;
 
   box.querySelector('#btn-reset-exercises').onclick = () => {
-    if (confirm('Bạn có chắc muốn làm lại tất cả bài tập của Unit này?')) {
-      delete unitExState[u.id];
+    if (confirm('Bạn có chắc muốn xóa đáp án và làm lại tất cả bài tập của Unit này?')) {
+      unitExState[String(u.id)] = {};
+      store.set('pronun_ex:' + u.id, {});
       renderUnitsTab(container);
     }
   };
@@ -5479,7 +5724,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
 // Helper: Bind Event Listeners for All Exercises
 // --------------------------------------------------------------------------
 function bindAllExerciseEvents(u, box, container) {
-  const uState = unitExState[u.id];
+  const uState = getUnitExState(u.id);
 
   // Helper to sync used chips state in word bank
   function syncWordBankUsed(cardEl, exId) {
@@ -5514,6 +5759,7 @@ function bindAllExerciseEvents(u, box, container) {
         const key = targetInput.dataset.blankKey;
         if (key) {
           uState[exId].answers[key] = w;
+          saveUnitExState(u.id, exId);
         }
 
         // Tự động chuyển con trỏ sang ô trống kế tiếp để người dùng điền liền mạch khi nghe
@@ -5547,6 +5793,7 @@ function bindAllExerciseEvents(u, box, container) {
         const exId = exCard.id.replace('ex-card-', '');
         if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
         uState[exId].answers[key] = inp.value;
+        saveUnitExState(u.id, exId);
         syncWordBankUsed(exCard, exId);
       }
     };
@@ -5557,6 +5804,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = b.dataset.exId;
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].checked = true;
+      saveUnitExState(u.id, exId);
       renderUnitsTab(container);
     };
   });
@@ -5576,6 +5824,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = b.dataset.exId;
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].checked = true;
+      saveUnitExState(u.id, exId);
       renderUnitsTab(container);
     };
   });
@@ -5589,6 +5838,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = exCard.id.replace('ex-card-', '');
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].answers[word] = choice;
+      saveUnitExState(u.id, exId);
       const isAudioBusy = (currentCambridgeAudio && !currentCambridgeAudio.paused) ||
                           (ttsAudioPlayer && !ttsAudioPlayer.paused) ||
                           (window.speechSynthesis && window.speechSynthesis.speaking);
@@ -5604,6 +5854,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = b.dataset.exId;
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].checked = true;
+      saveUnitExState(u.id, exId);
       renderUnitsTab(container);
     };
   });
@@ -5616,6 +5867,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = exCard.id.replace('ex-card-', '');
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].answers[`match_${pairId}`] = sel.value;
+      saveUnitExState(u.id, exId);
     };
   });
 
@@ -5624,6 +5876,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = b.dataset.exId;
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].checked = true;
+      saveUnitExState(u.id, exId);
       renderUnitsTab(container);
     };
   });
@@ -5648,6 +5901,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = exCard.id.replace('ex-card-', '');
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].answers[`drill_${drillId}`] = word;
+      saveUnitExState(u.id, exId);
       renderUnitsTab(container);
     };
   });
@@ -5657,6 +5911,7 @@ function bindAllExerciseEvents(u, box, container) {
       const exId = b.dataset.exId;
       if (!uState[exId]) uState[exId] = { answers: {}, checked: false };
       uState[exId].checked = true;
+      saveUnitExState(u.id, exId);
       renderUnitsTab(container);
     };
   });
@@ -5956,9 +6211,14 @@ async function renderProfile(box) {
   }
 
   let profileData = {};
+  let teacherNoteData = null;
   try {
-    const userDoc = await firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', currentUser.uid));
-    if (userDoc.exists()) profileData = userDoc.data();
+    const [userDoc, noteDoc] = await Promise.all([
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', currentUser.uid)).catch(() => null),
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', currentUser.uid, 'meta', 'teacher_note')).catch(() => null)
+    ]);
+    if (userDoc && userDoc.exists()) profileData = userDoc.data();
+    if (noteDoc && noteDoc.exists()) teacherNoteData = noteDoc.data();
   } catch (e) {}
 
   let completedCount = 0;
@@ -6026,9 +6286,23 @@ async function renderProfile(box) {
           ${currentUser.emailVerified
             ? '<span style="font-size:12px;color:var(--good);background:var(--good-soft);padding:3px 8px;border-radius:6px;font-weight:600">✓ Đã xác minh email</span>'
             : '<span style="font-size:12px;color:var(--warn);background:var(--warn-soft);padding:3px 8px;border-radius:6px;font-weight:600">Chưa xác minh email</span> <button class="btn ghost" id="btn-resend-verify" style="font-size:12px;padding:2px 6px">Gửi lại email</button>'}
+          ${isTeacherUser ? `<span style="margin-left:6px;font-size:12px;color:#fff;background:#2563EB;padding:3px 8px;border-radius:6px;font-weight:700">${isAdminUser ? '👑 Quản trị viên' : '👨‍🏫 Giáo viên'}</span>` : ''}
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:6px">
+          Mã UID: <code style="user-select:all;background:var(--sunk);padding:2px 6px;border-radius:4px">${esc(currentUser.uid)}</code>
         </div>
       </div>
     </div>
+
+    ${teacherNoteData && teacherNoteData.note ? `
+      <div class="card" style="margin-bottom:18px;background:rgba(37,99,235,0.06);border:1.5px solid rgba(37,99,235,0.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-weight:800;font-size:14.5px;color:#2563EB">👨‍🏫 Nhận xét từ Giáo viên</div>
+          <div style="font-size:12px;color:var(--muted)">${teacherNoteData.authorName ? esc(teacherNoteData.authorName) + ' · ' : ''}${teacherNoteData.updatedAt && teacherNoteData.updatedAt.toDate ? teacherNoteData.updatedAt.toDate().toLocaleDateString('vi-VN') : ''}</div>
+        </div>
+        <div style="font-size:14px;line-height:1.6;white-space:pre-wrap">${esc(teacherNoteData.note)}</div>
+      </div>
+    ` : ''}
 
     <div class="stat-grid">
       <div class="stat-card">
@@ -6183,13 +6457,54 @@ async function renderProfile(box) {
   };
 }
 
-// ---------- NEW PAGE: ADMIN (Quản trị viên) ----------
+// ---------- NEW PAGE: TEACHER & CLASS MANAGEMENT (Quản lý lớp học cho Thầy) ----------
+function fmtRelativeTime(ms) {
+  if (!ms) return 'Chưa có';
+  const diff = Date.now() - ms;
+  if (diff < 60000) return 'Vừa xong';
+  if (diff < 3600000) return Math.floor(diff / 60000) + ' phút trước';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + ' giờ trước';
+  if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + ' ngày trước';
+  return new Date(ms).toLocaleDateString('vi-VN');
+}
+
+function exportStudentsCSV(users) {
+  const headers = ['Họ tên', 'Email', 'Vai trò', 'Ngày tham gia', 'Hoạt động gần nhất', 'Chủ đề TOEIC đã học', 'Chủ đề TOEIC hoàn thành', 'Tổng điểm TOEIC', 'Unit Phát âm đã làm', 'Bài tập Phát âm đã điền', 'Bài tập Phát âm đã chấm', 'UID'];
+  const escCsv = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = users.map(u => [
+    u.displayName,
+    u.email,
+    u.isAdmin ? 'Quản trị viên' : (u.isTeacher ? 'Giáo viên' : 'Học viên'),
+    u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '',
+    u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('vi-VN') : '',
+    u.topicsAttempted || 0,
+    u.completedCount || 0,
+    u.totalBest || 0,
+    u.pronunUnitsDone || 0,
+    u.pronunExFilled || 0,
+    u.pronunExChecked || 0,
+    u.uid
+  ].map(escCsv).join(','));
+  const csvContent = '\uFEFF' + headers.map(escCsv).join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `BaoCao_LopHoc_TOEIC_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ Đã xuất file báo cáo CSV (mở được bằng Excel)!');
+}
+
 async function renderAdmin(box) {
-  if (!currentUser || !isAdminUser) {
+  if (!currentUser || !isTeacherUser) {
     box.innerHTML = `
       <div class="card" style="text-align:center;padding:40px">
         <h2 style="color:var(--bad);margin:0 0 8px">Truy cập bị từ chối</h2>
-        <p class="hint">Tài khoản của bạn không có quyền quản trị viên.</p>
+        <p class="hint">Tài khoản của bạn chưa được cấp quyền Giáo viên hoặc Quản trị viên.</p>
+        ${currentUser ? `<p class="hint" style="font-size:12.5px;margin-top:8px">Mã UID của bạn: <code style="user-select:all;background:var(--sunk);padding:2px 6px;border-radius:4px">${esc(currentUser.uid)}</code></p>` : ''}
         <button class="btn primary" onclick="location.hash='#t1-p1'" style="margin-top:12px">Quay về trang học</button>
       </div>`;
     return;
@@ -6197,108 +6512,337 @@ async function renderAdmin(box) {
 
   box.innerHTML = `
     <div class="thead" style="margin-bottom:18px">
-      <div class="eyebrow" style="color:var(--warn);font-weight:700">Trang quản trị</div>
-      <h1 style="font-size:28px">Danh sách người học & Bài làm</h1>
-      <div class="meta">
-        <span>Quyền quản trị viên (Chỉ đọc - Trực tiếp từ Firestore)</span>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="eyebrow" style="color:#2563EB;font-weight:700">${isAdminUser ? '👑 Quản trị viên & Giáo viên' : '👨‍🏫 Cổng Giáo viên'}</div>
+          <h1 style="font-size:28px;margin:4px 0">Quản lý lớp học & Bài làm</h1>
+          <div class="meta">
+            <span>Theo dõi tiến độ TOEIC 45 chủ đề & Phát âm Cambridge của tất cả thành viên theo thời gian thực</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btn-admin-refresh" style="font-size:13px">🔄 Làm mới</button>
+          <button class="btn" id="btn-admin-export" style="font-size:13px" disabled>📊 Xuất Excel (CSV)</button>
+          ${isAdminUser ? `<button class="btn primary" id="btn-manage-teachers" style="font-size:13px">🔑 Cấp quyền cho Thầy</button>` : ''}
+        </div>
       </div>
     </div>
+
+    <div id="admin-stats" class="stat-grid" style="margin-bottom:16px"></div>
+
+    <div class="card" style="margin-bottom:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <input type="search" id="admin-search" placeholder="🔍 Tìm tên, email hoặc UID học viên..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+      <select id="admin-filter" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
+        <option value="all">Tất cả thành viên</option>
+        <option value="active7d">Hoạt động 7 ngày qua</option>
+        <option value="has_pronun">Có làm Phát âm</option>
+        <option value="inactive">Chưa làm bài nào</option>
+      </select>
+      <select id="admin-sort" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
+        <option value="recent">Sắp xếp: Hoạt động gần nhất</option>
+        <option value="score">Sắp xếp: Tổng điểm TOEIC cao nhất</option>
+        <option value="pronun">Sắp xếp: Bài Phát âm nhiều nhất</option>
+        <option value="name">Sắp xếp: Tên A → Z</option>
+        <option value="joined">Sắp xếp: Mới tham gia</option>
+      </select>
+    </div>
+
     <div id="admin-user-list">
       <div class="card" style="text-align:center;padding:32px">
-        <div class="hint">Đang tải danh sách người dùng...</div>
+        <div class="hint">Đang tải danh sách thành viên từ Firestore…</div>
       </div>
     </div>`;
 
   const container = box.querySelector('#admin-user-list');
+  const statsEl = box.querySelector('#admin-stats');
+  const exportBtn = box.querySelector('#btn-admin-export');
+  box.querySelector('#btn-admin-refresh').onclick = () => renderAdmin(box);
 
   try {
-    const q = firestoreModules.query(firestoreModules.collection(fbDb, 'users'), firestoreModules.limit(50));
-    const userDocsSnap = await firestoreModules.getDocs(q);
+    const [userDocsSnap, teachersSnap, adminsSnap] = await Promise.all([
+      firestoreModules.getDocs(firestoreModules.query(firestoreModules.collection(fbDb, 'users'), firestoreModules.limit(200))),
+      firestoreModules.getDocs(firestoreModules.collection(fbDb, 'teachers')).catch(() => null),
+      firestoreModules.getDocs(firestoreModules.collection(fbDb, 'admins')).catch(() => null)
+    ]);
+
+    const teacherSet = new Set();
+    const adminSet = new Set();
+    if (teachersSnap) teachersSnap.forEach(d => teacherSet.add(d.id));
+    if (adminsSnap) adminsSnap.forEach(d => adminSet.add(d.id));
 
     if (userDocsSnap.empty) {
-      container.innerHTML = '<div class="card"><div class="empty">Chưa có người dùng nào được tạo.</div></div>';
+      container.innerHTML = '<div class="card"><div class="empty">Chưa có thành viên nào đăng ký.</div></div>';
       return;
     }
 
+    // Đọc meta/summary theo từng lô 10 học viên song song (nhanh gấp 10 lần và giảm tới 95% lượt đọc Firestore)
+    const docs = userDocsSnap.docs;
     const users = [];
-    for (const d of userDocsSnap.docs) {
-      const uData = d.data();
-      const u = {
-        uid: d.id,
-        displayName: uData.displayName || 'Chưa đặt tên',
-        email: uData.email || '',
-        createdAt: uData.createdAt && uData.createdAt.toMillis ? uData.createdAt.toMillis() : null,
-        totalBest: 0,
-        completedCount: 0,
-        topicsAttempted: 0
-      };
+    const BATCH_SIZE = 10;
 
-      try {
-        const pSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', d.id, 'progress'));
-        u.topicsAttempted = pSnap.size;
-        pSnap.forEach(pd => {
-          const p = pd.data();
-          if (typeof p.best === 'number') u.totalBest += p.best;
-          if (p.completed || p.completedManual) u.completedCount++;
-        });
-      } catch (e) {}
+    for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+      const chunk = docs.slice(i, i + BATCH_SIZE);
+      const chunkUsers = await Promise.all(chunk.map(async (d) => {
+        const uData = d.data();
+        const u = {
+          uid: d.id,
+          displayName: uData.displayName || 'Chưa đặt tên',
+          email: uData.email || '',
+          photoURL: uData.photoURL || '',
+          createdAt: uData.createdAt && uData.createdAt.toMillis ? uData.createdAt.toMillis() : null,
+          lastActiveAt: uData.updatedAt && uData.updatedAt.toMillis ? uData.updatedAt.toMillis() : null,
+          totalBest: 0,
+          completedCount: 0,
+          topicsAttempted: 0,
+          pronunUnitsDone: 0,
+          pronunExChecked: 0,
+          pronunExFilled: 0,
+          isAdmin: adminSet.has(d.id),
+          isTeacher: teacherSet.has(d.id)
+        };
 
-      users.push(u);
+        try {
+          const sumDoc = await firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', d.id, 'meta', 'summary'));
+          if (sumDoc.exists()) {
+            const s = sumDoc.data();
+            u.totalBest = Number(s.totalBest) || 0;
+            u.completedCount = Number(s.completedCount) || 0;
+            u.topicsAttempted = Number(s.topicsAttempted) || 0;
+            u.pronunUnitsDone = Number(s.pronunUnitsDone) || 0;
+            u.pronunExChecked = Number(s.pronunExChecked) || 0;
+            u.pronunExFilled = Number(s.pronunExFilled) || 0;
+            if (s.updatedAt && s.updatedAt.toMillis) {
+              u.lastActiveAt = Math.max(u.lastActiveAt || 0, s.updatedAt.toMillis());
+            }
+          } else {
+            // Fallback cho tài khoản cũ chưa có meta/summary
+            const pSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', d.id, 'progress'));
+            u.topicsAttempted = pSnap.size;
+            pSnap.forEach(pd => {
+              const p = pd.data();
+              if (typeof p.best === 'number') u.totalBest += p.best;
+              if (p.completed || p.completedManual) u.completedCount++;
+              if (p.updatedAt && p.updatedAt.toMillis) {
+                u.lastActiveAt = Math.max(u.lastActiveAt || 0, p.updatedAt.toMillis());
+              }
+            });
+          }
+        } catch (e) {}
+
+        return u;
+      }));
+      users.push(...chunkUsers);
     }
 
-    container.innerHTML = `
-      <div class="card" style="padding:0;overflow-x:auto">
-        <table class="lb-table" style="margin:0">
-          <thead>
-            <tr>
-              <th style="padding-left:16px">Học viên</th>
-              <th>Email</th>
-              <th>Ngày tham gia</th>
-              <th style="text-align:center">Đã học</th>
-              <th style="text-align:center">Hoàn thành</th>
-              <th style="text-align:right">Tổng điểm</th>
-              <th style="text-align:center;padding-right:16px">Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${users.map(u => `
-              <tr class="lb-row">
-                <td style="padding-left:16px">
-                  <div style="font-weight:600">${esc(u.displayName)}</div>
-                  <div style="font-size:11px;color:var(--muted)">UID: ${esc(u.uid.slice(0, 10))}…</div>
-                </td>
-                <td style="font-size:13px">${esc(u.email || '—')}</td>
-                <td style="font-size:12px;color:var(--muted)">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}</td>
-                <td style="text-align:center;font-weight:600">${u.topicsAttempted || 0}/45</td>
-                <td style="text-align:center;font-weight:600;color:var(--good)">${u.completedCount || 0}</td>
-                <td style="text-align:right;font-weight:700;color:var(--accent)">${u.totalBest || 0}</td>
-                <td style="text-align:center;padding-right:16px">
-                  <button class="btn" data-inspect="${esc(u.uid)}" data-name="${esc(u.displayName || u.email || 'Học viên')}" style="padding:4px 10px;font-size:12.5px">Xem bài</button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>`;
+    // Tổng hợp thống kê lớp học
+    const weekAgo = Date.now() - 7 * 86400000;
+    const active7d = users.filter(u => u.lastActiveAt && u.lastActiveAt >= weekAgo).length;
+    const sumCompleted = users.reduce((s, u) => s + (u.completedCount || 0), 0);
+    const sumPronunFilled = users.reduce((s, u) => s + (u.pronunExFilled || 0), 0);
 
-    container.querySelectorAll('[data-inspect]').forEach(b => {
-      b.onclick = () => openAdminUserInspector(b.dataset.inspect, b.dataset.name);
-    });
+    statsEl.innerHTML = `
+      <div class="stat-card">
+        <div class="val">${users.length}</div>
+        <div class="lbl">👥 Tổng thành viên</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color:var(--good)">${active7d}</div>
+        <div class="lbl">🟢 Hoạt động 7 ngày</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color:var(--accent)">${sumCompleted}</div>
+        <div class="lbl">📚 Chủ đề TOEIC xong</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" style="color:#E11D48">${sumPronunFilled}</div>
+        <div class="lbl">🎙️ Bài Phát âm đã làm</div>
+      </div>
+    `;
+
+    exportBtn.disabled = false;
+    exportBtn.onclick = () => exportStudentsCSV(users);
+
+    const manageBtn = box.querySelector('#btn-manage-teachers');
+    if (manageBtn) {
+      manageBtn.onclick = () => openTeacherRoleModal(users, () => renderAdmin(box));
+    }
+
+    function renderTable() {
+      const qTxt = (box.querySelector('#admin-search').value || '').trim().toLowerCase();
+      const flt = box.querySelector('#admin-filter').value;
+      const srt = box.querySelector('#admin-sort').value;
+
+      let list = users.filter(u => {
+        if (qTxt) {
+          const hay = `${u.displayName} ${u.email} ${u.uid}`.toLowerCase();
+          if (!hay.includes(qTxt)) return false;
+        }
+        if (flt === 'active7d') return u.lastActiveAt && u.lastActiveAt >= weekAgo;
+        if (flt === 'has_pronun') return (u.pronunExFilled || 0) > 0;
+        if (flt === 'inactive') return (u.topicsAttempted || 0) === 0 && (u.pronunExFilled || 0) === 0;
+        return true;
+      });
+
+      list.sort((a, b) => {
+        if (srt === 'recent') return (b.lastActiveAt || 0) - (a.lastActiveAt || 0);
+        if (srt === 'score') return (b.totalBest || 0) - (a.totalBest || 0);
+        if (srt === 'pronun') return (b.pronunExFilled || 0) - (a.pronunExFilled || 0);
+        if (srt === 'name') return (a.displayName || '').localeCompare(b.displayName || '', 'vi');
+        if (srt === 'joined') return (b.createdAt || 0) - (a.createdAt || 0);
+        return 0;
+      });
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="hint">Không tìm thấy thành viên nào khớp bộ lọc.</div></div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="card" style="padding:0;overflow-x:auto">
+          <table class="lb-table" style="margin:0;width:100%">
+            <thead>
+              <tr>
+                <th style="padding-left:16px">Học viên</th>
+                <th>Hoạt động gần nhất</th>
+                <th style="text-align:center">TOEIC (45)</th>
+                <th style="text-align:right">Tổng điểm</th>
+                <th style="text-align:center">Phát âm</th>
+                <th style="text-align:center;padding-right:16px">Bài làm</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(u => `
+                <tr class="lb-row">
+                  <td style="padding-left:16px">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div style="font-weight:700">${esc(u.displayName)}</div>
+                      ${u.isAdmin ? '<span style="font-size:10.5px;background:#F59E0B;color:#fff;padding:1px 6px;border-radius:10px;font-weight:700">Admin</span>' : (u.isTeacher ? '<span style="font-size:10.5px;background:#2563EB;color:#fff;padding:1px 6px;border-radius:10px;font-weight:700">Giáo viên</span>' : '')}
+                    </div>
+                    <div style="font-size:12px;color:var(--muted)">${esc(u.email || 'Chưa có email')}</div>
+                  </td>
+                  <td style="font-size:12.5px;color:var(--muted)">
+                    <div>${fmtRelativeTime(u.lastActiveAt)}</div>
+                    <div style="font-size:11px;opacity:.75">Tham gia: ${u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}</div>
+                  </td>
+                  <td style="text-align:center">
+                    <div style="font-weight:700">${u.topicsAttempted || 0}/45</div>
+                    <div style="font-size:11px;color:var(--good)">✓ ${u.completedCount || 0} xong</div>
+                  </td>
+                  <td style="text-align:right;font-weight:800;color:var(--accent)">${u.totalBest || 0}</td>
+                  <td style="text-align:center">
+                    <div style="font-weight:700;color:#E11D48">${u.pronunExFilled || 0} bài</div>
+                    <div style="font-size:11px;color:var(--muted)">${u.pronunUnitsDone || 0} Unit</div>
+                  </td>
+                  <td style="text-align:center;padding-right:16px">
+                    <button class="btn primary" data-inspect="${esc(u.uid)}" data-name="${esc(u.displayName || u.email || 'Học viên')}" style="padding:5px 12px;font-size:12.5px">📋 Xem bài</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+
+      container.querySelectorAll('[data-inspect]').forEach(b => {
+        b.onclick = () => openAdminUserInspector(b.dataset.inspect, b.dataset.name);
+      });
+    }
+
+    box.querySelector('#admin-search').oninput = renderTable;
+    box.querySelector('#admin-filter').onchange = renderTable;
+    box.querySelector('#admin-sort').onchange = renderTable;
+    renderTable();
   } catch (err) {
-    console.error('Lỗi tải danh sách người dùng:', err);
-    container.innerHTML = `<div class="card"><div class="fb no">Lỗi: ${esc(err.message)}</div></div>`;
+    console.error('Lỗi tải danh sách thành viên:', err);
+    container.innerHTML = `<div class="card"><div class="fb no">Lỗi tải dữ liệu: ${esc(err.message)}</div></div>`;
   }
+}
+
+function openTeacherRoleModal(users, onUpdated) {
+  openModal(`
+    <div class="modal-backdrop">
+      <div class="modal-box wide" style="max-height:85vh;overflow-y:auto">
+        <button class="modal-close" aria-label="Đóng">✕</button>
+        <h3 style="margin:0 0 6px;font-size:20px">🔑 Cấp quyền Giáo viên (cho Thầy)</h3>
+        <p class="hint" style="margin:0 0 14px;line-height:1.5">
+          Giáo viên sẽ thấy mục <b>👨‍🏫 Quản lý lớp học</b> trên thanh menu để xem toàn bộ bài làm TOEIC, Phát âm và gửi nhận xét cho từng học viên.
+        </p>
+
+        <div style="background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+          <div style="font-weight:700;font-size:13.5px;margin-bottom:6px">Bước 1: Mời Thầy đăng nhập vào web bằng Google/Email</div>
+          <div style="font-size:12.5px;color:var(--muted)">Sau khi Thầy đăng nhập lần đầu, tài khoản của Thầy sẽ xuất hiện trong danh sách bên dưới. Bấm nút <b>"Cấp quyền Giáo viên"</b> tương ứng.</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto" id="teacher-role-list">
+          ${users.map(u => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <div style="min-width:0">
+                <div style="font-weight:700;font-size:14px">${esc(u.displayName)} ${u.isAdmin ? '<span style="color:#F59E0B;font-size:11.5px">(Admin)</span>' : (u.isTeacher ? '<span style="color:#2563EB;font-size:11.5px">(Giáo viên)</span>' : '')}</div>
+                <div style="font-size:12px;color:var(--muted)">${esc(u.email || u.uid)}</div>
+              </div>
+              <div>
+                ${u.isAdmin ? `<span class="hint" style="font-size:12px">Toàn quyền Admin</span>` : (
+                  u.isTeacher
+                    ? `<button class="btn ghost btn-revoke-teacher" data-uid="${esc(u.uid)}" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Gỡ quyền Giáo viên</button>`
+                    : `<button class="btn primary btn-grant-teacher" data-uid="${esc(u.uid)}" data-name="${esc(u.displayName)}" data-email="${esc(u.email)}" style="font-size:12px">Cấp quyền Giáo viên</button>`
+                )}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `);
+
+  document.querySelectorAll('.btn-grant-teacher').forEach(b => {
+    b.onclick = async () => {
+      const uid = b.dataset.uid;
+      b.disabled = true;
+      b.textContent = 'Đang cấp…';
+      try {
+        await firestoreModules.setDoc(firestoreModules.doc(fbDb, 'teachers', uid), {
+          displayName: b.dataset.name || '',
+          email: b.dataset.email || '',
+          grantedBy: currentUser.uid,
+          grantedAt: firestoreModules.serverTimestamp()
+        });
+        showToast('✓ Đã cấp quyền Giáo viên thành công!');
+        closeModal();
+        if (onUpdated) onUpdated();
+      } catch (err) {
+        alert('Chưa thể cấp quyền trực tiếp từ web (cần cập nhật Firestore Rules từ file firestore.rules trong Firebase Console).\n\nChi tiết lỗi: ' + err.message);
+        b.disabled = false;
+        b.textContent = 'Cấp quyền Giáo viên';
+      }
+    };
+  });
+
+  document.querySelectorAll('.btn-revoke-teacher').forEach(b => {
+    b.onclick = async () => {
+      if (!confirm('Gỡ quyền Giáo viên của tài khoản này?')) return;
+      const uid = b.dataset.uid;
+      b.disabled = true;
+      try {
+        await firestoreModules.deleteDoc(firestoreModules.doc(fbDb, 'teachers', uid));
+        showToast('Đã gỡ quyền Giáo viên.');
+        closeModal();
+        if (onUpdated) onUpdated();
+      } catch (err) {
+        alert('Lỗi gỡ quyền: ' + err.message);
+        b.disabled = false;
+      }
+    };
+  });
 }
 
 async function openAdminUserInspector(targetUid, userName) {
   openModal(`
     <div class="modal-backdrop">
-      <div class="modal-box wide" style="max-height:85vh">
+      <div class="modal-box wide" style="max-height:88vh;overflow-y:auto">
         <button class="modal-close" aria-label="Đóng">✕</button>
-        <h3 style="margin:0 0 4px;font-size:20px">Chi tiết bài làm: ${esc(userName)}</h3>
-        <div class="hint" style="margin-bottom:14px">UID: ${esc(targetUid)}</div>
+        <h3 style="margin:0 0 4px;font-size:20px">📋 Bài làm của: ${esc(userName)}</h3>
+        <div class="hint" style="margin-bottom:14px;font-size:12px">UID: ${esc(targetUid)}</div>
         <div id="inspector-body">
-          <div class="hint" style="text-align:center;padding:24px">Đang tải dữ liệu bài làm...</div>
+          <div class="hint" style="text-align:center;padding:24px">Đang tải toàn bộ dữ liệu bài làm…</div>
         </div>
       </div>
     </div>
@@ -6307,88 +6851,235 @@ async function openAdminUserInspector(targetUid, userName) {
   try {
     const progress = {};
     const answers = {};
+    const pronunAnswers = {};
     let review = null;
+    let teacherNote = null;
 
-    const [progSnap, ansSnap, revDoc] = await Promise.all([
+    const [progSnap, ansSnap, revDoc, noteDoc] = await Promise.all([
       firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', targetUid, 'progress')).catch(() => null),
       firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', targetUid, 'answers')).catch(() => null),
-      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'review')).catch(() => null)
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'review')).catch(() => null),
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'teacher_note')).catch(() => null)
     ]);
 
     if (progSnap) progSnap.forEach(d => { progress[Number(d.id)] = d.data(); });
-    if (ansSnap) ansSnap.forEach(d => { answers[Number(d.id)] = d.data(); });
+    if (ansSnap) {
+      ansSnap.forEach(d => {
+        if (d.id.startsWith('pronun_')) {
+          const uId = Number(d.id.slice('pronun_'.length));
+          pronunAnswers[uId] = d.data();
+        } else {
+          answers[Number(d.id)] = d.data();
+        }
+      });
+    }
     if (revDoc && revDoc.exists()) review = revDoc.data();
+    if (noteDoc && noteDoc.exists()) teacherNote = noteDoc.data();
 
     const inspBody = $('#inspector-body');
-    let selTopicId = 1;
+    const pronunUnitIds = Object.keys(pronunAnswers).map(Number).sort((a, b) => a - b);
+    const workedTopicIds = TOPICS.filter(t => progress[t.id] || (answers[t.id] && Object.keys(answers[t.id].data || {}).length > 0)).map(t => t.id);
 
-    function renderInspectorTopic() {
-      const p = progress[selTopicId] || {};
-      const a = answers[selTopicId] ? answers[selTopicId].data || {} : {};
-      const topic = TOPICS.find(t => t.id === selTopicId);
+    let activeTab = workedTopicIds.length === 0 && pronunUnitIds.length > 0 ? 'pronun' : 'toeic';
+    let selTopicId = workedTopicIds[0] || 1;
+    let selPronunUnitId = pronunUnitIds[0] || 2;
 
-      const transKeys = Object.keys(a).filter(k => k.startsWith('tr:'));
-      const gapKeys = Object.keys(a).filter(k => k.startsWith('g-') || k.startsWith('gt-'));
+    function renderInspector() {
+      const activeReviewItems = (review && Array.isArray(review.items)) ? review.items.filter(x => !x.deleted) : [];
 
       inspBody.innerHTML = `
-        <div class="row between" style="margin-bottom:14px;background:var(--sunk);padding:10px 14px;border-radius:8px">
-          <div>
-            <b>Chọn chủ đề cần xem:</b>
-            <select id="insp-topic-sel" style="margin-left:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface)">
-              ${TOPICS.map(t => `<option value="${t.id}" ${t.id===selTopicId?'selected':''}>Chủ đề ${t.id}: ${esc(splitTitle(t).main)}</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <span>Điểm trắc nghiệm: <b>${p.best != null ? p.best + '%' : 'Chưa làm'}</b></span>
-            <span style="margin-left:12px">${p.completed || p.completedManual ? '<span style="color:var(--good);font-weight:700">✓ Đã hoàn thành</span>' : '<span style="color:var(--muted)">Chưa hoàn thành</span>'}</span>
-          </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <button class="btn ${activeTab === 'toeic' ? 'primary' : 'ghost'}" data-itab="toeic" style="font-size:13px">📚 TOEIC (${workedTopicIds.length} chủ đề)</button>
+          <button class="btn ${activeTab === 'pronun' ? 'primary' : 'ghost'}" data-itab="pronun" style="font-size:13px">🎙️ Phát âm (${pronunUnitIds.length} Unit)</button>
+          <button class="btn ${activeTab === 'feedback' ? 'primary' : 'ghost'}" data-itab="feedback" style="font-size:13px">💬 Nhận xét & Từ khó (${activeReviewItems.length})</button>
         </div>
-
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <div>
-            <h4 style="margin:0 0 8px;font-size:15px">1. Bài dịch câu tiếng Việt (${transKeys.length} đoạn đã dịch)</h4>
-            ${transKeys.length === 0 ? '<div class="hint" style="padding:10px;background:var(--bg);border-radius:6px">Chưa có bài dịch nào trong chủ đề này.</div>' : `
-              <div style="display:flex;flex-direction:column;gap:8px">
-                ${transKeys.map(k => `
-                  <div style="background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--line)">
-                    <div class="hint" style="font-size:11.5px;margin-bottom:3px">${esc(k)}</div>
-                    <div style="font-size:14px;white-space:pre-wrap">${esc(a[k])}</div>
-                  </div>`).join('')}
-              </div>
-            `}
-          </div>
-
-          <div>
-            <h4 style="margin:0 0 8px;font-size:15px">2. Bài điền từ & tự dịch khi nghe (${gapKeys.length} ô đã điền)</h4>
-            ${gapKeys.length === 0 ? '<div class="hint" style="padding:10px;background:var(--bg);border-radius:6px">Chưa có bài điền từ nghe nào.</div>' : `
-              <div style="display:flex;flex-direction:column;gap:8px">
-                ${gapKeys.map(k => `
-                  <div style="background:var(--bg);padding:8px 12px;border-radius:8px;border:1px solid var(--line)">
-                    <span class="hint" style="font-size:11.5px">${esc(k)}: </span>
-                    <b>${esc(a[k])}</b>
-                  </div>`).join('')}
-              </div>
-            `}
-          </div>
-
-          <div>
-            <h4 style="margin:0 0 8px;font-size:15px">3. Từ khó cần ôn (${review && review.items ? review.items.filter(x => !x.deleted).length : 0} từ)</h4>
-            ${(!review || !review.items || !review.items.filter(x => !x.deleted).length) ? '<div class="hint">Không có từ khó.</div>' : `
-              <div class="row" style="gap:6px">
-                ${review.items.filter(x => !x.deleted).map(x => `<span class="chip" style="background:var(--warn-soft);color:var(--warn);font-weight:600">⭐ ${esc(x.w)} (${esc(x.vi)})</span>`).join('')}
-              </div>
-            `}
-          </div>
-        </div>
+        <div id="insp-tab-content"></div>
       `;
 
-      inspBody.querySelector('#insp-topic-sel').onchange = (e) => {
-        selTopicId = Number(e.target.value);
-        renderInspectorTopic();
-      };
+      inspBody.querySelectorAll('[data-itab]').forEach(b => {
+        b.onclick = () => { activeTab = b.dataset.itab; renderInspector(); };
+      });
+
+      const tabBox = inspBody.querySelector('#insp-tab-content');
+
+      if (activeTab === 'toeic') {
+        const p = progress[selTopicId] || {};
+        const a = answers[selTopicId] ? answers[selTopicId].data || {} : {};
+        const transKeys = Object.keys(a).filter(k => k.startsWith('tr:'));
+        const gapKeys = Object.keys(a).filter(k => k.startsWith('g-') || k.startsWith('gt-'));
+        const wfKeys = Object.keys(a).filter(k => k.startsWith('wf-'));
+
+        tabBox.innerHTML = `
+          <div class="row between" style="margin-bottom:14px;background:var(--sunk);padding:10px 14px;border-radius:8px;flex-wrap:wrap;gap:8px">
+            <div>
+              <b>Chủ đề:</b>
+              <select id="insp-topic-sel" style="margin-left:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+                ${TOPICS.map(t => {
+                  const tp = progress[t.id];
+                  const ta = answers[t.id] ? Object.keys(answers[t.id].data || {}).length : 0;
+                  const mark = (tp && (tp.completed || tp.completedManual)) ? '✓ ' : ((tp || ta > 0) ? '• ' : '');
+                  const info = tp && tp.best != null ? ` (${tp.best}%)` : (ta > 0 ? ` (${ta} ô)` : '');
+                  return `<option value="${t.id}" ${t.id === selTopicId ? 'selected' : ''}>${mark}Chủ đề ${t.id}: ${esc(splitTitle(t).main)}${info}</option>`;
+                }).join('')}
+              </select>
+            </div>
+            <div>
+              <span>Điểm trắc nghiệm: <b>${p.best != null ? p.best + '%' : 'Chưa làm'}</b></span>
+              <span style="margin-left:12px">${p.completed || p.completedManual ? '<span style="color:var(--good);font-weight:700">✓ Đã hoàn thành</span>' : '<span style="color:var(--muted)">Chưa hoàn thành</span>'}</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <h4 style="margin:0 0 8px;font-size:15px">1. Bài dịch câu tiếng Việt (${transKeys.length} đoạn)</h4>
+              ${transKeys.length === 0 ? '<div class="hint" style="padding:10px;background:var(--bg);border-radius:6px">Chưa có bài dịch nào trong chủ đề này.</div>' : `
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  ${transKeys.map(k => `
+                    <div style="background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--line)">
+                      <div class="hint" style="font-size:11.5px;margin-bottom:3px">${esc(k)}</div>
+                      <div style="font-size:14px;white-space:pre-wrap">${esc(a[k])}</div>
+                    </div>`).join('')}
+                </div>
+              `}
+            </div>
+
+            <div>
+              <h4 style="margin:0 0 8px;font-size:15px">2. Bài nghe điền từ & tự dịch (${gapKeys.length} ô)</h4>
+              ${gapKeys.length === 0 ? '<div class="hint" style="padding:10px;background:var(--bg);border-radius:6px">Chưa có bài điền từ nghe nào.</div>' : `
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
+                  ${gapKeys.map(k => `
+                    <div style="background:var(--bg);padding:8px 12px;border-radius:8px;border:1px solid var(--line)">
+                      <span class="hint" style="font-size:11.5px">${esc(k)}: </span>
+                      <b>${esc(a[k])}</b>
+                    </div>`).join('')}
+                </div>
+              `}
+            </div>
+
+            ${wfKeys.length > 0 ? `
+              <div>
+                <h4 style="margin:0 0 8px;font-size:15px">3. Bài tập dạng từ (${wfKeys.length} câu)</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  ${wfKeys.map(k => `<span class="chip">${esc(k)}: <b>${esc(a[k])}</b></span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        tabBox.querySelector('#insp-topic-sel').onchange = (e) => {
+          selTopicId = Number(e.target.value);
+          renderInspector();
+        };
+      } else if (activeTab === 'pronun') {
+        if (pronunUnitIds.length === 0) {
+          tabBox.innerHTML = '<div class="hint" style="text-align:center;padding:24px;background:var(--sunk);border-radius:8px">Học viên này chưa làm bài tập Phát âm Cambridge nào.</div>';
+          return;
+        }
+        const uData = pronunAnswers[selPronunUnitId] || {};
+        const exMap = uData.exercises || {};
+        const unitMeta = PRONUN_UNITS.find(x => x.id === selPronunUnitId);
+
+        tabBox.innerHTML = `
+          <div class="row between" style="margin-bottom:14px;background:var(--sunk);padding:10px 14px;border-radius:8px;flex-wrap:wrap;gap:8px">
+            <div>
+              <b>Chọn Unit đã làm:</b>
+              <select id="insp-pronun-sel" style="margin-left:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+                ${pronunUnitIds.map(uidNum => {
+                  const um = PRONUN_UNITS.find(x => x.id === uidNum);
+                  return `<option value="${uidNum}" ${uidNum === selPronunUnitId ? 'selected' : ''}>Unit ${uidNum}: ${esc(um ? um.title : '')}</option>`;
+                }).join('')}
+              </select>
+            </div>
+            <div class="hint" style="font-size:12.5px">
+              Cập nhật: ${uData.updatedAt && uData.updatedAt.toDate ? uData.updatedAt.toDate().toLocaleString('vi-VN') : '—'}
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            ${Object.entries(exMap).map(([exId, exObj]) => {
+              const exMeta = unitMeta && unitMeta.exercises ? unitMeta.exercises.find(e => String(e.id) === String(exId)) : null;
+              const ansEntries = Object.entries((exObj && exObj.answers) || {}).filter(([, v]) => String(v || '').trim() !== '');
+              return `
+                <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+                    <div style="font-weight:800;font-size:14.5px">${esc(exMeta ? exMeta.title : 'Exercise ' + exId)}</div>
+                    <span class="badge" style="background:${exObj && exObj.checked ? 'var(--good-soft)' : 'var(--sunk)'};color:${exObj && exObj.checked ? 'var(--good)' : 'var(--muted)'};font-weight:700">
+                      ${exObj && exObj.checked ? '✓ Đã bấm kiểm tra' : 'Đang làm dở'} (${ansEntries.length} ô đã điền)
+                    </span>
+                  </div>
+                  ${ansEntries.length === 0 ? '<div class="hint">Chưa điền đáp án nào.</div>' : `
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px">
+                      ${ansEntries.map(([ak, av]) => `
+                        <div style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:13px">
+                          <span class="hint" style="font-size:11px">${esc(ak)}: </span>
+                          <b>${esc(av)}</b>
+                        </div>
+                      `).join('')}
+                    </div>
+                  `}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        tabBox.querySelector('#insp-pronun-sel').onchange = (e) => {
+          selPronunUnitId = Number(e.target.value);
+          renderInspector();
+        };
+      } else {
+        tabBox.innerHTML = `
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:14px">
+              <h4 style="margin:0 0 8px;font-size:15px">💬 Nhận xét của Thầy gửi học viên</h4>
+              <p class="hint" style="margin:0 0 8px;font-size:12.5px">Học viên sẽ nhìn thấy lời nhắn này ngay trên trang Hồ sơ cá nhân của mình.</p>
+              <textarea id="insp-teacher-note" rows="3" placeholder="Ví dụ: Em làm bài tập Unit 2 rất tốt, chú ý luyện thêm cặp âm /iː/ và /ɪ/ nhé!" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-size:14px;box-sizing:border-box">${esc(teacherNote ? teacherNote.note || '' : '')}</textarea>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                <span class="hint" style="font-size:12px" id="note-save-status">
+                  ${teacherNote && teacherNote.updatedAt && teacherNote.updatedAt.toDate ? 'Lưu lần cuối: ' + teacherNote.updatedAt.toDate().toLocaleString('vi-VN') : ''}
+                </span>
+                <button class="btn primary" id="btn-save-teacher-note" style="font-size:13px;padding:6px 14px">💾 Lưu nhận xét</button>
+              </div>
+            </div>
+
+            <div>
+              <h4 style="margin:0 0 8px;font-size:15px">⭐ Từ khó học viên cần ôn (${activeReviewItems.length} từ)</h4>
+              ${activeReviewItems.length === 0 ? '<div class="hint">Chưa có từ khó nào.</div>' : `
+                <div class="row" style="gap:6px;flex-wrap:wrap">
+                  ${activeReviewItems.map(x => `<span class="chip" style="background:var(--warn-soft);color:var(--warn);font-weight:600">⭐ ${esc(x.w)} (${esc(x.vi)})</span>`).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+
+        tabBox.querySelector('#btn-save-teacher-note').onclick = async (e) => {
+          const btn = e.currentTarget;
+          const noteText = (tabBox.querySelector('#insp-teacher-note').value || '').trim();
+          btn.disabled = true;
+          btn.textContent = 'Đang lưu…';
+          try {
+            await firestoreModules.setDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'teacher_note'), {
+              note: noteText,
+              authorUid: currentUser.uid,
+              authorName: currentUser.displayName || currentUser.email || 'Giáo viên',
+              updatedAt: firestoreModules.serverTimestamp()
+            });
+            teacherNote = { note: noteText, updatedAt: { toDate: () => new Date() } };
+            tabBox.querySelector('#note-save-status').textContent = '✓ Đã lưu nhận xét thành công!';
+            showToast('✓ Đã gửi nhận xét tới học viên!');
+          } catch (err) {
+            alert('Không thể lưu nhận xét (vui lòng cập nhật Firestore Rules từ file firestore.rules trong Firebase Console).\n\nLỗi: ' + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '💾 Lưu nhận xét';
+          }
+        };
+      }
     }
 
-    renderInspectorTopic();
+    renderInspector();
   } catch (err) {
     $('#inspector-body').innerHTML = `<div class="fb no">Lỗi: ${esc(err.message)}</div>`;
   }

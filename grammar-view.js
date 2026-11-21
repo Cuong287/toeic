@@ -8,6 +8,8 @@ let appConfirmModal = null;
 let appShowToast = null;
 let curTopicId = 'tenses';
 let curFilter = 'all'; // 'all' | 'unanswered' | 'answered'
+let curPage = 1;
+const PAGE_SIZE = 10;
 const grammarState = {};
 
 export function resetGrammarTopicState() {
@@ -155,6 +157,7 @@ export function renderGrammar(box) {
   box.querySelectorAll('.btn-select-topic').forEach(btn => {
     btn.onclick = () => {
       curTopicId = btn.dataset.tid;
+      curPage = 1;
       renderGrammar(box);
     };
   });
@@ -168,6 +171,7 @@ export function renderGrammar(box) {
   box.querySelectorAll('.btn-filter').forEach(btn => {
     btn.onclick = () => {
       curFilter = btn.dataset.f;
+      curPage = 1;
       renderGrammar(box);
     };
   });
@@ -185,6 +189,7 @@ export function renderGrammar(box) {
       }) : true;
       if (ok) {
         tState.answers = {};
+        curPage = 1;
         if (appStore) appStore.set('grammar_ex:' + currentTopic.id, tState);
         renderGrammar(box);
         if (appShowToast) appShowToast(`Reset answers for "${currentTopic.title}"`);
@@ -269,7 +274,14 @@ function renderQuestionsList(container, topic, box) {
     return;
   }
 
-  container.innerHTML = displayQuestions.map(q => {
+  const totalPages = Math.max(1, Math.ceil(displayQuestions.length / PAGE_SIZE));
+  if (curPage > totalPages) curPage = totalPages;
+  if (curPage < 1) curPage = 1;
+
+  const startIndex = (curPage - 1) * PAGE_SIZE;
+  const pageQuestions = displayQuestions.slice(startIndex, startIndex + PAGE_SIZE);
+
+  const questionsHtml = pageQuestions.map(q => {
     const selectedOpt = answers[q.id] || null;
     const hasAnswerKey = Boolean(q.answer);
     const isCorrect = hasAnswerKey && selectedOpt === q.answer;
@@ -350,6 +362,49 @@ function renderQuestionsList(container, topic, box) {
       </div>
     `;
   }).join('');
+
+  const paginationHtml = `
+    <div class="grammar-pagination card" style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;margin-top:4px;flex-wrap:wrap;gap:10px">
+      <div style="font-size:13.5px;color:var(--muted)">
+        Showing <b>${startIndex + 1}–${Math.min(startIndex + PAGE_SIZE, displayQuestions.length)}</b> of <b>${displayQuestions.length}</b> questions
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn" id="grammar-prev-page" ${curPage <= 1 ? 'disabled' : ''} style="display:inline-flex;align-items:center;gap:6px;font-size:13px">
+          ← Previous
+        </button>
+        <span style="font-size:13.5px;font-weight:700;color:var(--ink);min-width:85px;text-align:center">
+          Page ${curPage} of ${totalPages}
+        </span>
+        <button class="btn" id="grammar-next-page" ${curPage >= totalPages ? 'disabled' : ''} style="display:inline-flex;align-items:center;gap:6px;font-size:13px">
+          Next →
+        </button>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = questionsHtml + paginationHtml;
+
+  // Attach Pagination events
+  const prevBtn = container.querySelector('#grammar-prev-page');
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      if (curPage > 1) {
+        curPage--;
+        renderQuestionsList(container, topic, box);
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+  }
+  const nextBtn = container.querySelector('#grammar-next-page');
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      if (curPage < totalPages) {
+        curPage++;
+        renderQuestionsList(container, topic, box);
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+  }
 
   // Attach option selection click events
   container.querySelectorAll('.btn-grammar-opt').forEach(btn => {

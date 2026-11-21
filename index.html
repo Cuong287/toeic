@@ -983,8 +983,10 @@ button{cursor:pointer}
 .tab[aria-selected="true"] .k{background:var(--accent);color:var(--accent-ink)}
 
 @media (max-width:1100px) and (min-width:861px){
-  .tabs{gap:4px;padding:5px 0 8px}
+  .tabs{gap:4px;padding:5px 0 8px;flex-wrap:nowrap}
   .tab{padding:6px 9px;font-size:13px;gap:6px}
+  .tab .full{display:none}
+  .tabs .tab .short{display:inline}
 }
 .panel{display:flex;flex-direction:column;gap:18px}
 .seg-sm button{padding:4px 10px!important;font-size:12.5px!important}

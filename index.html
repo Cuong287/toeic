@@ -1916,12 +1916,12 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-seg button[disabled]{opacity:0.4;cursor:not-allowed}
 .sl-start-actions{margin-top:8px}
 .sl-btn-start{min-width:140px}
-.sl-stepper{display:flex;align-items:center;justify-content:center;gap:6px;font-size:0.85rem;color:var(--muted);font-weight:600;margin-bottom:8px;flex-wrap:wrap}
+.sl-stepper{display:flex;align-items:center;justify-content:center;gap:4px 6px;font-size:clamp(0.75rem,2.8vw,0.85rem);color:var(--muted);font-weight:600;margin-bottom:8px;flex-wrap:wrap}
 .sl-step{padding:2px 8px;border-radius:12px;transition:background .15s,color .15s}
 .sl-step.active{background:var(--accent);color:#fff}
 .sl-step-sep{opacity:0.5}
 .sl-chips-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0}
-.sl-chip{display:inline-flex;align-items:center;padding:6px 14px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;font-size:1.6rem;font-weight:700;color:var(--ink);letter-spacing:0.02em}
+.sl-chip{display:inline-flex;align-items:center;padding:6px 12px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;font-size:clamp(1.15rem,4.5vw,1.6rem);font-weight:700;color:var(--ink);letter-spacing:0.02em;word-break:break-word;overflow-wrap:anywhere;max-width:100%}
 .sl-chip-space{display:inline-block;width:12px}
 .sl-trouble{background:rgba(239,68,68,0.18);color:var(--ink);border-bottom:2px solid var(--accent);border-radius:3px;padding:0 2px}
 .sl-trouble-notes{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;margin-top:4px}
@@ -1929,7 +1929,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-trouble-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:var(--sunk);border:1px solid var(--line);font-size:0.8rem;color:var(--ink)}
 .sl-word-meta{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0}
 .sl-spell-display{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;padding:12px 0;margin:8px 0}
-.sl-letter{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:42px;padding:0 4px;font-size:1.6rem;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);transition:all .15s}
+.sl-letter{display:inline-flex;align-items:center;justify-content:center;min-width:clamp(22px,5.5vw,32px);height:clamp(32px,8vw,42px);padding:0 3px;font-size:clamp(1.15rem,4.5vw,1.6rem);font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);transition:all .15s}
 .sl-letter.space{border:none;background:transparent;min-width:14px}
 .sl-letter.sl-letter-active{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.1)}
 .sl-audio-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:12px 0}
@@ -1937,13 +1937,13 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-btn-audio svg{width:18px;height:18px}
 .sl-icon{width:18px;height:18px}
 .sl-blanks-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;margin:16px 0}
-.sl-blank-box{width:28px;height:36px;border-bottom:2.5px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:transparent;background:var(--sunk);border-radius:4px 4px 0 0}
+.sl-blank-box{width:clamp(18px,4.5vw,28px);height:clamp(26px,6.5vw,36px);border-bottom:2.5px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:clamp(1rem,3.5vw,1.3rem);font-weight:700;color:transparent;background:var(--sunk);border-radius:4px 4px 0 0}
 .sl-blank-space{width:16px}
 .sl-form{gap:10px;margin-top:12px;align-items:center;justify-content:center}
 .sl-input{font-size:1.15rem;font-weight:600;text-align:center;max-width:380px}
 .sl-diff-row{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;justify-content:center;margin:16px 0}
-.sl-diff-item{display:flex;flex-direction:column;align-items:center;min-width:32px;font-size:1.5rem;font-weight:700;line-height:1.2}
-.sl-diff-char{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:40px;padding:0 4px;border-radius:6px}
+.sl-diff-item{display:flex;flex-direction:column;align-items:center;min-width:clamp(22px,5.5vw,32px);font-size:clamp(1.15rem,4.5vw,1.5rem);font-weight:700;line-height:1.2}
+.sl-diff-char{display:inline-flex;align-items:center;justify-content:center;min-width:clamp(22px,5.5vw,32px);height:clamp(32px,8vw,40px);padding:0 3px;border-radius:6px}
 .sl-diff-sub{font-size:0.75rem;font-weight:600;margin-top:2px;text-transform:lowercase}
 .sl-diff-item.ok .sl-diff-char{background:rgba(16,185,129,0.15);color:var(--ok,#10b981);border:1.5px solid var(--ok,#10b981)}
 .sl-diff-item.ok .sl-diff-sub{display:none}
@@ -1961,7 +1961,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-dot.missing{border:1px dashed var(--danger,#ef4444);background:transparent}
 .sl-dot.extra{background:var(--muted);text-decoration:line-through}
 .sl-retype-box{margin-top:16px;padding:16px;border-radius:10px;background:var(--sunk);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;align-items:center}
-.sl-retype-target{font-size:1.6rem;font-weight:700;color:var(--ink);letter-spacing:0.04em;display:flex;flex-wrap:wrap;gap:2px;justify-content:center}
+.sl-retype-target{font-size:clamp(1.2rem,5vw,1.6rem);font-weight:700;color:var(--ink);letter-spacing:0.04em;display:flex;flex-wrap:wrap;gap:2px;justify-content:center;word-break:break-word;overflow-wrap:anywhere}
 .sl-char-mistake{border-bottom:3px solid var(--danger,#ef4444);color:var(--danger,#ef4444)}
 .sl-retype-counter{font-weight:700;color:var(--accent);font-size:0.95rem}
 .sl-mistake-log-details{margin-top:14px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface)}
@@ -4542,6 +4542,8 @@ function isSpellAnswerCorrect(w, input) {
   const ans = answers(w);
   return ans.includes(norm(input));
 }
+window.getSpellTarget = getSpellTarget;
+window.isSpellAnswerCorrect = isSpellAnswerCorrect;
 
 function getSpellLog(topicId) {
   try {

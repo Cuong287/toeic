@@ -5012,17 +5012,13 @@ function spellLab(t, box) {
 
   let sessionWords = [];
   let curWordIdx = 0;
-  let currentStep = 'look'; // 'look' | 'listen' | 'cover' | 'check' | 'log'
+  let currentStep = 'write'; // 'write' | 'check' | 'log'
   let score = 0;
   let mistakes = [];
 
   function renderStepper(step) {
     return `<nav class="sl-stepper" aria-label="Spelling steps">
-      <span class="sl-step ${step==='look'?'active':''}" ${step==='look'?'aria-current="step"':''}>Look</span>
-      <span class="sl-step-sep">·</span>
-      <span class="sl-step ${step==='listen'?'active':''}" ${step==='listen'?'aria-current="step"':''}>Listen</span>
-      <span class="sl-step-sep">·</span>
-      <span class="sl-step ${step==='cover'?'active':''}" ${step==='cover'?'aria-current="step"':''}>Cover &amp; Write</span>
+      <span class="sl-step ${step==='write'?'active':''}" ${step==='write'?'aria-current="step"':''}>Listen &amp; Write</span>
       <span class="sl-step-sep">·</span>
       <span class="sl-step ${step==='check'?'active':''}" ${step==='check'?'aria-current="step"':''}>Check</span>
       <span class="sl-step-sep">·</span>
@@ -5030,73 +5026,30 @@ function spellLab(t, box) {
     </nav>`;
   }
 
-  function renderLookStep() {
+  function renderWriteStep() {
     const v = sessionWords[curWordIdx];
     const target = v.target;
-    const troubles = trouble(target);
-    const e = enr(t.id), ev = e ? e.vocab : {};
-    const x = ev[v.w];
-
-    box.innerHTML = `<div class="card sl-card">
-      <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
-      ${renderStepper('look')}
-      <div class="row between">
-        <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
-        ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
-      </div>
-
-      <div class="sl-chips-row" aria-label="Word breakdown">
-        ${renderChipsHtml(target, troubles)}
-      </div>
-
-      ${troubles.length ? `
-        <div class="sl-trouble-notes" aria-label="Key spelling patterns">
-          <span class="sl-trouble-label">Patterns:</span>
-          ${troubles.map(tr => `<span class="sl-trouble-tag" title="${esc(tr.note)}"><b>${esc(target.slice(tr.start, tr.end))}</b>: ${esc(tr.note)}</span>`).join('')}
-        </div>
-      ` : ''}
-
-      <div class="sl-word-meta">
-        ${x ? `<span class="ipa">${esc(x[0])}</span>` : ''}
-        <span class="vi">${esc(formatVi(v.vi, v.pos))}</span>
-      </div>
-
-      ${x && x[1] ? `<div class="ex">${highlightOne(x[1], v.w)}<span class="vi">${esc(x[2])}</span></div>` : ''}
-
-      <div class="row between" style="margin-top:12px">
-        <button class="btn ghost" id="sl-btn-quick-listen" type="button" aria-label="Listen to pronunciation">${SPEAK} <span>Listen</span></button>
-        <button class="btn primary" id="sl-btn-to-listen" type="button">Next: Listen →</button>
-      </div>
-    </div>`;
-
-    box.querySelector('#sl-btn-quick-listen').onclick = () => speak(target);
-    box.querySelector('#sl-btn-to-listen').onclick = () => {
-      currentStep = 'listen';
-      renderListenStep();
-    };
-  }
-
-  function renderListenStep() {
-    const v = sessionWords[curWordIdx];
-    const target = v.target;
+    const curLog = getSpellLog(t.id);
+    const isSeen = Boolean(curLog.words && curLog.words[target]?.seen > 0);
+    const ghost = isSeen ? new Set() : clozeGhost(target);
     const hasTTS = typeof window !== 'undefined' && 'speechSynthesis' in window && !!window.speechSynthesis;
 
+    speak(cleanWord(v.w));
+
     box.innerHTML = `<div class="card sl-card">
       <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
-      ${renderStepper('listen')}
+      ${renderStepper('write')}
       <div class="row between">
         <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
         ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
       </div>
 
-      <p class="hint" style="text-align:center;margin:4px 0">Listen carefully to the pronunciation and letter spelling.</p>
-
-      <div class="sl-spell-display" id="sl-spell-display" aria-label="Letter spelling visualizer">
-        ${target.split('').map((c, i) => `<span class="sl-letter ${c === ' ' ? 'space' : ''}" data-idx="${i}">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('')}
+      <div class="row" style="justify-content:center;margin:2px 0">
+        <span class="sl-mode-badge">${isSeen ? 'Full recall' : 'Tricky letters hidden'}</span>
       </div>
 
-      <div class="sl-word-meta">
-        <span class="vi">${esc(formatVi(v.vi, v.pos))}</span>
+      <div class="sl-word-meta" style="margin:4px 0">
+        <span class="vi" style="font-size:1.15rem;font-weight:600">${esc(formatVi(v.vi, v.pos))}</span>
       </div>
 
       <div class="sl-audio-btns">
@@ -5107,80 +5060,50 @@ function spellLab(t, box) {
         ` : ''}
       </div>
 
-      <div class="row" style="justify-content:center;margin-top:12px">
-        <button class="btn primary" id="sl-btn-cover" type="button">I've got it → Cover</button>
+      <div id="sl-boxes-mount"></div>
+
+      <div class="row" style="justify-content:center;margin-top:14px">
+        <button class="btn primary" id="sl-btn-check" type="button">Check</button>
       </div>
     </div>`;
 
+    const mountEl = box.querySelector('#sl-boxes-mount');
+    const boxes = mountLetterBoxes(mountEl, target, {
+      ghost,
+      onSubmit: (val) => {
+        if (val) handleWordSubmission(val);
+      }
+    });
+    boxes.focus();
+
     box.querySelector('#sl-btn-speak-word').onclick = () => {
       if (curSpellCancel) curSpellCancel();
-      speak(target);
+      speak(cleanWord(v.w));
     };
 
     if (hasTTS) {
       box.querySelector('#sl-btn-speak-slow').onclick = () => {
         if (curSpellCancel) curSpellCancel();
-        speakSlow(target);
+        speakSlow(cleanWord(v.w));
       };
 
       box.querySelector('#sl-btn-speak-spell').onclick = () => {
-        const letters = box.querySelectorAll('#sl-spell-display .sl-letter');
+        if (curSpellCancel) curSpellCancel();
         spellLetters(target, (activeIdx) => {
-          letters.forEach((el, idx) => {
-            if (idx === activeIdx) el.classList.add('sl-letter-active');
-            else el.classList.remove('sl-letter-active');
-          });
+          if (boxes && boxes.highlightBox) boxes.highlightBox(activeIdx);
         });
       };
     }
 
-    box.querySelector('#sl-btn-cover').onclick = () => {
-      if (curSpellCancel) curSpellCancel();
-      currentStep = 'cover';
-      renderCoverStep();
-    };
-  }
-
-  function renderCoverStep() {
-    const v = sessionWords[curWordIdx];
-    const target = v.target;
-
-    box.innerHTML = `<div class="card sl-card">
-      <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
-      ${renderStepper('cover')}
-      <div class="row between">
-        <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
-        ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
-      </div>
-
-      <div class="sl-word-meta" style="margin-top:8px">
-        <span class="vi" style="font-size:1.15rem;font-weight:600">${esc(formatVi(v.vi, v.pos))}</span>
-      </div>
-
-      <div class="sl-blanks-row" aria-label="Word letter blanks">
-        ${target.split('').map(c => c === ' ' ? '<span class="sl-blank-space"> </span>' : '<span class="sl-blank-box">_</span>').join('')}
-      </div>
-
-      <p class="hint" style="text-align:center;margin:4px 0">Write it on paper first, then type it here.</p>
-
-      <form id="sl-write-form" class="row sl-form" autocomplete="off">
-        <input class="field sl-input" id="sl-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type the word here...">
-        <button class="btn primary" type="submit" id="sl-btn-submit">Check</button>
-      </form>
-    </div>`;
-
-    const inp = box.querySelector('#sl-input');
-    inp.focus();
-
-    box.querySelector('#sl-write-form').onsubmit = (ev) => {
-      ev.preventDefault();
-      const inputVal = inp.value.trim();
-      if (!inputVal) return;
-      handleWordSubmission(inputVal);
+    box.querySelector('#sl-btn-check').onclick = () => {
+      const val = boxes.getValue();
+      if (val) handleWordSubmission(val);
+      else boxes.focus();
     };
   }
 
   function handleWordSubmission(inputVal) {
+    if (curSpellCancel) curSpellCancel();
     const v = sessionWords[curWordIdx];
     const target = v.target;
     const isOk = isSpellAnswerCorrect(v.w, inputVal);
@@ -5228,8 +5151,8 @@ function spellLab(t, box) {
     nextBtn.onclick = () => {
       curWordIdx++;
       if (curWordIdx < sessionWords.length) {
-        currentStep = 'look';
-        renderLookStep();
+        currentStep = 'write';
+        renderWriteStep();
       } else {
         currentStep = 'log';
         renderLogStep();
@@ -5321,8 +5244,8 @@ function spellLab(t, box) {
             nBtn.onclick = () => {
               curWordIdx++;
               if (curWordIdx < sessionWords.length) {
-                currentStep = 'look';
-                renderLookStep();
+                currentStep = 'write';
+                renderWriteStep();
               } else {
                 currentStep = 'log';
                 renderLogStep();
@@ -5384,8 +5307,8 @@ function spellLab(t, box) {
       curWordIdx = 0;
       score = 0;
       mistakes = [];
-      currentStep = 'look';
-      renderLookStep();
+      currentStep = 'write';
+      renderWriteStep();
     };
 
     box.querySelector('#sl-btn-back-start').onclick = () => {
@@ -5413,7 +5336,7 @@ function spellLab(t, box) {
     box.innerHTML = `<div class="card sl-card sl-start-card">
       <div class="eyebrow">Spelling Lab</div>
       <h2 class="sl-title">Master English Spelling</h2>
-      <p class="hint sl-subtitle">5-step practice: Look → Listen → Cover &amp; Write → Check → Log</p>
+      <p class="hint sl-subtitle">3-step practice: Listen &amp; Write → Check → Log</p>
       
       <div class="sl-section">
         <label class="sl-label">Word Source</label>
@@ -5483,8 +5406,8 @@ function spellLab(t, box) {
         curWordIdx = 0;
         score = 0;
         mistakes = [];
-        currentStep = 'look';
-        renderLookStep();
+        currentStep = 'write';
+        renderWriteStep();
       };
     }
   }

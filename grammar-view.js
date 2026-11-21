@@ -1,5 +1,5 @@
 // grammar-view.js - Core TOEIC Grammar Module (13 Topics)
-import { GRAMMAR_TOPICS } from './grammar-data.js';
+import { GRAMMAR_TOPICS } from './grammar-data.js?v=35';
 
 let appStore = null;
 let appEsc = null;

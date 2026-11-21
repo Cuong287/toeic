@@ -1,5 +1,5 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v32';
+const V = 'so-tu-toeic-v35';
 const CORE = [
   './',
   './index.html',
@@ -24,7 +24,11 @@ const CORE = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(V).then(c => c.addAll(CORE)).then(() => self.skipWaiting())
+    caches.open(V).then(c => {
+      return Promise.all(
+        CORE.map(url => c.add(url).catch(err => console.warn('[SW] Pre-cache failed for ' + url, err)))
+      );
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -69,16 +73,22 @@ self.addEventListener('fetch', e => {
   if (r.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('index.html')) {
     e.respondWith(
       fetch(r).then(res => {
-        const c = res.clone();
-        caches.open(V).then(x => x.put('./index.html', c));
+        if (res.ok) {
+          const c = res.clone();
+          caches.open(V).then(x => x.put('./index.html', c));
+        }
         return res;
       }).catch(() => caches.match('./index.html'))
     );
     return;
   }
 
-  // 4. firebase-config.js: Network-first để cập nhật cấu hình ngay khi người dùng sửa file
-  if (url.pathname.endsWith('firebase-config.js')) {
+  // 4. Các file script và style cùng origin (JS, MJS, CSS):
+  // Network-first với cache fallback.
+  // Đảm bảo mỗi khi mở/refresh (F5), trình duyệt luôn nhận được code JS mới nhất,
+  // loại bỏ hoàn toàn nguy cơ lệch version ES module exports/imports.
+  // Khi offline, tự động fallback về cache đã lưu.
+  if (url.origin === location.origin && (url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs') || url.pathname.endsWith('.css'))) {
     e.respondWith(
       fetch(r).then(res => {
         if (res.ok) {
@@ -86,12 +96,12 @@ self.addEventListener('fetch', e => {
           caches.open(V).then(x => x.put(r, c));
         }
         return res;
-      }).catch(() => caches.match(r))
+      }).catch(() => caches.match(r, { ignoreSearch: true }).then(m => m || caches.match(r)))
     );
     return;
   }
 
-  // 5. Tài nguyên tĩnh (CSS, fonts, pinned Firebase SDK từ gstatic): Cache-first
+  // 5. Tài nguyên tĩnh (CSS ngoại vi, fonts, hình ảnh, pinned Firebase SDK từ gstatic): Cache-first
   e.respondWith(
     caches.match(r).then(m => m || fetch(r).then(res => {
       const isAllowedDomain = (

@@ -1,5 +1,5 @@
 // practice-view.js - Giao diện Reflex Translation & Drills từ 01._Practice.pdf
-import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js';
+import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js?v=35';
 
 let appStore = null;
 let appEsc = null;

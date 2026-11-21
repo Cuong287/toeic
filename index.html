@@ -911,7 +911,10 @@ button{cursor:pointer}
 @media (min-width:861px){
   .app.side-collapsed{grid-template-columns:minmax(0,1fr)!important}
   .app.side-collapsed .side{display:none!important}
-  .app.side-collapsed .main{padding-top:52px}
+  .app.side-collapsed .main{
+    padding-top:28px;
+    padding-left:max(64px, calc(env(safe-area-inset-left, 0px) + 64px));
+  }
   .app.side-collapsed .desktop-expand-btn{
     display:inline-flex!important;
     position:fixed;

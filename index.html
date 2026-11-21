@@ -2422,7 +2422,7 @@ let currentRoute = 'home'; // 'home' | 'topic' | 'review' | 'leaderboard' | 'pro
 
 function readHash(){
   const h = location.hash || '';
-  if (h === '#home' || h === '#dashboard') { currentRoute = 'home'; return true; }
+  if (!h || h === '#' || h === '#home' || h === '#dashboard') { currentRoute = 'home'; return true; }
   if (h === '#topic-0' || h === '#t0' || h === '#t0-p1' || h === '#hub') { currentRoute = 'topic0'; return true; }
   if (h === '#pronun' || h === '#pronunciation' || h === '#phat-am' || h === '#speaking') { currentRoute = 'pronun'; return true; }
   if (h === '#practice' || h.startsWith('#practice-')) { currentRoute = 'practice'; return true; }
@@ -2437,6 +2437,7 @@ function readHash(){
     S.t = +m[1]; S.p = +m[2];
     return true;
   }
+  currentRoute = 'notfound';
   return false;
 }
 
@@ -2458,7 +2459,7 @@ function goTo(route){
   try { window.scrollTo({ top: 0 }); } catch(e){ window.scrollTo(0,0); }
 }
 
-window.addEventListener('hashchange', () => { if (readHash()) render(); });
+window.addEventListener('hashchange', () => { readHash(); render(); });
 
 function updateReviewBadge() {
   const badge = $('#rev-count');
@@ -8453,7 +8454,8 @@ function render(){
         'leaderboard': 'Leaderboard',
         'topic0': 'Vocabulary Index',
         'admin': 'Classroom Management',
-        'profile': 'My Profile'
+        'profile': 'My Profile',
+        'notfound': 'Page Not Found'
       };
       if (mobTitleText) mobTitleText.textContent = titles[currentRoute] || 'TOEIC Prep Hub';
     }
@@ -8466,17 +8468,34 @@ function render(){
     else if (currentRoute === 'leaderboard') renderLeaderboard(panel);
     else if (currentRoute === 'profile') renderProfile(panel);
     else if (currentRoute === 'admin') renderAdmin(panel);
+    else if (currentRoute === 'notfound') renderNotFound(panel);
   }
 }
 
+function renderNotFound(box) {
+  box.innerHTML = `
+    <div class="card" style="text-align:center;padding:48px 20px;max-width:480px;margin:30px auto">
+      <div style="font-size:48px;font-weight:800;color:var(--accent);line-height:1;margin-bottom:12px">404</div>
+      <h2 style="font-size:20px;font-weight:700;margin:0 0 8px">Page not found</h2>
+      <p class="hint" style="font-size:14px;line-height:1.5;margin:0 0 20px">The page or topic you requested does not exist or has been moved.</p>
+      <div>
+        <a href="#home" class="btn primary" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Back to Home</span>
+        </a>
+      </div>
+    </div>
+  `;
+}
+
 // ---------- App Bootstrap ----------
-if (!readHash()) {
+readHash();
+if (currentRoute === 'home') {
   const last = store.get('last', null);
   if (last && TOPICS[last.t-1]) {
     S.t = last.t;
     S.p = last.p;
   }
-  currentRoute = 'home';
 }
 
 try { window.speechSynthesis && window.speechSynthesis.getVoices(); } catch(e){}

@@ -1024,6 +1024,7 @@ h2.sec{margin:6px 0 0;font-size:17px;font-weight:700;letter-spacing:-.005em}
 .vw{font-size:18px;font-weight:700;letter-spacing:-.01em}
 .pos{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:5px}
 .ipa{font-family:var(--f-ipa);color:var(--muted);font-size:13.5px}
+.v-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
 .vtop .icon-btn{margin-left:auto}
 .vvi{font-size:15px}
 .ex{font-family:var(--f-ex);font-style:italic;font-size:15px;border-top:1px dashed var(--line);padding-top:8px;margin-top:2px}
@@ -1299,6 +1300,9 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   .gin{width:8.5em}
   .tcard{padding:14px}
   .vcard{padding:12px 14px 12px 20px}
+  .vtop{flex-wrap:wrap;gap:6px 10px}
+  .v-actions{width:100%;margin-left:0;display:flex;gap:8px;align-items:center;padding-top:2px}
+  .ipa{white-space:nowrap}
   .qprompt{font-size:20px}
   .opt{padding:12px 14px;min-height:48px}
   .card{padding:14px}
@@ -4241,7 +4245,7 @@ function part1(t, el){
     const x = ev[v.w];
     const starred = store.isStarred(v.w);
     return `<article class="vcard"><div class="vtop"><span class="vnum">${i+1}</span><span class="vw">${esc(v.w)}</span>${v.pos?`<span class="pos">${esc(v.pos)}</span>`:''}${x?`<span class="ipa">${esc(x[0])}</span>`:''}
-      <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <div class="v-actions">
         <button class="icon-btn star-btn ${starred ? 'starred' : ''}" data-star="${esc(v.w)}" aria-label="${starred ? 'Remove from saved words' : 'Save word'}" title="${starred ? 'Remove from saved words' : 'Save to review'}">
           <svg viewBox="0 0 24 24" fill="${starred ? '#F59E0B' : 'none'}" stroke="${starred ? '#F59E0B' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </button>

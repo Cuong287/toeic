@@ -1985,6 +1985,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-box.sl-box-active-letter{background:var(--accent);color:#fff;border-color:var(--accent)}
 .sl-box-space{width:clamp(12px,3vw,18px);height:clamp(32px,8vw,44px);display:inline-flex;align-items:center;justify-content:center}
 .sl-box-space.sl-box-cursor::after{content:'';width:8px;height:2.5px;background:var(--accent);border-radius:2px}
+.sl-mode-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
 </style>
 
 <div class="app">
@@ -4876,6 +4877,45 @@ function getTargetMistakeIndices(diff) {
     }
   }
   return mistakeIndices;
+}
+
+function clozeGhost(target) {
+  const hidden = new Set();
+  const troubles = trouble(target);
+  for (const tr of troubles) {
+    for (let i = tr.start; i < tr.end; i++) {
+      if (i < target.length && !/\s/.test(target[i])) {
+        hidden.add(i);
+      }
+    }
+  }
+
+  let letterCount = 0;
+  for (let i = 0; i < target.length; i++) {
+    if (/[a-zA-Z]/.test(target[i])) letterCount++;
+  }
+  const minHidden = Math.max(2, Math.ceil(letterCount * 0.3));
+
+  if (hidden.size < minHidden) {
+    for (let i = 0; i < target.length; i++) {
+      if (hidden.size >= minHidden) break;
+      const ch = target[i];
+      if (!/[aeiou]/i.test(ch)) continue;
+      const isFirstLetterOfWord = (i === 0 || /[\s\-]/.test(target[i - 1]));
+      if (isFirstLetterOfWord) continue;
+      if (!hidden.has(i)) {
+        hidden.add(i);
+      }
+    }
+  }
+
+  const ghost = new Set();
+  for (let i = 0; i < target.length; i++) {
+    if (!/\s/.test(target[i]) && !hidden.has(i)) {
+      ghost.add(i);
+    }
+  }
+  return ghost;
 }
 
 function mountLetterBoxes(container, target, { ghost = new Set(), onSubmit } = {}) {

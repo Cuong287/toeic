@@ -1920,27 +1920,11 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-step{padding:2px 8px;border-radius:12px;transition:background .15s,color .15s}
 .sl-step.active{background:var(--accent);color:#fff}
 .sl-step-sep{opacity:0.5}
-.sl-chips-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:12px 0}
-.sl-chip{display:inline-flex;align-items:center;padding:6px 12px;background:var(--sunk);border:1px solid var(--line);border-radius:8px;font-size:clamp(1.15rem,4.5vw,1.6rem);font-weight:700;color:var(--ink);letter-spacing:0.02em;word-break:break-word;overflow-wrap:anywhere;max-width:100%}
-.sl-chip-space{display:inline-block;width:12px}
-.sl-trouble{background:rgba(239,68,68,0.18);color:var(--ink);border-bottom:2px solid var(--accent);border-radius:3px;padding:0 2px}
-.sl-trouble-notes{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;margin-top:4px}
-.sl-trouble-label{font-size:0.8rem;color:var(--muted);font-weight:600}
-.sl-trouble-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:var(--sunk);border:1px solid var(--line);font-size:0.8rem;color:var(--ink)}
 .sl-word-meta{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:4px 0}
-.sl-spell-display{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;padding:12px 0;margin:8px 0}
-.sl-letter{display:inline-flex;align-items:center;justify-content:center;min-width:clamp(22px,5.5vw,32px);height:clamp(32px,8vw,42px);padding:0 3px;font-size:clamp(1.15rem,4.5vw,1.6rem);font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);transition:all .15s}
-.sl-letter.space{border:none;background:transparent;min-width:14px}
-.sl-letter.sl-letter-active{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.1)}
 .sl-audio-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:12px 0}
 .sl-btn-audio{display:inline-flex;align-items:center;gap:6px;padding:8px 16px}
 .sl-btn-audio svg{width:18px;height:18px}
 .sl-icon{width:18px;height:18px}
-.sl-blanks-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;margin:16px 0}
-.sl-blank-box{width:clamp(18px,4.5vw,28px);height:clamp(26px,6.5vw,36px);border-bottom:2.5px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:clamp(1rem,3.5vw,1.3rem);font-weight:700;color:transparent;background:var(--sunk);border-radius:4px 4px 0 0}
-.sl-blank-space{width:16px}
-.sl-form{gap:10px;margin-top:12px;align-items:center;justify-content:center}
-.sl-input{font-size:1.15rem;font-weight:600;text-align:center;max-width:380px}
 .sl-diff-row{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;justify-content:center;margin:16px 0}
 .sl-diff-item{display:flex;flex-direction:column;align-items:center;min-width:clamp(22px,5.5vw,32px);font-size:clamp(1.15rem,4.5vw,1.5rem);font-weight:700;line-height:1.2}
 .sl-diff-char{display:inline-flex;align-items:center;justify-content:center;min-width:clamp(22px,5.5vw,32px);height:clamp(32px,8vw,40px);padding:0 3px;border-radius:6px}
@@ -2163,7 +2147,6 @@ let currentUid = (() => {
   }
 })();
 const LOCAL_ONLY_KEYS = /^(last|rate|qdir|trhide:|_pending_dirty|synced_choice|p0_sub_|p0_filter_|t0_scope|t0_mode|t0_qdir|spell_log_)/;
-window.LOCAL_ONLY_KEYS = LOCAL_ONLY_KEYS;
 
 function migrateLegacyStorage() {
   try {
@@ -4548,15 +4531,20 @@ function writeDrill(t, box){
 
 // ---------- Spelling Lab (Tab 4 in Vocabulary) ----------
 function getSpellTarget(w) {
-  return cleanWord(w).split(/[\/=]/)[0].trim();
+  let clean = cleanWord(w).trim();
+  if (clean.includes('/')) {
+    const parts = clean.split('/');
+    if (parts[0].length <= 3 || parts[1].length <= 3) {
+      clean = clean.replace(/\//g, '').trim();
+    }
+  }
+  return clean.split(/[\/=]/)[0].trim();
 }
 
 function isSpellAnswerCorrect(w, input) {
-  const ans = answers(w);
-  return ans.includes(norm(input));
+  const target = getSpellTarget(w);
+  return norm(input) === norm(target) || answers(w).includes(norm(input));
 }
-window.getSpellTarget = getSpellTarget;
-window.isSpellAnswerCorrect = isSpellAnswerCorrect;
 
 function getSpellLog(topicId) {
   try {
@@ -4586,11 +4574,6 @@ function saveSpellWordResult(topicId, target, isCorrect, typo) {
     store.set('spell_log_' + topicId, log);
   } catch (e) {}
 }
-window.getSpellLog = getSpellLog;
-window.saveSpellWordResult = saveSpellWordResult;
-
-const SPELL_PREFIXES = ['inter', 'under', 'over', 'mis', 'dis', 'pre', 'un', 're'];
-const SPELL_SUFFIXES = ['ance', 'ence', 'able', 'ible', 'tion', 'sion', 'ment', 'ness', 'less', 'ity', 'ive', 'ous', 'ize', 'ise', 'ful', 'ant', 'ent', 'ly'];
 
 function trouble(target) {
   const list = [];
@@ -4650,82 +4633,6 @@ function trouble(target) {
     }
   }
   return merged;
-}
-window.trouble = trouble;
-
-function getWordChipsWithOffsets(target) {
-  const result = [];
-  let pos = 0;
-  const words = target.split(/(\s+)/);
-  for (const token of words) {
-    if (/^\s+$/.test(token)) {
-      result.push({ text: token, isSpace: true, start: pos, end: pos + token.length });
-      pos += token.length;
-      continue;
-    }
-    const low = token.toLowerCase();
-    let pMatch = null;
-    for (const p of SPELL_PREFIXES) {
-      if (low.startsWith(p) && low.length >= p.length + 2) {
-        pMatch = p;
-        break;
-      }
-    }
-    let sMatch = null;
-    for (const s of SPELL_SUFFIXES) {
-      if (low.endsWith(s) && low.length >= s.length + 2) {
-        sMatch = s;
-        break;
-      }
-    }
-    let chips = [];
-    if (pMatch && sMatch && low.length >= pMatch.length + sMatch.length + 1) {
-      chips = [
-        token.slice(0, pMatch.length),
-        token.slice(pMatch.length, token.length - sMatch.length),
-        token.slice(token.length - sMatch.length)
-      ];
-    } else if (pMatch) {
-      chips = [token.slice(0, pMatch.length), token.slice(pMatch.length)];
-    } else if (sMatch) {
-      chips = [token.slice(0, token.length - sMatch.length), token.slice(token.length - sMatch.length)];
-    } else {
-      chips = [token];
-    }
-
-    let wPos = pos;
-    for (const ch of chips) {
-      result.push({ text: ch, isSpace: false, start: wPos, end: wPos + ch.length });
-      wPos += ch.length;
-    }
-    pos += token.length;
-  }
-  return result;
-}
-
-function renderChipsHtml(target, troubles) {
-  const chips = getWordChipsWithOffsets(target);
-  return chips.map(chip => {
-    if (chip.isSpace) return '<span class="sl-chip-space"> </span>';
-    let out = '';
-    let i = chip.start;
-    while (i < chip.end) {
-      const tr = troubles.find(t => t.start <= i && i < t.end);
-      if (tr) {
-        const segEnd = Math.min(chip.end, tr.end);
-        out += `<mark class="sl-trouble" title="${esc(tr.note)}">${esc(chip.text.slice(i - chip.start, segEnd - chip.start))}</mark>`;
-        i = segEnd;
-      } else {
-        let nextTrStart = chip.end;
-        for (const t of troubles) {
-          if (t.start > i && t.start < nextTrStart) nextTrStart = t.start;
-        }
-        out += esc(chip.text.slice(i - chip.start, nextTrStart - chip.start));
-        i = nextTrStart;
-      }
-    }
-    return `<span class="sl-chip">${out}</span>`;
-  }).join('');
 }
 
 function speakSlow(text, onDone) {
@@ -4861,7 +4768,6 @@ function alignDiff(input, target) {
 
   return diff.reverse();
 }
-window.alignDiff = alignDiff;
 
 function getTargetMistakeIndices(diff) {
   const mistakeIndices = new Set();
@@ -5204,21 +5110,23 @@ function spellLab(t, box) {
           <div class="fb no" style="font-weight:600">Incorrect spelling</div>
         </div>
 
-        <div class="sl-diff-row" aria-label="Spelling comparison">
-          ${diff.map(d => {
-            if (d.type === 'ok') return `<div class="sl-diff-item ok"><span class="sl-diff-char">${esc(d.ch)}</span></div>`;
-            if (d.type === 'wrong') return `<div class="sl-diff-item wrong"><span class="sl-diff-char">${esc(d.ch)}</span><span class="sl-diff-sub">${esc(d.correctCh)}</span></div>`;
-            if (d.type === 'missing') return `<div class="sl-diff-item missing"><span class="sl-diff-char">${esc(d.correctCh)}</span><span class="sl-diff-sub">missing</span></div>`;
-            return `<div class="sl-diff-item extra"><span class="sl-diff-char">${esc(d.ch)}</span><span class="sl-diff-sub">extra</span></div>`;
-          }).join('')}
-        </div>
+        ${retypeRound === 1 ? `
+          <div class="sl-diff-row" aria-label="Spelling comparison">
+            ${diff.map(d => {
+              if (d.type === 'ok') return `<div class="sl-diff-item ok"><span class="sl-diff-char">${esc(d.ch)}</span></div>`;
+              if (d.type === 'wrong') return `<div class="sl-diff-item wrong"><span class="sl-diff-char">${esc(d.ch)}</span><span class="sl-diff-sub">${esc(d.correctCh)}</span></div>`;
+              if (d.type === 'missing') return `<div class="sl-diff-item missing"><span class="sl-diff-char">${esc(d.correctCh)}</span><span class="sl-diff-sub">missing</span></div>`;
+              return `<div class="sl-diff-item extra"><span class="sl-diff-char">${esc(d.ch)}</span><span class="sl-diff-sub">extra</span></div>`;
+            }).join('')}
+          </div>
 
-        <div class="sl-diff-legend">
-          <span class="sl-leg-item ok"><i class="sl-dot ok"></i> Correct</span>
-          <span class="sl-leg-item wrong"><i class="sl-dot wrong"></i> Wrong (correct below)</span>
-          <span class="sl-leg-item missing"><i class="sl-dot missing"></i> Missing letter</span>
-          <span class="sl-leg-item extra"><i class="sl-dot extra"></i> Extra letter</span>
-        </div>
+          <div class="sl-diff-legend">
+            <span class="sl-leg-item ok"><i class="sl-dot ok"></i> Correct</span>
+            <span class="sl-leg-item wrong"><i class="sl-dot wrong"></i> Wrong (correct below)</span>
+            <span class="sl-leg-item missing"><i class="sl-dot missing"></i> Missing letter</span>
+            <span class="sl-leg-item extra"><i class="sl-dot extra"></i> Extra letter</span>
+          </div>
+        ` : ''}
 
         <div class="sl-retype-box">
           <div class="sl-retype-counter">Retype ${retypeRound}/3</div>
@@ -5228,27 +5136,22 @@ function spellLab(t, box) {
             </div>
             <p class="hint" style="margin:2px 0">Notice the underlined letters you missed, then retype the word.</p>
           ` : `
-            <div class="sl-blanks-row" style="margin:4px 0">
-              ${target.split('').map(c => c === ' ' ? '<span class="sl-blank-space"> </span>' : '<span class="sl-blank-box">_</span>').join('')}
-            </div>
-            <p class="hint" style="margin:2px 0">Word covered — type it from memory.</p>
+            <p class="hint" style="margin:4px 0">Word covered — type it from memory.</p>
           `}
 
-          <form id="sl-retype-form" class="row sl-form" autocomplete="off" style="width:100%">
-            <input class="field sl-input" id="sl-retype-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type here...">
-            <button class="btn primary" type="submit" id="sl-btn-retype-submit">Check</button>
-          </form>
+          <div id="sl-retype-mount" style="width:100%;display:flex;justify-content:center;margin:8px 0"></div>
+
+          <div class="row" style="justify-content:center;width:100%;margin-top:6px">
+            <button class="btn primary" type="button" id="sl-btn-retype-submit">Check</button>
+          </div>
           <div class="fb" id="sl-retype-fb" style="min-height:22px"></div>
         </div>
       </div>`;
 
-      const rInp = box.querySelector('#sl-retype-input');
-      rInp.focus();
+      const retypeMount = box.querySelector('#sl-retype-mount');
       const rFb = box.querySelector('#sl-retype-fb');
 
-      box.querySelector('#sl-retype-form').onsubmit = (ev) => {
-        ev.preventDefault();
-        const val = rInp.value.trim();
+      function handleRetype(val) {
         if (!val) return;
         if (isSpellAnswerCorrect(v.w, val)) {
           if (retypeRound < 3) {
@@ -5277,13 +5180,27 @@ function spellLab(t, box) {
             };
           }
         } else {
-          rInp.classList.add('no');
+          rBoxes.wrapper.classList.add('no');
           rFb.className = 'fb no';
           rFb.textContent = 'Incorrect, try typing again.';
-          setTimeout(() => rInp.classList.remove('no'), 600);
-          rInp.value = '';
-          rInp.focus();
+          setTimeout(() => {
+            rBoxes.wrapper.classList.remove('no');
+            rBoxes.clear();
+            rBoxes.focus();
+          }, 600);
         }
+      }
+
+      const rBoxes = mountLetterBoxes(retypeMount, target, {
+        ghost: new Set(),
+        onSubmit: (val) => handleRetype(val)
+      });
+      rBoxes.focus();
+
+      box.querySelector('#sl-btn-retype-submit').onclick = () => {
+        const val = rBoxes.getValue();
+        if (val) handleRetype(val);
+        else rBoxes.focus();
       };
     }
 

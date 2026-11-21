@@ -1,5 +1,5 @@
 // Sổ từ TOEIC: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v29';
+const V = 'so-tu-toeic-v30';
 const CORE = [
   './',
   './index.html',

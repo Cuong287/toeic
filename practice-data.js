@@ -9,39 +9,48 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Nộp báo cáo tài chính"
+        "vi": "Nộp báo cáo tài chính",
+        "ref": "Submit a financial report"
       },
       {
         "id": 2,
-        "vi": "Xác nhận 1 đơn hàng"
+        "vi": "Xác nhận 1 đơn hàng",
+        "ref": "Confirm an order"
       },
       {
         "id": 3,
-        "vi": "Mua một vài đồ nội thất"
+        "vi": "Mua một vài đồ nội thất",
+        "ref": "Purchase some furniture"
       },
       {
         "id": 4,
-        "vi": "Giá không bao gồm phụ phí"
+        "vi": "Giá không bao gồm phụ phí",
+        "ref": "The price does not include additional charges"
       },
       {
         "id": 5,
-        "vi": "Hủy bỏ 1 cuộc họp"
+        "vi": "Hủy bỏ 1 cuộc họp",
+        "ref": "Cancel a meeting"
       },
       {
         "id": 6,
-        "vi": "Đăng ký một tài khoản online"
+        "vi": "Đăng ký một tài khoản online",
+        "ref": "Register an online account"
       },
       {
         "id": 7,
-        "vi": "Hàng sẽ được giao không trễ hơn 30/8"
+        "vi": "Hàng sẽ được giao không trễ hơn 30/8",
+        "ref": "The shipment will be delivered no later than August 30th"
       },
       {
         "id": 8,
-        "vi": "Sự thanh toán sẽ không được hoàn lại"
+        "vi": "Sự thanh toán sẽ không được hoàn lại",
+        "ref": "The payment is non-refundable"
       },
       {
         "id": 9,
-        "vi": "Hóa đơn thương mại"
+        "vi": "Hóa đơn thương mại",
+        "ref": "Commercial invoice"
       }
     ]
   },
@@ -52,43 +61,53 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Trả tiền 1 hóa đơn"
+        "vi": "Trả tiền 1 hóa đơn",
+        "ref": "Pay a bill"
       },
       {
         "id": 2,
-        "vi": "Xác nhận 1 đơn đặt hàng"
+        "vi": "Xác nhận 1 đơn đặt hàng",
+        "ref": "Confirm a purchase order"
       },
       {
         "id": 3,
-        "vi": "Nộp 1 đơn xin việc"
+        "vi": "Nộp 1 đơn xin việc",
+        "ref": "Submit a job application"
       },
       {
         "id": 4,
-        "vi": "Trả lại món hàng"
+        "vi": "Trả lại món hàng",
+        "ref": "Return an item"
       },
       {
         "id": 5,
-        "vi": "Đặt trước 1 bàn ở nhà hàng"
+        "vi": "Đặt trước 1 bàn ở nhà hàng",
+        "ref": "Reserve a table at a restaurant"
       },
       {
         "id": 6,
-        "vi": "Bạn nên kiểm tra lô hàng này trước khi thực hiện thanh toán"
+        "vi": "Bạn nên kiểm tra lô hàng này trước khi thực hiện thanh toán",
+        "ref": "You should check this shipment before making payment"
       },
       {
         "id": 7,
-        "vi": "Cửa hàng bán nhiều sản phẩm điện tử với giá cả vô cùng phải chăng"
+        "vi": "Cửa hàng bán nhiều sản phẩm điện tử với giá cả vô cùng phải chăng",
+        "ref": "The store sells a variety of electronic products at very affordable prices"
       },
       {
         "id": 8,
-        "vi": "Khách sạn cung cấp những bữa ăn miễn phí cho khách hàng trung thành"
+        "vi": "Khách sạn cung cấp những bữa ăn miễn phí cho khách hàng trung thành",
+        "ref": "The hotel provides complimentary meals for loyal customers"
       },
       {
         "id": 9,
-        "vi": "Giá bao gồm phí lắp đặt và phụ phí"
+        "vi": "Giá bao gồm phí lắp đặt và phụ phí",
+        "ref": "The price includes installation fees and additional charges"
       },
       {
         "id": 10,
-        "vi": "Bạn nên đếm số sản phẩm để hoàn thành báo cáo về hàng tồn kho"
+        "vi": "Bạn nên đếm số sản phẩm để hoàn thành báo cáo về hàng tồn kho",
+        "ref": "You should count the products to complete the inventory report"
       }
     ]
   },
@@ -99,27 +118,33 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Gia hạn một hợp đồng"
+        "vi": "Gia hạn một hợp đồng",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Hàng hóa bị hư hỏng sẽ được thay thế trong 7 ngày"
+        "vi": "Hàng hóa bị hư hỏng sẽ được thay thế trong 7 ngày",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Chiếc xe vẫn trong thời hạn bảo hành"
+        "vi": "Chiếc xe vẫn trong thời hạn bảo hành",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "1 người quản lý chu đáo"
+        "vi": "1 người quản lý chu đáo",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Công ty rất biết ơn sự trung thành của khách hàng"
+        "vi": "Công ty rất biết ơn sự trung thành của khách hàng",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Vui lòng nhìn qua tài liệu đính kèm với email này"
+        "vi": "Vui lòng nhìn qua tài liệu đính kèm với email này",
+        "ref": ""
       }
     ]
   },
@@ -130,43 +155,53 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Xin chào, tôi gọi đến từ Công ty thiết bị nhà bếp ABC. Công ty chúng tôi rất vui khi thông báo rằng chương trình khuyến mãi mùa hè sẽ bắt đầu từ ngày 1/5. Trong suốt tháng này, khách hàng sẽ được đưa ra nhiều lựa chọn khi mua hàng online hoặc mua hàng tại các cửa hàng bán lẻ."
+        "vi": "Xin chào, tôi gọi đến từ Công ty thiết bị nhà bếp ABC. Công ty chúng tôi rất vui khi thông báo rằng chương trình khuyến mãi mùa hè sẽ bắt đầu từ ngày 1/5. Trong suốt tháng này, khách hàng sẽ được đưa ra nhiều lựa chọn khi mua hàng online hoặc mua hàng tại các cửa hàng bán lẻ.",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Tôi sẽ kiểm tra cẩn thận đề xuất này và sẽ gửi cho các phòng ban khác sau khi nhận được sự chấp thuận từ giám đốc"
+        "vi": "Tôi sẽ kiểm tra cẩn thận đề xuất này và sẽ gửi cho các phòng ban khác sau khi nhận được sự chấp thuận từ giám đốc",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Trách nhiệm chính của bạn là cập nhật những xu hướng mới nhất ở thị trường và viết một bài báo cáo cho cuộc họp hằng quý tiếp theo"
+        "vi": "Trách nhiệm chính của bạn là cập nhật những xu hướng mới nhất ở thị trường và viết một bài báo cáo cho cuộc họp hằng quý tiếp theo",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Có rất nhiều nhà cung cấp đã liên lạc chúng ta, và tôi thật sự không biết nên chọn ai."
+        "vi": "Có rất nhiều nhà cung cấp đã liên lạc chúng ta, và tôi thật sự không biết nên chọn ai.",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Bạn cần phải làm mới giấy phép lái xe trước khi nó hết hạn"
+        "vi": "Bạn cần phải làm mới giấy phép lái xe trước khi nó hết hạn",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Công ty chúng ta đã xuất hiện trên trang bìa của tờ tạp chí được phát hành hôm nay"
+        "vi": "Công ty chúng ta đã xuất hiện trên trang bìa của tờ tạp chí được phát hành hôm nay",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "Việc mở rộng thị trường đến khu vực TPHCM sẽ rất khó khăn vì có nhiều đối thủ"
+        "vi": "Việc mở rộng thị trường đến khu vực TPHCM sẽ rất khó khăn vì có nhiều đối thủ",
+        "ref": ""
       },
       {
         "id": 8,
-        "vi": "Nếu kế hoạch này khả thi, chúng ta sẽ bắt đầu xây dựng tòa nhà mới vào tháng sau"
+        "vi": "Nếu kế hoạch này khả thi, chúng ta sẽ bắt đầu xây dựng tòa nhà mới vào tháng sau",
+        "ref": ""
       },
       {
         "id": 9,
-        "vi": "Tăng lương sẽ thúc đẩy năng suất làm việc"
+        "vi": "Tăng lương sẽ thúc đẩy năng suất làm việc",
+        "ref": ""
       },
       {
         "id": 10,
-        "vi": "Chúng tôi là nhà phân phối hàng đầu ở thị trường Vietnam trong suốt thập kỷ vừa qua"
+        "vi": "Chúng tôi là nhà phân phối hàng đầu ở thị trường Vietnam trong suốt thập kỷ vừa qua",
+        "ref": ""
       }
     ]
   },
@@ -177,35 +212,43 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Nhà cung cấp dịch vụ ăn uống"
+        "vi": "Nhà cung cấp dịch vụ ăn uống",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Đăng ký 1 khóa học chuyên sâu"
+        "vi": "Đăng ký 1 khóa học chuyên sâu",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Mở rộng dự án đầu tư"
+        "vi": "Mở rộng dự án đầu tư",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "1 đại lý đáng tin cậy trong thị trường bất động sản"
+        "vi": "1 đại lý đáng tin cậy trong thị trường bất động sản",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Lựa chọn 1 thí sinh tiềm năng"
+        "vi": "Lựa chọn 1 thí sinh tiềm năng",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Sự bảo trì hằng năm"
+        "vi": "Sự bảo trì hằng năm",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "Khi bạn thất bại để truy cập vào hệ thống, bạn sẽ nhận được sự trợ giúp từ chúng tôi."
+        "vi": "Khi bạn thất bại để truy cập vào hệ thống, bạn sẽ nhận được sự trợ giúp từ chúng tôi.",
+        "ref": ""
       },
       {
         "id": 8,
-        "vi": "1 người tổ chức đã được ủy quyền"
+        "vi": "1 người tổ chức đã được ủy quyền",
+        "ref": ""
       }
     ]
   },
@@ -216,59 +259,73 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Phân bổ vốn đầu tư"
+        "vi": "Phân bổ vốn đầu tư",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Quyên góp tiền"
+        "vi": "Quyên góp tiền",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Dự án thiết kế"
+        "vi": "Dự án thiết kế",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Tài sản công/ Tài sản tư"
+        "vi": "Tài sản công/ Tài sản tư",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Sự đóng góp vô giá"
+        "vi": "Sự đóng góp vô giá",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Chủ của 1 tòa nhà"
+        "vi": "Chủ của 1 tòa nhà",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "Đại lý bất động sản"
+        "vi": "Đại lý bất động sản",
+        "ref": ""
       },
       {
         "id": 8,
-        "vi": "Hợp đồng ngắn hạn"
+        "vi": "Hợp đồng ngắn hạn",
+        "ref": ""
       },
       {
         "id": 9,
-        "vi": "Căn phòng đã được trang bị nội thất"
+        "vi": "Căn phòng đã được trang bị nội thất",
+        "ref": ""
       },
       {
         "id": 10,
-        "vi": "Ứng cử viên tiềm năng"
+        "vi": "Ứng cử viên tiềm năng",
+        "ref": ""
       },
       {
         "id": 11,
-        "vi": "Nhân viên đủ tiêu chuẩn để được thăng tiến"
+        "vi": "Nhân viên đủ tiêu chuẩn để được thăng tiến",
+        "ref": ""
       },
       {
         "id": 12,
-        "vi": "Những yêu cầu cụ thể cho công việc"
+        "vi": "Những yêu cầu cụ thể cho công việc",
+        "ref": ""
       },
       {
         "id": 13,
-        "vi": "Vị trí kế toán tạm thời"
+        "vi": "Vị trí kế toán tạm thời",
+        "ref": ""
       },
       {
         "id": 14,
-        "vi": "Sự đánh giá toàn diện"
+        "vi": "Sự đánh giá toàn diện",
+        "ref": ""
       }
     ]
   },
@@ -279,27 +336,33 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Trợ lý giám đốc sẽ gửi biên bản cuộc họp trước ngày mai"
+        "vi": "Trợ lý giám đốc sẽ gửi biên bản cuộc họp trước ngày mai",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Chúng tôi cần tất cả nhân viên có 1 quyết định thống nhất về chính sách này"
+        "vi": "Chúng tôi cần tất cả nhân viên có 1 quyết định thống nhất về chính sách này",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Bạn cần nghĩ ra những ý tưởng trước khi đi vào kế hoạch chi tiết"
+        "vi": "Bạn cần nghĩ ra những ý tưởng trước khi đi vào kế hoạch chi tiết",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Anh ấy sẽ đảm nhiệm vị trí đó khi chủ tịch nghỉ hưu"
+        "vi": "Anh ấy sẽ đảm nhiệm vị trí đó khi chủ tịch nghỉ hưu",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Nhân viên bị cấm làm việc riêng trong giờ làm việc"
+        "vi": "Nhân viên bị cấm làm việc riêng trong giờ làm việc",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Cô ấy có kinh nghiệm trong việc giám sát và đánh giá những đội marketing"
+        "vi": "Cô ấy có kinh nghiệm trong việc giám sát và đánh giá những đội marketing",
+        "ref": ""
       }
     ]
   },
@@ -310,43 +373,53 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Soạn thảo giấy tờ cho một cuộc họp"
+        "vi": "Soạn thảo giấy tờ cho một cuộc họp",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Một bản đánh giá chi tiết về hiệu suất làm việc của nhân viên"
+        "vi": "Một bản đánh giá chi tiết về hiệu suất làm việc của nhân viên",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Cuộc họp hằng năm bị hoãn do trùng lịch"
+        "vi": "Cuộc họp hằng năm bị hoãn do trùng lịch",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Làm việc với tư cách một thư ký"
+        "vi": "Làm việc với tư cách một thư ký",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Sự cải tạo đường ABC dẫn đến  sự gián đoạn giao thông"
+        "vi": "Sự cải tạo đường ABC dẫn đến  sự gián đoạn giao thông",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Anh ấy được bổ nhiệm vào chức vụ đang bỏ trống nhờ vào tầm nhìn tốt"
+        "vi": "Anh ấy được bổ nhiệm vào chức vụ đang bỏ trống nhờ vào tầm nhìn tốt",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "Những tin tức sẽ được đính lên bảng thông báo đặt tại sảnh"
+        "vi": "Những tin tức sẽ được đính lên bảng thông báo đặt tại sảnh",
+        "ref": ""
       },
       {
         "id": 8,
-        "vi": "Công ty chúng tôi chuyên về sản xuất những sản phẩm công nghệ phức tạp"
+        "vi": "Công ty chúng tôi chuyên về sản xuất những sản phẩm công nghệ phức tạp",
+        "ref": ""
       },
       {
         "id": 9,
-        "vi": "Điền vào đơn này để đem chiếc máy tính này đi thử nghiệm trong một tháng."
+        "vi": "Điền vào đơn này để đem chiếc máy tính này đi thử nghiệm trong một tháng.",
+        "ref": ""
       },
       {
         "id": 10,
-        "vi": "Đặt tính nổi bật của sản phẩm là hình dáng linh hoạt và cấu trúc phức tạp"
+        "vi": "Đặt tính nổi bật của sản phẩm là hình dáng linh hoạt và cấu trúc phức tạp",
+        "ref": ""
       }
     ]
   },
@@ -357,31 +430,38 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Để được tham gia vào sự kiện này, bạn cần phải đăng ký trước"
+        "vi": "Để được tham gia vào sự kiện này, bạn cần phải đăng ký trước",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Tôi cần phải sắp xếp các buổi gặp mặt để tránh bị trùng lịch"
+        "vi": "Tôi cần phải sắp xếp các buổi gặp mặt để tránh bị trùng lịch",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Danh thắng này luôn là 1 điểm thu hút khách du lịch dù đó có là mùa cao điểm hay không"
+        "vi": "Danh thắng này luôn là 1 điểm thu hút khách du lịch dù đó có là mùa cao điểm hay không",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Hành khách bay phải để mắt đến hành lý xách tay của mình"
+        "vi": "Hành khách bay phải để mắt đến hành lý xách tay của mình",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Hạn chót để gửi bản thảo là ngày 30/8"
+        "vi": "Hạn chót để gửi bản thảo là ngày 30/8",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Nội dung của tác phẩm dự thi phải  được chấp nhận bởi giám khảo"
+        "vi": "Nội dung của tác phẩm dự thi phải  được chấp nhận bởi giám khảo",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "Truy cập trang web của chúng tôi để biết thêm chi tiết về cuộc thi và giải thưởng"
+        "vi": "Truy cập trang web của chúng tôi để biết thêm chi tiết về cuộc thi và giải thưởng",
+        "ref": ""
       }
     ]
   },
@@ -392,27 +472,33 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Cái bánh xe bị mòn sẽ được thay thế trong khoảng 1 giờ"
+        "vi": "Cái bánh xe bị mòn sẽ được thay thế trong khoảng 1 giờ",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Những công ty có lượng tiêu thụ năng lượng lớn sẽ được hỗ trợ bởi Chính Phủ"
+        "vi": "Những công ty có lượng tiêu thụ năng lượng lớn sẽ được hỗ trợ bởi Chính Phủ",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Việc lắp đặt sẽ bị hoãn lại do thời tiết xấu"
+        "vi": "Việc lắp đặt sẽ bị hoãn lại do thời tiết xấu",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Thiết bị điện tử này không chỉ dễ vận hành mà còn có thể xách tay được"
+        "vi": "Thiết bị điện tử này không chỉ dễ vận hành mà còn có thể xách tay được",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Hội nghị sắp tới sẽ được dẫn dắt bởi 1 trong những người đại diện nổi tiếng nhất của Honda"
+        "vi": "Hội nghị sắp tới sẽ được dẫn dắt bởi 1 trong những người đại diện nổi tiếng nhất của Honda",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Bữa tiệc chiêu đãi sẽ bắt đầu trong khoảng 1 giờ nữa nhưng những người điều phối vẫn chưa sắp xếp xong"
+        "vi": "Bữa tiệc chiêu đãi sẽ bắt đầu trong khoảng 1 giờ nữa nhưng những người điều phối vẫn chưa sắp xếp xong",
+        "ref": ""
       }
     ]
   },
@@ -423,27 +509,33 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Vui lòng cung cấp địa chỉ thanh toán để hoàn thành hồ sơ của bạn"
+        "vi": "Vui lòng cung cấp địa chỉ thanh toán để hoàn thành hồ sơ của bạn",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Công ty có đủ ngân sách để chi trả cho hợp đồng này"
+        "vi": "Công ty có đủ ngân sách để chi trả cho hợp đồng này",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Những món nợ chưa trả của sẽ được xem như khoản khấu trừ trong mức lương hằng tháng của bạn"
+        "vi": "Những món nợ chưa trả của sẽ được xem như khoản khấu trừ trong mức lương hằng tháng của bạn",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Chúng ta cần phải thu hồi các khoản thanh toán đã quá hạn từ khách hàng"
+        "vi": "Chúng ta cần phải thu hồi các khoản thanh toán đã quá hạn từ khách hàng",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Chiếc máy tính sẽ đi kèm với sổ hướng dẫn và 1 cái loa có thể xách tay được"
+        "vi": "Chiếc máy tính sẽ đi kèm với sổ hướng dẫn và 1 cái loa có thể xách tay được",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Những thiết bị trong phòng thí nghiệm cần được rửa một cách cẩn thận vì chúng dễ vỡ."
+        "vi": "Những thiết bị trong phòng thí nghiệm cần được rửa một cách cẩn thận vì chúng dễ vỡ.",
+        "ref": ""
       }
     ]
   },
@@ -454,27 +546,33 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Công ty sẽ tiến hành 1 chuyến tham quan sau khi hội nghị hằng năm kết thúc"
+        "vi": "Công ty sẽ tiến hành 1 chuyến tham quan sau khi hội nghị hằng năm kết thúc",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Nếu bạn đặt phòng trước 2 tháng, bạn sẽ được đón từ sân bay bằng xe buýt miễn phí được cung cấp bởi khách sạn"
+        "vi": "Nếu bạn đặt phòng trước 2 tháng, bạn sẽ được đón từ sân bay bằng xe buýt miễn phí được cung cấp bởi khách sạn",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Cuộc hành trình kéo dài hơn 3 tháng và chúng tôi đã gặp nhiều sinh vật ngoại lai."
+        "vi": "Cuộc hành trình kéo dài hơn 3 tháng và chúng tôi đã gặp nhiều sinh vật ngoại lai.",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Đài quan sát nằm trong khu vực hạn chế, do vậy bạn cần có sự cho phép để được vào."
+        "vi": "Đài quan sát nằm trong khu vực hạn chế, do vậy bạn cần có sự cho phép để được vào.",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Công ty gia đình này đã hoạt động từ thế kỉ trước"
+        "vi": "Công ty gia đình này đã hoạt động từ thế kỉ trước",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Tổng giám đốc đã liên tục phản bác lại những tin đồn về sự nghỉ hưu của ông ta."
+        "vi": "Tổng giám đốc đã liên tục phản bác lại những tin đồn về sự nghỉ hưu của ông ta.",
+        "ref": ""
       }
     ]
   },
@@ -485,35 +583,43 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "Chúng tôi gần đây đã tạo ra một ứng dụng để theo dõi đơn hàng từ nhà kho đến địa chỉ thanh toán của khách hàng"
+        "vi": "Chúng tôi gần đây đã tạo ra một ứng dụng để theo dõi đơn hàng từ nhà kho đến địa chỉ thanh toán của khách hàng",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "Việc xử lí những phàn nàn của khách hàng 1 cách tôn trọng đòi hỏi nhân viên phải có kiến thức và kỹ năng."
+        "vi": "Việc xử lí những phàn nàn của khách hàng 1 cách tôn trọng đòi hỏi nhân viên phải có kiến thức và kỹ năng.",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "Yêu cầu của quý khách sẽ được chuyển đến phòng kinh doanh sớm và nó sẽ không tốn nhiều thời gian để xử lý."
+        "vi": "Yêu cầu của quý khách sẽ được chuyển đến phòng kinh doanh sớm và nó sẽ không tốn nhiều thời gian để xử lý.",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "Lô hàng sẽ được đóng gói và vận chuyển đến nhà của bạn trong ít nhất 3 ngày làm việc."
+        "vi": "Lô hàng sẽ được đóng gói và vận chuyển đến nhà của bạn trong ít nhất 3 ngày làm việc.",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "Biên tập viên rất ngạc nhiên vì bài báo của anh ấy xuất hiện trên trang bìa của ấn phẩm tháng này."
+        "vi": "Biên tập viên rất ngạc nhiên vì bài báo của anh ấy xuất hiện trên trang bìa của ấn phẩm tháng này.",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "Chúng ta cần xác định xem khía cạnh nào của hội nghị là hữu ích nhất."
+        "vi": "Chúng ta cần xác định xem khía cạnh nào của hội nghị là hữu ích nhất.",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "Các phòng ban sẽ có những cuộc họp định kỳ để bàn luận về những mục tiêu trong quý tới."
+        "vi": "Các phòng ban sẽ có những cuộc họp định kỳ để bàn luận về những mục tiêu trong quý tới.",
+        "ref": ""
       },
       {
         "id": 8,
-        "vi": "Tuyển tập sách mới về quản trị kinh doanh đã được xuất bản và nhận được sự chú ý từ độc giả."
+        "vi": "Tuyển tập sách mới về quản trị kinh doanh đã được xuất bản và nhận được sự chú ý từ độc giả.",
+        "ref": ""
       }
     ]
   },
@@ -524,31 +630,38 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "​ Bạn có thể nhìn vào sơ đồ chỗ ngồi này hoặc hỏi người hướng dẫn đang đứng ở đằng kia"
+        "vi": "​ Bạn có thể nhìn vào sơ đồ chỗ ngồi này hoặc hỏi người hướng dẫn đang đứng ở đằng kia",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "​ Khán giả bị cấm mang theo vũ khí vào buổi công chiếu"
+        "vi": "​ Khán giả bị cấm mang theo vũ khí vào buổi công chiếu",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "​ Anh ta đã soạn ra 1 bài hát mà nhanh chóng trở thành 1 kiệt tác trong thế kỷ"
+        "vi": "​ Anh ta đã soạn ra 1 bài hát mà nhanh chóng trở thành 1 kiệt tác trong thế kỷ",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "​ Bạn vui lòng xem trước video này và đưa ra một vài lời khuyên về trang phục và âm nhạc để chúng tôi có thể cải thiện chất lượng của nó."
+        "vi": "​ Bạn vui lòng xem trước video này và đưa ra một vài lời khuyên về trang phục và âm nhạc để chúng tôi có thể cải thiện chất lượng của nó.",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "​ Đầu tư có thể tạo ra lợi nhuận nhưng nhiều lúc tạo ra những khoản nợ khổng lồ"
+        "vi": "​ Đầu tư có thể tạo ra lợi nhuận nhưng nhiều lúc tạo ra những khoản nợ khổng lồ",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "​ Suy thoái kinh tế khiến lĩnh vực tư nhân chống chọi với nhiều vấn đề tài chính"
+        "vi": "​ Suy thoái kinh tế khiến lĩnh vực tư nhân chống chọi với nhiều vấn đề tài chính",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "​ Khoản vay được xem như 1 khoản khấu trừ trong thu nhập hằng tháng của anh ta."
+        "vi": "​ Khoản vay được xem như 1 khoản khấu trừ trong thu nhập hằng tháng của anh ta.",
+        "ref": ""
       }
     ]
   },
@@ -559,35 +672,43 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "​ Lợi ích của 1 công việc freelance là sự linh hoạt trong giờ làm việc và môi trường làm việc"
+        "vi": "​ Lợi ích của 1 công việc freelance là sự linh hoạt trong giờ làm việc và môi trường làm việc",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "​ Để thúc đẩy tinh thần của nhân viên, công ty đã thực hiện các việc làm như tổ chức các buổi chơi ngoài và các hoạt động giải trí hằng tuần"
+        "vi": "​ Để thúc đẩy tinh thần của nhân viên, công ty đã thực hiện các việc làm như tổ chức các buổi chơi ngoài và các hoạt động giải trí hằng tuần",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "​ Thiếu hụt nhân viên là trở ngại chính khiến tập đoàn ABC không thể mở rộng thị trường sang châu Á"
+        "vi": "​ Thiếu hụt nhân viên là trở ngại chính khiến tập đoàn ABC không thể mở rộng thị trường sang châu Á",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "​ Chủ đề chính của buổi họp sáng nay là làm thế nào để tạo ra một chiến lược marketing mà làm cho công ty của chúng ta khác biệt với những đối thủ cạnh tranh"
+        "vi": "​ Chủ đề chính của buổi họp sáng nay là làm thế nào để tạo ra một chiến lược marketing mà làm cho công ty của chúng ta khác biệt với những đối thủ cạnh tranh",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "​ Các viên chức cấp cao được mời đến hội trường thành phố để bàn luận về những vấn đề chính trị quan trọng gần đây"
+        "vi": "​ Các viên chức cấp cao được mời đến hội trường thành phố để bàn luận về những vấn đề chính trị quan trọng gần đây",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "​ Với kinh nghiệm 10 năm làm việc cho các tổ chức phi lợi nhuận, bà ABC đã trở thành một trong những nhà cầm quyền có danh tiếng nhất trong thị trấn"
+        "vi": "​ Với kinh nghiệm 10 năm làm việc cho các tổ chức phi lợi nhuận, bà ABC đã trở thành một trong những nhà cầm quyền có danh tiếng nhất trong thị trấn",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "​ Thực hiện các biện pháp để bảo tồn công viên quốc gia là nhiệm vụ của mỗi cư dân trong khu vực này"
+        "vi": "​ Thực hiện các biện pháp để bảo tồn công viên quốc gia là nhiệm vụ của mỗi cư dân trong khu vực này",
+        "ref": ""
       },
       {
         "id": 8,
-        "vi": "​ Phần lớn dân số của quốc gia A đang trải qua một sự khan hiếm nghiêm trọng về thức ăn"
+        "vi": "​ Phần lớn dân số của quốc gia A đang trải qua một sự khan hiếm nghiêm trọng về thức ăn",
+        "ref": ""
       }
     ]
   },
@@ -598,31 +719,38 @@ export const PRACTICE_UNITS = [
     "items": [
       {
         "id": 1,
-        "vi": "​ Mặc dù được ra mắt trong mùa cao điểm, dòng sản phẩm ABC không tạo ra được sự chú ý bởi vì hoạt động marketing không hiệu quả và việc lựa chọn sai phân khúc thị trường."
+        "vi": "​ Mặc dù được ra mắt trong mùa cao điểm, dòng sản phẩm ABC không tạo ra được sự chú ý bởi vì hoạt động marketing không hiệu quả và việc lựa chọn sai phân khúc thị trường.",
+        "ref": ""
       },
       {
         "id": 2,
-        "vi": "​ Dù doanh số tăng một cách rất chậm chạp, công ty vẫn tiếp tục chiến lược mở rộng ra thị trường Đông Nam Á nhờ vào lợi nhuận biên dương."
+        "vi": "​ Dù doanh số tăng một cách rất chậm chạp, công ty vẫn tiếp tục chiến lược mở rộng ra thị trường Đông Nam Á nhờ vào lợi nhuận biên dương.",
+        "ref": ""
       },
       {
         "id": 3,
-        "vi": "​ Vì dịch Covid, nhiều công ty đã xoay xở để giữ vững vị thế trong thị trường bằng cách cắt giảm số lượng nhân sự và giảm chi phí không cần thiết."
+        "vi": "​ Vì dịch Covid, nhiều công ty đã xoay xở để giữ vững vị thế trong thị trường bằng cách cắt giảm số lượng nhân sự và giảm chi phí không cần thiết.",
+        "ref": ""
       },
       {
         "id": 4,
-        "vi": "​ Vào quý ba mỗi năm, công ty luôn luôn trải qua một sự giảm thiểu doanh thu điển hình."
+        "vi": "​ Vào quý ba mỗi năm, công ty luôn luôn trải qua một sự giảm thiểu doanh thu điển hình.",
+        "ref": ""
       },
       {
         "id": 5,
-        "vi": "​ Mỗi nhân viên sẽ được cung cấp giấy phép hoặc thẻ để truy cập vào khu vực để xe của công ty, ngoại trừ nhân viên ở chi nhánh XYZ, họ sẽ có chỗ để xe chỉ định riêng cho cá nhân."
+        "vi": "​ Mỗi nhân viên sẽ được cung cấp giấy phép hoặc thẻ để truy cập vào khu vực để xe của công ty, ngoại trừ nhân viên ở chi nhánh XYZ, họ sẽ có chỗ để xe chỉ định riêng cho cá nhân.",
+        "ref": ""
       },
       {
         "id": 6,
-        "vi": "​ Thay vì đầu tư vào nhân sự và nguyên liệu, công ty của chúng ta sẽ tập trung vào việc phát triển cơ sở hạ tầng để tối ưu hóa sản xuất và tối đa hóa số lượng sản phẩm."
+        "vi": "​ Thay vì đầu tư vào nhân sự và nguyên liệu, công ty của chúng ta sẽ tập trung vào việc phát triển cơ sở hạ tầng để tối ưu hóa sản xuất và tối đa hóa số lượng sản phẩm.",
+        "ref": ""
       },
       {
         "id": 7,
-        "vi": "​ Số lượng người chuyển đến sống ở khu vực ngoại ô ngày càng tăng, dẫn đến sự gia tăng về giá bất động sản ở những nơi này."
+        "vi": "​ Số lượng người chuyển đến sống ở khu vực ngoại ô ngày càng tăng, dẫn đến sự gia tăng về giá bất động sản ở những nơi này.",
+        "ref": ""
       }
     ]
   }

@@ -311,7 +311,7 @@
   gap: 2px;
 }
 
-/* Quick selection popover for Speak & Translate - Siêu nét, nổi bật trên mọi nền */
+/* Quick selection popover for Speak, Translate & Save Review Word - Thiết kế tách biệt, tránh đè lên menu Edge */
 .sel-popover {
   position: absolute;
   z-index: 999999;
@@ -327,14 +327,16 @@
   font-family: var(--f-ui), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   font-size: 13.5px !important;
   line-height: 1.4 !important;
+  max-width: 440px !important;
+  min-width: 250px !important;
+  pointer-events: auto !important;
+}
+.sel-popover:not(.below) {
   animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
   transform: translate(-50%, -100%) !important;
   margin-top: -10px !important;
-  max-width: 320px !important;
-  min-width: 190px !important;
-  pointer-events: auto !important;
 }
-.sel-popover::after {
+.sel-popover:not(.below)::after {
   content: '';
   position: absolute;
   bottom: -7px;
@@ -347,29 +349,41 @@
   width: 0;
 }
 .sel-popover.below {
+  animation: popInBelow 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
   transform: translate(-50%, 0) !important;
-  margin-top: 10px !important;
+  margin-top: 8px !important;
 }
 .sel-popover.below::after {
-  bottom: auto;
+  content: '';
+  position: absolute;
   top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
   border-width: 0 7px 7px;
+  border-style: solid;
   border-color: transparent transparent #38BDF8;
+  display: block;
+  width: 0;
+}
+@keyframes popInBelow {
+  from { opacity: 0; transform: translate(-50%, -8px) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
 }
 .sel-btn-bar {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
 }
 .sel-btn {
   border: none !important;
   border-radius: 8px !important;
-  padding: 7px 14px !important;
+  padding: 6px 12px !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
   transition: all 0.15s !important;
   white-space: nowrap !important;
@@ -392,16 +406,29 @@
   background: #15803D !important;
   transform: translateY(-1px) !important;
 }
+.sel-btn.btn-star {
+  background: #D97706 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.45) !important;
+}
+.sel-btn.btn-star:hover {
+  background: #B45309 !important;
+  transform: translateY(-1px) !important;
+}
+.sel-btn.btn-star.is-saved {
+  background: #059669 !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.45) !important;
+}
 .sel-btn.btn-close {
   background: rgba(255, 255, 255, 0.14) !important;
   color: #CBD5E1 !important;
-  width: 28px !important;
-  height: 28px !important;
+  width: 26px !important;
+  height: 26px !important;
   padding: 0 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   font-weight: 800 !important;
   border-radius: 50% !important;
   margin-left: auto !important;
@@ -414,8 +441,8 @@
   transform: scale(0.96) !important;
 }
 .sel-btn svg {
-  width: 15px !important;
-  height: 15px !important;
+  width: 14px !important;
+  height: 14px !important;
   flex-shrink: 0 !important;
 }
 .sel-result {
@@ -427,7 +454,7 @@
   font-size: 13.5px !important;
   color: #F1F5F9 !important;
   word-break: break-word !important;
-  max-height: 150px !important;
+  max-height: 160px !important;
   overflow-y: auto !important;
   line-height: 1.5 !important;
 }
@@ -4354,8 +4381,12 @@ function renderReview(box) {
       ` : `
         <div class="vgrid">
           ${filtered.map((item, idx) => {
-            const topic = TOPICS.find(t => t.id === Number(item.topicId));
-            const tTitle = topic ? splitTitle(topic).main : `Chủ đề ${item.topicId}`;
+            const isNumTopic = !isNaN(Number(item.topicId)) && Number(item.topicId) > 0;
+            const topic = isNumTopic ? TOPICS.find(t => t.id === Number(item.topicId)) : null;
+            const tTitle = topic ? splitTitle(topic).main : '';
+            const topicLabel = isNumTopic
+              ? `<a href="#t${item.topicId}-p1" style="color:var(--accent);text-decoration:none"><b>Chủ đề ${item.topicId}: ${esc(tTitle)}</b></a>`
+              : `<span style="color:var(--accent)"><b>${item.source === 'selection' ? 'Tra từ nhanh' : (esc(item.topicId) || 'Tự thêm')}</b></span>`;
             return `
               <article class="vcard">
                 <div class="vtop">
@@ -4366,7 +4397,7 @@ function renderReview(box) {
                   <button class="btn ghost" data-unstar="${esc(item.w)}" style="color:var(--bad);font-size:12px;padding:4px 8px" title="Bỏ khỏi từ khó">Bỏ ôn</button>
                 </div>
                 <div class="vvi">${esc(item.vi) || 'Chưa có nghĩa'}</div>
-                <div class="hint" style="font-size:12px;margin-top:6px">Thuộc: <a href="#t${item.topicId}-p1" style="color:var(--accent);text-decoration:none"><b>Chủ đề ${item.topicId}: ${esc(tTitle)}</b></a></div>
+                <div class="hint" style="font-size:12px;margin-top:6px">Nguồn: ${topicLabel}</div>
               </article>`;
           }).join('')}
         </div>
@@ -8037,10 +8068,11 @@ const RecorderManager = (function() {
   };
 })();
 
-// ---------- Quick Selection Tooltip (Speak & Translate) ----------
+// ---------- Quick Selection Tooltip (Speak, Translate & Star Review Word) ----------
 (function initSelectionTooltip() {
   let popover = null;
   let activeTarget = '';
+  let activeTranslated = '';
 
   function removePopover() {
     if (popover && popover.parentNode) {
@@ -8048,6 +8080,7 @@ const RecorderManager = (function() {
     }
     popover = null;
     activeTarget = '';
+    activeTranslated = '';
   }
 
   function handleSelection() {
@@ -8055,7 +8088,7 @@ const RecorderManager = (function() {
     if (!sel || sel.isCollapsed) return;
 
     const rawText = sel.toString().trim();
-    if (!rawText || rawText.length > 150) {
+    if (!rawText || rawText.length > 200) {
       removePopover();
       return;
     }
@@ -8077,23 +8110,30 @@ const RecorderManager = (function() {
     removePopover();
     activeTarget = targetWord;
 
+    const isVietnamese = VN.test(targetWord);
+    const isAlreadyStarred = store.isStarred(targetWord);
+
     popover = document.createElement('div');
-    popover.className = 'sel-popover';
+    popover.className = 'sel-popover below'; // Mặc định ở dưới để không bị thanh công cụ Edge đè lên
     popover.dataset.word = targetWord;
 
     popover.innerHTML = `
       <div class="sel-btn-bar">
-        <button class="sel-btn btn-speak" id="sel-speak" title="Nghe phát âm">
+        <button class="sel-btn btn-speak" id="sel-speak" title="${isVietnamese ? 'Nghe phát âm tiếng Việt' : 'Nghe phát âm tiếng Anh'}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
           <span>Nghe</span>
         </button>
-        <button class="sel-btn btn-rec rec-btn" id="sel-rec" data-rec-text="${esc(targetWord)}" data-rec-id="sel-target" title="Ghi âm đọc thử từ này">
+        <button class="sel-btn btn-rec rec-btn" id="sel-rec" data-rec-text="${esc(targetWord)}" data-rec-id="sel-target" title="Ghi âm đọc thử">
           ${MIC_ICON}
           <span>Nói</span>
         </button>
-        <button class="sel-btn btn-trans" id="sel-trans" title="Dịch nghĩa tiếng Việt">
+        <button class="sel-btn btn-trans" id="sel-trans" title="${isVietnamese ? 'Dịch sang tiếng Anh' : 'Dịch nghĩa tiếng Việt'}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span>Dịch</span>
+          <span>${isVietnamese ? 'Dịch (EN)' : 'Dịch'}</span>
+        </button>
+        <button class="sel-btn btn-star ${isAlreadyStarred ? 'is-saved' : ''}" id="sel-star" title="${isAlreadyStarred ? 'Đã lưu trong Từ khó cần ôn' : 'Thêm vào Từ khó cần ôn'}">
+          <svg viewBox="0 0 24 24" fill="${isAlreadyStarred ? '#FBBF24' : 'none'}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <span id="sel-star-txt">${isAlreadyStarred ? 'Đã lưu' : 'Lưu từ'}</span>
         </button>
         <button class="sel-btn btn-close" id="sel-close" title="Đóng">✕</button>
       </div>
@@ -8107,15 +8147,19 @@ const RecorderManager = (function() {
     const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
 
     let posX = rect.left + rect.width / 2 + scrollX;
-    let posY = rect.top + scrollY;
+    // Mặc định hiển thị DƯỚI dòng chữ đã quét để hoàn toàn tránh menu Edge
+    let posY = rect.bottom + scrollY + 8;
 
-    const popWidth = 240;
-    if (posX - popWidth / 2 < 12) posX = popWidth / 2 + 12;
-    if (posX + popWidth / 2 > window.innerWidth - 12) posX = window.innerWidth - popWidth / 2 - 12;
+    const popWidth = Math.max(340, popover.offsetWidth || 340);
+    const minLeft = popWidth / 2 + 16;
+    const maxLeft = Math.max(minLeft, window.innerWidth - popWidth / 2 - 16);
+    if (posX < minLeft) posX = minLeft;
+    if (posX > maxLeft) posX = maxLeft;
 
-    if (rect.top < 85) {
-      popover.classList.add('below');
-      posY = rect.bottom + scrollY;
+    // Chỉ đưa lên trên nếu ở sát đáy màn hình VÀ phía trên còn nhiều khoảng trống
+    if (rect.bottom + 140 > window.innerHeight && rect.top > 120) {
+      popover.classList.remove('below');
+      posY = rect.top + scrollY - 8;
     }
 
     popover.style.left = posX + 'px';
@@ -8126,6 +8170,18 @@ const RecorderManager = (function() {
       e.stopPropagation();
       const txtSpan = speakBtn.querySelector('span');
       if (txtSpan) txtSpan.textContent = 'Đang đọc...';
+
+      if (isVietnamese && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(targetWord);
+        u.lang = 'vi-VN';
+        u.rate = 0.95;
+        u.onend = () => { if (txtSpan) txtSpan.textContent = 'Nghe'; };
+        u.onerror = () => { if (txtSpan) txtSpan.textContent = 'Nghe'; };
+        window.speechSynthesis.speak(u);
+        return;
+      }
+
       speak(targetWord, () => {
         if (txtSpan) txtSpan.textContent = 'Nghe';
       });
@@ -8138,63 +8194,186 @@ const RecorderManager = (function() {
       e.stopPropagation();
       const resEl = popover.querySelector('#sel-res');
       resEl.style.display = 'block';
-      resEl.innerHTML = '<span style="color:#94A3B8">Đang dịch...</span>';
+      resEl.innerHTML = '<span style="color:#94A3B8">Đang tra từ...</span>';
 
-      const normT = norm(targetWord);
       const allVocab = vocabPool();
+      const normVN = s => String(s || '').toLowerCase().replace(/[.,!?;:()"]/g, '').replace(/\s+/g, ' ').trim();
+      const normT = isVietnamese ? normVN(targetWord) : norm(targetWord);
 
-      // 1. Khớp từ điển bài học nếu đúng chính xác từ đó
-      const exactHit = allVocab.find(v => norm(cleanWord(v.w)) === normT);
-      if (exactHit) {
-        resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(exactHit.w)}</b> ${exactHit.pos ? `<span style="color:#94A3B8">(${esc(exactHit.pos)})</span>` : ''}: <b style="color:#4ADE80">${esc(exactHit.vi)}</b></div>`;
-        return;
-      }
-
-      // 2. Tra qua Google Translate public API (nhanh <100ms, rất chính xác cho từ & cụm từ)
-      try {
-        const gUrl = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(targetWord);
-        const gr = await fetch(gUrl);
-        if (gr.ok) {
-          const gd = await gr.json();
-          if (gd && gd[0] && gd[0][0] && gd[0][0][0]) {
-            const trans = gd[0].map(x => x[0]).join('').trim();
-            if (trans) {
-              resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b>: <b style="color:#4ADE80">${esc(trans)}</b></div>`;
-              return;
-            }
-          }
-        }
-      } catch(e) {}
-
-      // 3. Fallback: Tra qua MyMemory Translation API
-      try {
-        const mUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(targetWord) + '&langpair=en|vi';
-        const mr = await fetch(mUrl);
-        if (mr.ok) {
-          const md = await mr.json();
-          if (md && md.responseData && md.responseData.translatedText) {
-            const translated = md.responseData.translatedText.trim();
-            if (translated && !translated.includes('NO QUERY SPECIFIED')) {
-              resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b>: <b style="color:#4ADE80">${esc(translated)}</b></div>`;
-              return;
-            }
-          }
-        }
-      } catch (err) {}
-
-      // 4. Fallback: Tra từ gốc trong bài học
-      if (normT.length >= 4) {
-        const prefixHit = allVocab.find(v => {
-          const cw = norm(cleanWord(v.w));
-          return cw.length >= 4 && (normT.startsWith(cw) || cw.startsWith(normT));
+      if (isVietnamese) {
+        // --- Quét tiếng Việt -> Dịch sang tiếng Anh ---
+        // 1. Tra trong từ điển bài học
+        const hitVi = allVocab.find(v => {
+          const cv = normVN(cleanWord(v.vi));
+          return cv === normT || cv.includes(normT);
         });
-        if (prefixHit) {
-          resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b> (gốc <i>${esc(prefixHit.w)}</i>): <b style="color:#4ADE80">${esc(prefixHit.vi)}</b></div>`;
+        if (hitVi) {
+          activeTranslated = hitVi.w;
+          resEl.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <div>
+                <span style="color:#94A3B8;font-size:12px;">Từ vựng bài học:</span><br>
+                <b style="color:#38BDF8">${esc(targetWord)}</b> → <b style="color:#4ADE80;font-size:14.5px;">${esc(hitVi.w)}</b> ${hitVi.phonetic ? `<span style="color:#94A3B8">[${esc(hitVi.phonetic)}]</span>` : ''}
+              </div>
+              <button class="sel-btn btn-speak" style="padding:4px 8px;font-size:12px;" onclick="speak('${esc(hitVi.w)}')">🔊 Nghe</button>
+            </div>
+          `;
           return;
         }
-      }
 
-      resEl.innerHTML = `<div>Không tìm thấy bản dịch cho "${esc(targetWord)}".</div>`;
+        // 2. Tra qua Google Translate (sl=vi&tl=en)
+        try {
+          const gUrl = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=vi&tl=en&dt=t&q=' + encodeURIComponent(targetWord);
+          const gr = await fetch(gUrl);
+          if (gr.ok) {
+            const gd = await gr.json();
+            if (gd && gd[0] && gd[0][0] && gd[0][0][0]) {
+              const trans = gd[0].map(x => x[0]).join('').trim();
+              if (trans) {
+                activeTranslated = trans;
+                resEl.innerHTML = `
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div>
+                      <span style="color:#94A3B8;font-size:12px;">Dịch sang tiếng Anh:</span><br>
+                      <b style="color:#38BDF8">${esc(targetWord)}</b> → <b style="color:#4ADE80;font-size:14.5px;">${esc(trans)}</b>
+                    </div>
+                    <button class="sel-btn btn-speak" style="padding:4px 8px;font-size:12px;" onclick="speak('${esc(trans)}')">🔊 Nghe</button>
+                  </div>
+                `;
+                return;
+              }
+            }
+          }
+        } catch(e) {}
+
+        // 3. Fallback: MyMemory Translation API
+        try {
+          const mUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(targetWord) + '&langpair=vi|en';
+          const mr = await fetch(mUrl);
+          if (mr.ok) {
+            const md = await mr.json();
+            if (md && md.responseData && md.responseData.translatedText) {
+              const trans = md.responseData.translatedText.trim();
+              if (trans && !trans.includes('NO QUERY SPECIFIED')) {
+                activeTranslated = trans;
+                resEl.innerHTML = `
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                    <div>
+                      <span style="color:#94A3B8;font-size:12px;">Dịch sang tiếng Anh:</span><br>
+                      <b style="color:#38BDF8">${esc(targetWord)}</b> → <b style="color:#4ADE80;font-size:14.5px;">${esc(trans)}</b>
+                    </div>
+                    <button class="sel-btn btn-speak" style="padding:4px 8px;font-size:12px;" onclick="speak('${esc(trans)}')">🔊 Nghe</button>
+                  </div>
+                `;
+                return;
+              }
+            }
+          }
+        } catch(e) {}
+
+        resEl.innerHTML = `<div>Không tìm thấy bản dịch tiếng Anh cho "${esc(targetWord)}".</div>`;
+
+      } else {
+        // --- Quét tiếng Anh -> Dịch sang tiếng Việt ---
+        // 1. Khớp từ điển bài học nếu đúng chính xác từ đó
+        const exactHit = allVocab.find(v => norm(cleanWord(v.w)) === normT);
+        if (exactHit) {
+          activeTranslated = exactHit.vi;
+          resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(exactHit.w)}</b> ${exactHit.pos ? `<span style="color:#94A3B8">(${esc(exactHit.pos)})</span>` : ''}: <b style="color:#4ADE80">${esc(exactHit.vi)}</b></div>`;
+          return;
+        }
+
+        // 2. Tra qua Google Translate public API
+        try {
+          const gUrl = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=' + encodeURIComponent(targetWord);
+          const gr = await fetch(gUrl);
+          if (gr.ok) {
+            const gd = await gr.json();
+            if (gd && gd[0] && gd[0][0] && gd[0][0][0]) {
+              const trans = gd[0].map(x => x[0]).join('').trim();
+              if (trans) {
+                activeTranslated = trans;
+                resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b>: <b style="color:#4ADE80">${esc(trans)}</b></div>`;
+                return;
+              }
+            }
+          }
+        } catch(e) {}
+
+        // 3. Fallback: Tra qua MyMemory Translation API
+        try {
+          const mUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(targetWord) + '&langpair=en|vi';
+          const mr = await fetch(mUrl);
+          if (mr.ok) {
+            const md = await mr.json();
+            if (md && md.responseData && md.responseData.translatedText) {
+              const trans = md.responseData.translatedText.trim();
+              if (trans && !trans.includes('NO QUERY SPECIFIED')) {
+                activeTranslated = trans;
+                resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b>: <b style="color:#4ADE80">${esc(trans)}</b></div>`;
+                return;
+              }
+            }
+          }
+        } catch (err) {}
+
+        // 4. Fallback: Tra từ gốc trong bài học
+        if (normT.length >= 4) {
+          const prefixHit = allVocab.find(v => {
+            const cw = norm(cleanWord(v.w));
+            return cw.length >= 4 && (normT.startsWith(cw) || cw.startsWith(normT));
+          });
+          if (prefixHit) {
+            activeTranslated = prefixHit.vi;
+            resEl.innerHTML = `<div><b style="color:#38BDF8">${esc(targetWord)}</b> (gốc <i>${esc(prefixHit.w)}</i>): <b style="color:#4ADE80">${esc(prefixHit.vi)}</b></div>`;
+            return;
+          }
+        }
+
+        resEl.innerHTML = `<div>Không tìm thấy bản dịch tiếng Việt cho "${esc(targetWord)}".</div>`;
+      }
+    };
+
+    // Bấm nút "Lưu từ" (Thêm vào Từ khó cần ôn)
+    const starBtn = popover.querySelector('#sel-star');
+    starBtn.onclick = (e) => {
+      e.stopPropagation();
+      const starTxt = starBtn.querySelector('#sel-star-txt');
+      const starSvg = starBtn.querySelector('svg');
+      const currentlySaved = store.isStarred(targetWord) || (activeTranslated && store.isStarred(activeTranslated));
+
+      if (currentlySaved) {
+        store.removeReviewWord(targetWord);
+        if (activeTranslated) store.removeReviewWord(activeTranslated);
+        starBtn.classList.remove('is-saved');
+        if (starTxt) starTxt.textContent = 'Lưu từ';
+        if (starSvg) {
+          starSvg.setAttribute('fill', 'none');
+          starSvg.setAttribute('stroke', 'currentColor');
+        }
+        showToast(`Đã bỏ lưu "${targetWord}" khỏi mục Từ khó cần ôn`);
+      } else {
+        let saveW = targetWord;
+        let saveVi = activeTranslated || '';
+        if (isVietnamese) {
+          if (activeTranslated) {
+            saveW = activeTranslated;
+            saveVi = targetWord;
+          } else {
+            saveW = targetWord;
+            saveVi = '';
+          }
+        }
+        const curTopic = (window.S && window.S.t) || 'selection';
+        store.addReviewWord({ w: saveW, vi: saveVi }, curTopic, 'selection');
+        starBtn.classList.add('is-saved');
+        if (starTxt) starTxt.textContent = 'Đã lưu';
+        if (starSvg) {
+          starSvg.setAttribute('fill', '#FBBF24');
+          starSvg.setAttribute('stroke', '#FBBF24');
+        }
+        showToast(`⭐ Đã thêm "${saveW}" vào mục Từ khó cần ôn!`);
+      }
     };
 
     popover.querySelector('#sel-close').onclick = (e) => {
@@ -8218,6 +8397,8 @@ const RecorderManager = (function() {
       removePopover();
     }
   });
+
+  window.addEventListener('hashchange', removePopover);
 })();
 
 </script>

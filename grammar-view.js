@@ -18,7 +18,9 @@ export function getGrammarTopicState(topicId) {
   const key = String(topicId);
   if (!grammarState[key]) {
     const saved = appStore ? appStore.get('grammar_ex:' + key, null) : null;
-    grammarState[key] = (saved && typeof saved === 'object') ? saved : { answers: {}, updatedAt: Date.now() };
+    grammarState[key] = (saved && typeof saved === 'object') ? saved : { answers: {}, notes: {}, updatedAt: Date.now() };
+    if (!grammarState[key].notes) grammarState[key].notes = {};
+    if (!grammarState[key].answers) grammarState[key].answers = {};
   }
   return grammarState[key];
 }
@@ -26,8 +28,9 @@ export function getGrammarTopicState(topicId) {
 export function saveGrammarTopicAnswer(topicId, qId, val) {
   const key = String(topicId);
   const state = getGrammarTopicState(key);
-  if (!state.answers) state.answers = {};
-  state.answers[qId] = val;
+  if (qId && val !== undefined) {
+    state.answers[qId] = val;
+  }
   state.updatedAt = Date.now();
   if (appStore) {
     appStore.set('grammar_ex:' + key, state);
@@ -172,6 +175,7 @@ function renderQuestionsList(container, topic) {
   const esc = appEsc || (s => String(s ?? ''));
   const tState = getGrammarTopicState(topic.id);
   const answers = tState.answers || {};
+  const notes = tState.notes || {};
 
   // Filter questions
   let displayQuestions = topic.questions;
@@ -209,7 +213,7 @@ function renderQuestionsList(container, topic) {
               Câu ${q.num}
             </span>
             ${isCorrect ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ Chính xác</span>` : ''}
-            ${isWrong ? `<span style="font-size:12px;color:var(--bad);font-weight:700">✕ Chưa chính xác (Đáp án đúng: ${q.answer})</span>` : ''}
+            ${isWrong ? `<span style="font-size:12px;color:var(--bad);font-weight:700">✕ Chưa chính xác, hãy chọn lại!</span>` : ''}
           </div>
           <button class="btn icon-btn btn-speak-q" data-stem="${esc(q.stem)}" title="Nghe câu hỏi" aria-label="Nghe câu" style="padding:4px 7px">🔊</button>
         </div>
@@ -226,17 +230,18 @@ function renderQuestionsList(container, topic) {
             if (!optVal) return '';
 
             const isThisSelected = selectedOpt === optKey;
-            const isThisTheKey = hasAnswerKey && optKey === q.answer;
 
             let btnStyle = 'background:var(--bg);border:1px solid var(--line);color:var(--ink)';
             let iconMark = `<span style="font-weight:800;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:var(--sunk);margin-right:8px">${optKey}</span>`;
 
             if (selectedOpt) {
               if (hasAnswerKey) {
-                if (isThisTheKey) {
+                // CHỈ hiện xanh khi chính bạn chọn ĐÚNG đáp án!
+                if (isCorrect && isThisSelected) {
                   btnStyle = 'background:rgba(5,150,105,0.15);border:1.5px solid var(--good);color:var(--good);font-weight:700';
                   iconMark = `<span style="font-weight:800;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:var(--good);color:#FFF;margin-right:8px">✓</span>`;
                 } else if (isThisSelected && isWrong) {
+                  // Chỉ đánh dấu nút bạn vừa chọn sai là màu đỏ, KHÔNG hiện đáp án đúng để bạn tự chọn lại
                   btnStyle = 'background:rgba(220,38,38,0.12);border:1.5px solid var(--bad);color:var(--bad);font-weight:700';
                   iconMark = `<span style="font-weight:800;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;background:var(--bad);color:#FFF;margin-right:8px">✕</span>`;
                 }
@@ -257,12 +262,18 @@ function renderQuestionsList(container, topic) {
           }).join('')}
         </div>
 
-        <!-- Explanation if available -->
-        ${q.explanation ? `
+        <!-- Explanation if available (CHỈ hiện khi bạn đã trả lời đúng) -->
+        ${(isCorrect && q.explanation) ? `
           <div style="margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.08);border-left:3px solid #F59E0B;border-radius:4px;font-size:13px;color:var(--ink)">
             <span style="font-weight:700;color:#D97706">💡 Lưu ý từ vựng / Ngữ pháp:</span> ${esc(q.explanation)}
           </div>
         ` : ''}
+
+        <!-- User Note Field (Dòng để tự viết Note cho câu này) -->
+        <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:12.5px;color:var(--muted);white-space:nowrap;font-weight:600">📝 Note:</span>
+          <input type="text" class="grammar-user-note" data-qid="${esc(q.id)}" value="${esc(notes[q.id] || '')}" placeholder="Viết ghi chú cá nhân của bạn cho câu này (tự động lưu)..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px dashed var(--line);background:var(--bg);color:var(--ink);font-size:13px;outline:none" />
+        </div>
       </div>
     `;
   }).join('');
@@ -275,6 +286,20 @@ function renderQuestionsList(container, topic) {
       saveGrammarTopicAnswer(topic.id, qId, opt);
       // Re-render questions list to update active card states
       renderQuestionsList(container, topic);
+    };
+  });
+
+  // Attach Note typing auto-save
+  container.querySelectorAll('.grammar-user-note').forEach(input => {
+    let noteTimer = null;
+    input.oninput = () => {
+      const qId = input.dataset.qid;
+      if (!tState.notes) tState.notes = {};
+      tState.notes[qId] = input.value;
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => {
+        saveGrammarTopicAnswer(topic.id);
+      }, 400);
     };
   });
 

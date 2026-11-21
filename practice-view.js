@@ -25,16 +25,10 @@ export function resetPracticeExState() {
 
 export function getPracticeExState(exId) {
   const key = String(exId);
-  const saved = appStore ? appStore.get('practice_ex:' + key, null) : null;
-  const savedObj = (saved && typeof saved === 'object') ? saved : null;
-
   if (!practiceExState[key]) {
+    const saved = appStore ? appStore.get('practice_ex:' + key, null) : null;
+    const savedObj = (saved && typeof saved === 'object') ? saved : null;
     practiceExState[key] = savedObj || { answers: {}, checked: {}, eval: {}, updatedAt: Date.now() };
-    if (!practiceExState[key].answers) practiceExState[key].answers = {};
-    if (!practiceExState[key].checked) practiceExState[key].checked = {};
-    if (!practiceExState[key].eval) practiceExState[key].eval = {};
-  } else if (savedObj && savedObj.updatedAt && savedObj.updatedAt > (practiceExState[key].updatedAt || 0)) {
-    practiceExState[key] = savedObj;
     if (!practiceExState[key].answers) practiceExState[key].answers = {};
     if (!practiceExState[key].checked) practiceExState[key].checked = {};
     if (!practiceExState[key].eval) practiceExState[key].eval = {};
@@ -44,7 +38,7 @@ export function getPracticeExState(exId) {
 
 export function savePracticeExState(exId) {
   const key = String(exId);
-  const state = getPracticeExState(key);
+  const state = practiceExState[key] || getPracticeExState(key);
   state.updatedAt = Date.now();
   if (appStore) {
     appStore.set('practice_ex:' + key, state);
@@ -253,17 +247,8 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
   const esc = appEsc || (s => String(s ?? ''));
   if (!userVal) {
     return `
-      <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
-        <div style="color:var(--muted);margin-bottom:8px;font-size:13px">
-          Please enter your English translation or review the reference answer below:
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-          ${refText ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(refText)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
-        </div>
-        <div style="font-size:15px;font-weight:700;color:var(--ink)">
-          ${esc(refText || 'Reference answer being updated')}
-        </div>
+      <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+        Please enter your translation first
       </div>
     `;
   }
@@ -415,8 +400,8 @@ function renderUnitsSection(container) {
   const userAnswers = uState.answers || {};
   const checkedMap = uState.checked || {};
 
-  const answeredCount = currentUnit.items.filter(it => userAnswers[it.id] && String(userAnswers[it.id]).trim().length > 0).length;
-  const progressPct = Math.round((answeredCount / currentUnit.items.length) * 100);
+  const correctCount = currentUnit.items.filter(it => uState.eval && uState.eval[it.id] && uState.eval[it.id].verdict === 'correct').length;
+  const progressPct = Math.round((correctCount / currentUnit.items.length) * 100);
 
   container.innerHTML = `
     <!-- Unit Selector Pills -->
@@ -425,8 +410,8 @@ function renderUnitsSection(container) {
       <div class="practice-pills-scroll" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;scrollbar-width:none">
         ${PRACTICE_UNITS.map((u, idx) => {
           const st = getPracticeExState(u.id);
-          const ansCount = u.items.filter(it => (st.answers || {})[it.id] && String((st.answers || {})[it.id]).trim().length > 0).length;
-          const isDone = ansCount === u.items.length;
+          const cCount = u.items.filter(it => st.eval && st.eval[it.id] && st.eval[it.id].verdict === 'correct').length;
+          const isDone = cCount === u.items.length;
           return `
             <button class="btn ${idx === curUnitIdx ? 'primary' : 'ghost'} btn-select-unit" data-idx="${idx}" style="font-size:12px;padding:6px 12px;border-radius:6px;flex-shrink:0;white-space:nowrap">
               ${isDone ? '✓ ' : ''}${esc(u.unitTag)}
@@ -444,7 +429,7 @@ function renderUnitsSection(container) {
           <div class="hint" style="font-size:13px">Translate each sentence into English using the target vocabulary</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span id="unit-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${currentUnit.items.length} questions</span>
+          <span id="unit-answered-count" style="font-size:13px;font-weight:600">${correctCount} / ${currentUnit.items.length} questions</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
             <div id="unit-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
           </div>
@@ -498,6 +483,11 @@ function renderUnitsSection(container) {
                     <span>Record</span>
                   </button>
 
+                  <!-- Reveal Answer Button -->
+                  <button class="btn ghost practice-reveal-btn btn-reveal-item" data-id="${it.id}" data-vi="${esc(it.vi)}" data-ref="${esc(refText)}" title="Reveal reference answer">
+                    Reveal
+                  </button>
+
                   <!-- Check Answer Button -->
                   <button class="btn practice-check-btn btn-check-item" data-id="${it.id}" data-vi="${esc(it.vi)}" data-ref="${esc(refText)}">
                     ${isChecked ? 'Hide Answer' : 'Check Answer'}
@@ -541,13 +531,12 @@ function renderUnitsSection(container) {
 function updateUnitStatsUI(container, currentUnit) {
   if (!container || !currentUnit) return;
   const uState = getPracticeExState(currentUnit.id);
-  const userAnswers = uState.answers || {};
-  const answeredCount = currentUnit.items.filter(it => userAnswers[it.id] && String(userAnswers[it.id]).trim().length > 0).length;
-  const progressPct = Math.round((answeredCount / currentUnit.items.length) * 100);
-  const isDone = answeredCount === currentUnit.items.length;
+  const correctCount = currentUnit.items.filter(it => uState.eval && uState.eval[it.id] && uState.eval[it.id].verdict === 'correct').length;
+  const progressPct = Math.round((correctCount / currentUnit.items.length) * 100);
+  const isDone = correctCount === currentUnit.items.length;
 
   const countEl = container.querySelector('#unit-answered-count');
-  if (countEl) countEl.textContent = `${answeredCount} / ${currentUnit.items.length} questions`;
+  if (countEl) countEl.textContent = `${correctCount} / ${currentUnit.items.length} questions`;
   const progEl = container.querySelector('#unit-progress-bar');
   if (progEl) progEl.style.width = `${progressPct}%`;
 
@@ -567,6 +556,10 @@ function updateUnitStatsUI(container, currentUnit) {
       input.style.background = 'var(--bg)';
       const b = container.querySelector(`#badge-item-${itemId}`);
       if (b) b.innerHTML = '';
+      if (uState.eval && uState.eval[itemId]) {
+        delete uState.eval[itemId];
+        updateUnitStatsUI(container, currentUnit);
+      }
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         savePracticeExState(currentUnit.id);
@@ -589,6 +582,50 @@ function updateUnitStatsUI(container, currentUnit) {
     };
   });
 
+  // Reveal Answer Event
+  container.querySelectorAll('.btn-reveal-item').forEach(btn => {
+    btn.onclick = async () => {
+      const itemId = Number(btn.dataset.id);
+      const viText = btn.dataset.vi;
+      let ref = btn.dataset.ref;
+      const chkBox = container.querySelector('#check-box-' + itemId);
+      if (!chkBox) return;
+
+      if (chkBox.style.display !== 'none' && chkBox.dataset.revealed === 'true') {
+        chkBox.style.display = 'none';
+        chkBox.dataset.revealed = 'false';
+        btn.textContent = 'Reveal';
+        return;
+      }
+
+      chkBox.style.display = 'block';
+      chkBox.dataset.revealed = 'true';
+      btn.textContent = 'Hide';
+
+      if (!ref) {
+        chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Loading reference translation...</div>';
+        ref = await fetchSuggestedTranslation(viText);
+      }
+
+      chkBox.innerHTML = `
+        <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
+            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+          </div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">
+            ${esc(ref || 'Reference answer being updated')}
+          </div>
+        </div>
+      `;
+
+      const speakRefBtn = chkBox.querySelector('.btn-speak-ref');
+      if (speakRefBtn && appSpeak) {
+        speakRefBtn.onclick = () => appSpeak(speakRefBtn.dataset.say);
+      }
+    };
+  });
+
   // Check Answer Event
   container.querySelectorAll('.btn-check-item').forEach(btn => {
     btn.onclick = async () => {
@@ -598,7 +635,20 @@ function updateUnitStatsUI(container, currentUnit) {
       const chkBox = container.querySelector('#check-box-' + itemId);
       if (!chkBox) return;
 
-      const willOpen = chkBox.style.display === 'none';
+      const userVal = (uState.answers[itemId] || '').trim();
+      if (!userVal) {
+        if (appShowToast) appShowToast('Please enter your translation first');
+        chkBox.style.display = 'block';
+        chkBox.dataset.revealed = 'false';
+        chkBox.innerHTML = `
+          <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+            Please enter your translation first
+          </div>
+        `;
+        return;
+      }
+
+      const willOpen = chkBox.style.display === 'none' || chkBox.dataset.revealed === 'true';
       if (!willOpen) {
         chkBox.style.display = 'none';
         btn.textContent = 'Check Answer';
@@ -608,6 +658,7 @@ function updateUnitStatsUI(container, currentUnit) {
       }
 
       chkBox.style.display = 'block';
+      chkBox.dataset.revealed = 'false';
       chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Analyzing and evaluating translation...</div>';
       btn.textContent = 'Hide Answer';
       uState.checked[itemId] = true;
@@ -616,7 +667,6 @@ function updateUnitStatsUI(container, currentUnit) {
         ref = await fetchSuggestedTranslation(viText);
       }
 
-      const userVal = (uState.answers[itemId] || '').trim();
       const evalRes = await evaluateTranslation(userVal, ref, viText);
       uState.eval = uState.eval || {};
       uState.eval[itemId] = evalRes;
@@ -655,6 +705,7 @@ function updateUnitStatsUI(container, currentUnit) {
       }
 
       chkBox.innerHTML = buildCheckAnswerHtml(evalRes, ref, userVal);
+      updateUnitStatsUI(container, currentUnit);
 
       const speakRefBtn = chkBox.querySelector('.btn-speak-ref');
       if (speakRefBtn && appSpeak) {
@@ -677,6 +728,7 @@ function updateUnitStatsUI(container, currentUnit) {
       if (ok) {
         uState.answers = {};
         uState.checked = {};
+        uState.eval = {};
         savePracticeExState(currentUnit.id);
         renderUnitsSection(container);
         if (appShowToast) appShowToast('Reset answers for ' + currentUnit.unitTag);
@@ -784,6 +836,10 @@ function renderParasSection(container) {
                     <span>Record</span>
                   </button>
 
+                  <button class="btn ghost practice-reveal-btn btn-reveal-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}" title="Reveal reference answer">
+                    Reveal
+                  </button>
+
                   <button class="btn practice-check-btn btn-check-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}">
                     ${isChecked ? 'Hide Answer' : 'Check Answer'}
                   </button>
@@ -829,6 +885,9 @@ function renderParasSection(container) {
       txt.style.background = 'var(--bg)';
       const b = container.querySelector(`#badge-para-${segId}`);
       if (b) b.innerHTML = '';
+      if (pState.eval && pState.eval[segId]) {
+        delete pState.eval[segId];
+      }
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         savePracticeExState(currentPara.id);
@@ -845,6 +904,47 @@ function renderParasSection(container) {
     };
   });
 
+  // Reveal Passage Section Event
+  container.querySelectorAll('.btn-reveal-para-seg').forEach(btn => {
+    btn.onclick = async () => {
+      const segId = Number(btn.dataset.seg);
+      const viText = btn.dataset.vi;
+      const chkBox = container.querySelector('#check-para-box-' + segId);
+      if (!chkBox) return;
+
+      if (chkBox.style.display !== 'none' && chkBox.dataset.revealed === 'true') {
+        chkBox.style.display = 'none';
+        chkBox.dataset.revealed = 'false';
+        btn.textContent = 'Reveal';
+        return;
+      }
+
+      chkBox.style.display = 'block';
+      chkBox.dataset.revealed = 'true';
+      btn.textContent = 'Hide';
+      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Loading reference translation...</div>';
+
+      const ref = await fetchSuggestedTranslation(viText);
+
+      chkBox.innerHTML = `
+        <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
+            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+          </div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">
+            ${esc(ref || 'Reference answer being updated')}
+          </div>
+        </div>
+      `;
+
+      const speakRefBtn = chkBox.querySelector('.btn-speak-ref');
+      if (speakRefBtn && appSpeak) {
+        speakRefBtn.onclick = () => appSpeak(speakRefBtn.dataset.say);
+      }
+    };
+  });
+
   // Check Answer Event
   container.querySelectorAll('.btn-check-para-seg').forEach(btn => {
     btn.onclick = async () => {
@@ -853,7 +953,20 @@ function renderParasSection(container) {
       const chkBox = container.querySelector('#check-para-box-' + segId);
       if (!chkBox) return;
 
-      const willOpen = chkBox.style.display === 'none';
+      const userVal = (pState.answers[segId] || '').trim();
+      if (!userVal) {
+        if (appShowToast) appShowToast('Please enter your translation first');
+        chkBox.style.display = 'block';
+        chkBox.dataset.revealed = 'false';
+        chkBox.innerHTML = `
+          <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+            Please enter your translation first
+          </div>
+        `;
+        return;
+      }
+
+      const willOpen = chkBox.style.display === 'none' || chkBox.dataset.revealed === 'true';
       if (!willOpen) {
         chkBox.style.display = 'none';
         btn.textContent = 'Check Answer';
@@ -863,12 +976,12 @@ function renderParasSection(container) {
       }
 
       chkBox.style.display = 'block';
+      chkBox.dataset.revealed = 'false';
       chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Analyzing and evaluating translation...</div>';
       btn.textContent = 'Hide Answer';
       pState.checked[segId] = true;
 
       const ref = await fetchSuggestedTranslation(viText);
-      const userVal = (pState.answers[segId] || '').trim();
       const evalRes = await evaluateTranslation(userVal, ref, viText);
       pState.eval = pState.eval || {};
       pState.eval[segId] = evalRes;
@@ -927,6 +1040,7 @@ function renderParasSection(container) {
       if (ok) {
         pState.answers = {};
         pState.checked = {};
+        pState.eval = {};
         savePracticeExState(currentPara.id);
         renderParasSection(container);
         if (appShowToast) appShowToast('Reset passage answers');
@@ -944,8 +1058,8 @@ function renderTensesSection(container) {
   const userAnswers = tState.answers || {};
   const checkedMap = tState.checked || {};
 
-  const answeredCount = PRACTICE_TENSES.filter(it => userAnswers[it.id] && String(userAnswers[it.id]).trim().length > 0).length;
-  const progressPct = Math.round((answeredCount / PRACTICE_TENSES.length) * 100);
+  const correctCount = PRACTICE_TENSES.filter(it => tState.eval && tState.eval[it.id] && tState.eval[it.id].verdict === 'correct').length;
+  const progressPct = Math.round((correctCount / PRACTICE_TENSES.length) * 100);
 
   container.innerHTML = `
     <div class="card" style="margin-bottom:16px;padding:18px 20px">
@@ -955,7 +1069,7 @@ function renderTensesSection(container) {
           <div class="hint" style="font-size:13px">Reflex drills across key tenses: Present, Past, Future, and Perfect aspects</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span id="tenses-answered-count" style="font-size:13px;font-weight:600">${answeredCount} / ${PRACTICE_TENSES.length} questions</span>
+          <span id="tenses-answered-count" style="font-size:13px;font-weight:600">${correctCount} / ${PRACTICE_TENSES.length} questions</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
             <div id="tenses-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
           </div>
@@ -1004,6 +1118,10 @@ function renderTensesSection(container) {
                     <span>Record</span>
                   </button>
 
+                  <button class="btn ghost practice-reveal-btn btn-reveal-tense" data-id="${it.id}" data-vi="${esc(viClean)}" title="Reveal reference answer">
+                    Reveal
+                  </button>
+
                   <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(viClean)}">
                     ${isChecked ? 'Hide Answer' : 'Check Answer'}
                   </button>
@@ -1022,6 +1140,18 @@ function renderTensesSection(container) {
     </div>
   `;
 
+  function updateTensesStatsUI(c) {
+    if (!c) return;
+    const curState = getPracticeExState('practice_tenses_30');
+    const cCount = PRACTICE_TENSES.filter(it => curState.eval && curState.eval[it.id] && curState.eval[it.id].verdict === 'correct').length;
+    const pct = Math.round((cCount / PRACTICE_TENSES.length) * 100);
+
+    const countEl = c.querySelector('#tenses-answered-count');
+    if (countEl) countEl.textContent = `${cCount} / ${PRACTICE_TENSES.length} questions`;
+    const progEl = c.querySelector('#tenses-progress-bar');
+    if (progEl) progEl.style.width = `${pct}%`;
+  }
+
   // Input auto-save events
   container.querySelectorAll('.tense-input').forEach(input => {
     let debounceTimer = null;
@@ -1032,6 +1162,10 @@ function renderTensesSection(container) {
       input.style.background = 'var(--bg)';
       const b = container.querySelector(`#badge-tense-${itemId}`);
       if (b) b.innerHTML = '';
+      if (tState.eval && tState.eval[itemId]) {
+        delete tState.eval[itemId];
+        updateTensesStatsUI(container);
+      }
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         savePracticeExState('practice_tenses_30');
@@ -1054,6 +1188,47 @@ function renderTensesSection(container) {
     };
   });
 
+  // Reveal Tense Event
+  container.querySelectorAll('.btn-reveal-tense').forEach(btn => {
+    btn.onclick = async () => {
+      const itemId = Number(btn.dataset.id);
+      const viText = btn.dataset.vi;
+      const chkBox = container.querySelector('#check-tense-box-' + itemId);
+      if (!chkBox) return;
+
+      if (chkBox.style.display !== 'none' && chkBox.dataset.revealed === 'true') {
+        chkBox.style.display = 'none';
+        chkBox.dataset.revealed = 'false';
+        btn.textContent = 'Reveal';
+        return;
+      }
+
+      chkBox.style.display = 'block';
+      chkBox.dataset.revealed = 'true';
+      btn.textContent = 'Hide';
+      chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Loading reference translation...</div>';
+
+      const ref = await fetchSuggestedTranslation(viText);
+
+      chkBox.innerHTML = `
+        <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
+            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+          </div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink)">
+            ${esc(ref || 'Reference answer being updated')}
+          </div>
+        </div>
+      `;
+
+      const speakRefBtn = chkBox.querySelector('.btn-speak-ref');
+      if (speakRefBtn && appSpeak) {
+        speakRefBtn.onclick = () => appSpeak(speakRefBtn.dataset.say);
+      }
+    };
+  });
+
   // Check Answer Event
   container.querySelectorAll('.btn-check-tense').forEach(btn => {
     btn.onclick = async () => {
@@ -1062,7 +1237,20 @@ function renderTensesSection(container) {
       const chkBox = container.querySelector('#check-tense-box-' + itemId);
       if (!chkBox) return;
 
-      const willOpen = chkBox.style.display === 'none';
+      const userVal = (tState.answers[itemId] || '').trim();
+      if (!userVal) {
+        if (appShowToast) appShowToast('Please enter your translation first');
+        chkBox.style.display = 'block';
+        chkBox.dataset.revealed = 'false';
+        chkBox.innerHTML = `
+          <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+            Please enter your translation first
+          </div>
+        `;
+        return;
+      }
+
+      const willOpen = chkBox.style.display === 'none' || chkBox.dataset.revealed === 'true';
       if (!willOpen) {
         chkBox.style.display = 'none';
         btn.textContent = 'Check Answer';
@@ -1072,12 +1260,12 @@ function renderTensesSection(container) {
       }
 
       chkBox.style.display = 'block';
+      chkBox.dataset.revealed = 'false';
       chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Analyzing and evaluating translation...</div>';
       btn.textContent = 'Hide Answer';
       tState.checked[itemId] = true;
 
       const ref = await fetchSuggestedTranslation(viText);
-      const userVal = (tState.answers[itemId] || '').trim();
       const evalRes = await evaluateTranslation(userVal, ref, viText);
       tState.eval = tState.eval || {};
       tState.eval[itemId] = evalRes;
@@ -1114,6 +1302,7 @@ function renderTensesSection(container) {
       }
 
       chkBox.innerHTML = buildCheckAnswerHtml(evalRes, ref, userVal);
+      updateTensesStatsUI(container);
 
       const speakRefBtn = chkBox.querySelector('.btn-speak-ref');
       if (speakRefBtn && appSpeak) {
@@ -1136,6 +1325,7 @@ function renderTensesSection(container) {
       if (ok) {
         tState.answers = {};
         tState.checked = {};
+        tState.eval = {};
         savePracticeExState('practice_tenses_30');
         renderTensesSection(container);
         if (appShowToast) appShowToast('Reset all 30 tense drills');

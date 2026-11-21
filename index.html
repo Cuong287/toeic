@@ -1797,7 +1797,13 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .lb-score{font-weight:800;color:var(--good);font-size:16px;font-variant-numeric:tabular-nums}
 
 /* Profile page stats */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+@media (max-width:1100px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:480px){
+  .stat-grid{grid-template-columns:1fr}
+}
 .stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:4px}
 .stat-card .val{font-size:28px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
 .stat-card .lbl{font-size:13px;color:var(--muted);font-weight:500}

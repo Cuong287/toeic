@@ -2192,7 +2192,69 @@ function answers(w){
   const par = w.match(/\(([^)]*)\)/); if (par && /^[A-Za-z ]+$/.test(par[1])) out.add(norm(par[1]));
   return [...out].filter(Boolean);
 }
-function shortVi(v){ return v.split('->')[0].replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim().replace(/[,.;:]$/,''); }
+function formatVi(vi, pos = '', isQuiz = false) {
+  if (typeof vi === 'object' && vi !== null) {
+    pos = vi.pos || pos;
+    vi = vi.vi || '';
+  }
+  if (!vi) return '';
+  let raw = String(vi);
+  if (isQuiz) {
+    raw = raw.split('->')[0];
+    raw = raw.replace(/\/[^/]+\//g, '');
+  }
+  raw = raw.replace(/[\s\u00A0]+([,:])/g, '$1');
+
+  const arrowIdx = raw.indexOf('->');
+  let mainPart = raw;
+  let tail = '';
+  if (arrowIdx !== -1 && !isQuiz) {
+    mainPart = raw.slice(0, arrowIdx).trim();
+    tail = ' ' + raw.slice(arrowIdx).trim();
+  } else {
+    mainPart = raw.trim();
+  }
+
+  const posRe = /(?:^|[,;\s]+)\(((?:n|v|a|adj|adv|prep))\)\s*:?\s*/gi;
+  const matches = [...mainPart.matchAll(posRe)];
+  if (matches.length > 0) {
+    const parts = [];
+    if (matches[0].index === 0) {
+      for (let i = 0; i < matches.length; i++) {
+        const p = matches[i][1].toLowerCase();
+        const start = matches[i].index + matches[i][0].length;
+        const end = (i + 1 < matches.length) ? matches[i + 1].index : mainPart.length;
+        const seg = mainPart.slice(start, end).replace(/^[\s,;·]+|[\s,;·]+$/g, '');
+        if (seg) parts.push(`${p}. ${seg}`);
+      }
+    } else {
+      const p0 = pos ? pos.split(',')[0].trim() : '';
+      const firstSeg = mainPart.slice(0, matches[0].index).replace(/^[\s,;·]+|[\s,;·]+$/g, '');
+      if (p0) parts.push(`${p0}. ${firstSeg}`);
+      else parts.push(firstSeg);
+
+      for (let i = 0; i < matches.length; i++) {
+        const p = matches[i][1].toLowerCase();
+        const start = matches[i].index + matches[i][0].length;
+        const end = (i + 1 < matches.length) ? matches[i + 1].index : mainPart.length;
+        const seg = mainPart.slice(start, end).replace(/^[\s,;·]+|[\s,;·]+$/g, '');
+        if (seg) parts.push(`${p}. ${seg}`);
+      }
+    }
+    mainPart = parts.join(' · ');
+  }
+
+  let res = (mainPart + tail).trim();
+  res = res.replace(/[\s\u00A0]+([,:])/g, '$1');
+  res = res.replace(/[ \t]+/g, ' ').trim();
+  if (isQuiz) {
+    res = res.replace(/[,.;:]+$/, '').trim();
+  }
+  return res;
+}
+function shortVi(v, pos = ''){ return formatVi(v, pos, true); }
+window.formatVi = formatVi;
+window.shortVi = shortVi;
 
 const TOPIC_TITLES_EN = {
   1: { main: 'Order', sub: 'Đặt hàng' },
@@ -4122,7 +4184,7 @@ function part1(t, el){
         <button class="icon-btn rec-btn" data-rec-text="${esc(cleanWord(v.w))}" data-rec-id="v-${t.id}-${i}" aria-label="Record voice for ${esc(v.w)}" title="Record pronunciation">${MIC_ICON}</button>
       </div>
     </div>
-      <div class="vvi">${esc(v.vi) || '<span class="hint">No definition available</span>'}</div>
+      <div class="vvi">${esc(formatVi(v.vi, v.pos)) || '<span class="hint">No definition available</span>'}</div>
       ${x?`<div class="ex">${highlightOne(x[1], v.w)}<span class="vi">${esc(x[2])}</span></div>`:''}
       <div class="rec-slot" id="slot-v-${t.id}-${i}"></div></article>`;
   }).join('')}</div>`;
@@ -4200,11 +4262,11 @@ function quiz(t, box){
     }
     const q = qs[i];
     const viDesc = getWordDescVi(t, q.v, q.opts, dir);
-    const prompt = dir === 'en' ? `${esc(q.v.w)}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select correct Vietnamese meaning</small>` : `${esc(shortVi(q.v.vi))}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select correct English word</small>`;
+    const prompt = dir === 'en' ? `${esc(q.v.w)}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select correct Vietnamese meaning</small>` : `${esc(shortVi(q.v.vi, q.v.pos))}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select correct English word</small>`;
     box.innerHTML = `<div class="row between"><div class="seg" id="dir"><button data-d="en">EN → VI</button><button data-d="vi">VI → EN</button></div><span class="hint">Question ${i+1}/${qs.length} · Correct ${score}</span></div>
       <div class="card"><div class="qprog"><i style="width:${i/qs.length*100}%"></i></div>
       <div class="qprompt">${prompt}${viDesc ? `<div class="qdesc-vi"><span class="qdesc-tag">💡 Gợi ý:</span>${esc(viDesc)}</div>` : ''}</div>
-      <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="l">${'ABCD'[k]}</span><span>${esc(dir==='en'?shortVi(o.vi):cleanWord(o.w))}</span></button>`).join('')}</div>
+      <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="l">${'ABCD'[k]}</span><span>${esc(dir==='en'?shortVi(o.vi, o.pos):cleanWord(o.w))}</span></button>`).join('')}</div>
       <div class="row between"><span class="fb" id="fb"></span><button class="btn primary" id="next" hidden>Next Question →</button></div></div>`;
     box.querySelectorAll('#dir button').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.d===dir)); b.onclick = () => { if (b.dataset.d!==dir){ store.set('qdir', b.dataset.d); quiz(t, box);} }; });
     let answered = false;
@@ -4219,7 +4281,7 @@ function quiz(t, box){
         store.addReviewWord(q.v, t.id, 'quiz');
       } else score++;
       const fb = box.querySelector('#fb'); fb.className = 'fb ' + (ok?'ok':'no');
-      fb.textContent = ok ? 'Correct.' : `Incorrect. ${cleanWord(q.v.w)} = ${shortVi(q.v.vi)}`;
+      fb.textContent = ok ? 'Correct.' : `Incorrect. ${cleanWord(q.v.w)} = ${shortVi(q.v.vi, q.v.pos)}`;
       if (dir==='en' || ok) speak(cleanWord(q.v.w));
       const n = box.querySelector('#next'); n.hidden = false; n.focus();
       n.onclick = () => { i++; draw(); };
@@ -4656,7 +4718,7 @@ function renderT0Flashcards(container, rawPool) {
             <!-- Mặt sau (Back) -->
             <div class="fc-face back">
               <span class="fc-badge">${curIdx + 1} / ${pool.length} · ${esc(v.topicTitle)}${v.source ? ` · <b style="color:var(--accent)">${esc(v.source)}</b>` : ''}</span>
-              <div class="fc-vi">${esc(v.vi)}</div>
+              <div class="fc-vi">${esc(formatVi(v.vi, v.pos))}</div>
               ${exEn ? `<div class="fc-ex-box">
                 <div style="font-weight:600;color:var(--accent);margin-bottom:4px">“${esc(exEn)}”</div>
                 ${sentVi ? `<div style="color:var(--ink);margin-bottom:6px">💬 ${esc(sentVi)}</div>` : ''}
@@ -4928,7 +4990,7 @@ function renderT0Quiz(container, rawPool) {
 
     const promptHtml = dir === 'en'
       ? `<div style="display:flex;align-items:center;gap:10px">${esc(q.v.w)} <button class="icon-btn" id="t0-q-speak" title="Listen to pronunciation" style="display:inline-flex">${SPEAK}</button></div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select correct Vietnamese meaning</small>`
-      : `<div>${esc(shortVi(q.v.vi))}</div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select correct English word</small>`;
+      : `<div>${esc(shortVi(q.v.vi, q.v.pos))}</div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select correct English word</small>`;
 
     container.innerHTML = `
       <div class="row between" style="margin-bottom:8px">
@@ -4948,7 +5010,7 @@ function renderT0Quiz(container, rawPool) {
           ${q.opts.map((o, k) => `
             <button class="opt" data-k="${k}">
               <span class="l">${'ABCD'[k]}</span>
-              <span>${esc(dir === 'en' ? shortVi(o.vi) : cleanWord(o.w))}</span>
+              <span>${esc(dir === 'en' ? shortVi(o.vi, o.pos) : cleanWord(o.w))}</span>
             </button>
           `).join('')}
         </div>
@@ -4988,7 +5050,7 @@ function renderT0Quiz(container, rawPool) {
           wrongList.push(q.v);
           store.addReviewWord(q.v, q.v.topicId, 'quiz');
           container.querySelector('#t0-fb').className = 'fb no';
-          container.querySelector('#t0-fb').textContent = '✕ Incorrect. Correct answer: ' + (dir === 'en' ? q.v.vi : cleanWord(q.v.w));
+          container.querySelector('#t0-fb').textContent = '✕ Incorrect. Correct answer: ' + (dir === 'en' ? shortVi(q.v.vi, q.v.pos) : cleanWord(q.v.w));
           // Highlight nút đúng
           container.querySelectorAll('.opts .opt').forEach((b, k) => {
             if (q.opts[k].w === q.v.w) b.classList.add('ok');
@@ -5091,7 +5153,7 @@ function renderReview(box) {
                   <button class="icon-btn" data-say="${esc(cleanWord(item.w))}" aria-label="Listen">${SPEAK}</button>
                   <button class="btn ghost" data-unstar="${esc(item.w)}" style="color:var(--bad);font-size:12px;padding:4px 8px" title="Remove from saved words">Remove</button>
                 </div>
-                <div class="vvi">${esc(item.vi) || 'No translation'}</div>
+                <div class="vvi">${esc(formatVi(item.vi, item.pos)) || 'No translation'}</div>
                 <div class="hint" style="font-size:12px;margin-top:6px">Source: ${topicLabel}</div>
               </article>`;
           }).join('')}
@@ -5174,7 +5236,7 @@ function runHardWordsQuiz(box, words) {
           ${q.opts.map((o, k) => `
             <button class="opt" data-k="${k}">
               <span class="l">${'ABCD'[k]}</span>
-              <span>${esc(shortVi(o.vi))}</span>
+              <span>${esc(shortVi(o.vi, o.pos))}</span>
             </button>
           `).join('')}
         </div>
@@ -5200,7 +5262,7 @@ function runHardWordsQuiz(box, words) {
         }
         const fb = box.querySelector('#rfb');
         fb.className = 'fb ' + (ok ? 'ok' : 'no');
-        fb.textContent = ok ? 'Correct.' : `Incorrect: ${cleanWord(q.v.w)} = ${shortVi(q.v.vi)}`;
+        fb.textContent = ok ? 'Correct.' : `Incorrect: ${cleanWord(q.v.w)} = ${shortVi(q.v.vi, q.v.pos)}`;
         speak(cleanWord(q.v.w));
         const n = box.querySelector('#rnext');
         n.hidden = false;

@@ -1986,6 +1986,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-box-space{width:clamp(12px,3vw,18px);height:clamp(32px,8vw,44px);display:inline-flex;align-items:center;justify-content:center}
 .sl-box-space.sl-box-cursor::after{content:'';width:8px;height:2.5px;background:var(--accent);border-radius:2px}
 .sl-mode-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.sl-hint-used-badge{display:inline-flex;align-items:center;font-size:0.75rem;font-weight:600;color:var(--muted);background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:2px 8px;margin-left:4px}
 </style>
 
 <div class="app">
@@ -5015,6 +5016,7 @@ function spellLab(t, box) {
   let currentStep = 'write'; // 'write' | 'check' | 'log'
   let score = 0;
   let mistakes = [];
+  let usedSpellHint = false;
 
   function renderStepper(step) {
     return `<nav class="sl-stepper" aria-label="Spelling steps">
@@ -5027,6 +5029,7 @@ function spellLab(t, box) {
   }
 
   function renderWriteStep() {
+    usedSpellHint = false;
     const v = sessionWords[curWordIdx];
     const target = v.target;
     const curLog = getSpellLog(t.id);
@@ -5089,6 +5092,14 @@ function spellLab(t, box) {
 
       box.querySelector('#sl-btn-speak-spell').onclick = () => {
         if (curSpellCancel) curSpellCancel();
+        usedSpellHint = true;
+        let hintBadge = box.querySelector('#sl-hint-used-badge');
+        if (!hintBadge) {
+          const spellBtn = box.querySelector('#sl-btn-speak-spell');
+          if (spellBtn) {
+            spellBtn.insertAdjacentHTML('afterend', ' <span class="sl-hint-used-badge" id="sl-hint-used-badge">Hint used</span>');
+          }
+        }
         spellLetters(target, (activeIdx) => {
           if (boxes && boxes.highlightBox) boxes.highlightBox(activeIdx);
         });
@@ -5109,10 +5120,18 @@ function spellLab(t, box) {
     const isOk = isSpellAnswerCorrect(v.w, inputVal);
 
     if (isOk) {
-      score++;
-      saveSpellWordResult(t.id, target, true, null);
-      currentStep = 'check';
-      renderCorrectCheck(inputVal);
+      if (usedSpellHint) {
+        saveSpellWordResult(t.id, target, false, null);
+        store.addReviewWord(v, t.id, 'spell');
+        mistakes.push({ v, target, typo: '(hint)' });
+        currentStep = 'check';
+        renderCorrectCheck(inputVal, true);
+      } else {
+        score++;
+        saveSpellWordResult(t.id, target, true, null);
+        currentStep = 'check';
+        renderCorrectCheck(inputVal, false);
+      }
     } else {
       mistakes.push({ v, target, typo: inputVal });
       saveSpellWordResult(t.id, target, false, inputVal);
@@ -5122,7 +5141,7 @@ function spellLab(t, box) {
     }
   }
 
-  function renderCorrectCheck(inputVal) {
+  function renderCorrectCheck(inputVal, withHint = false) {
     const v = sessionWords[curWordIdx];
     const target = v.target;
     speak(target);
@@ -5136,8 +5155,13 @@ function spellLab(t, box) {
       </div>
 
       <div style="text-align:center;margin:16px 0">
-        <div class="fb ok" style="font-size:1.35rem;font-weight:700">✓ Correct</div>
-        <h2 class="sl-target" style="font-size:2rem;color:var(--ok,#10b981);margin:10px 0">${esc(target)}</h2>
+        ${withHint ? `
+          <div class="fb" style="font-size:1.25rem;font-weight:600;color:var(--muted)">Correct — with hint</div>
+          <h2 class="sl-target" style="font-size:2rem;color:var(--ink);margin:10px 0">${esc(target)}</h2>
+        ` : `
+          <div class="fb ok" style="font-size:1.35rem;font-weight:700">✓ Correct</div>
+          <h2 class="sl-target" style="font-size:2rem;color:var(--ok,#10b981);margin:10px 0">${esc(target)}</h2>
+        `}
         <div class="vi">${esc(formatVi(v.vi, v.pos))}</div>
       </div>
 

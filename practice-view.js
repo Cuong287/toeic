@@ -158,7 +158,6 @@ function renderUnitsSection(container) {
           const val = userAnswers[it.id] || '';
           const isChecked = Boolean(checkedMap[it.id]);
           const refText = it.ref || '';
-          const targetRecText = val || refText || it.vi;
           const recSlotId = `slot-prac-u-${currentUnit.id}-${it.id}`;
 
           return `
@@ -171,17 +170,17 @@ function renderUnitsSection(container) {
                 </div>
 
                 <!-- Action Controls -->
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  ${val ? `<button class="btn icon-btn btn-speak-item" data-id="${it.id}" title="Nghe câu bạn đã dịch" aria-label="Nghe câu" style="padding:4px 7px;font-size:12.5px">🔊 Nghe</button>` : ''}
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  ${val ? `<button class="btn practice-speak-btn btn-speak-item" data-id="${it.id}" title="Nghe câu bạn đã dịch" aria-label="Nghe câu">🔊 Nghe</button>` : ''}
                   
-                  <!-- Voice Recording Button -->
-                  <button class="btn icon-btn rec-btn" data-rec-text="${esc(targetRecText)}" data-rec-id="prac-u-${currentUnit.id}-${it.id}" title="Ghi âm đọc thử câu dịch này" style="padding:4px 9px;font-size:12px;display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,0.12);color:#D97706;border:1px solid rgba(245,158,11,0.3)">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                  <!-- Voice Recording Button (Nói tiếng Anh để nhận diện) -->
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-u-${currentUnit.id}-${it.id}" title="Bấm để nói tiếng Anh - xem máy nhận diện được gì">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
                     <span>Ghi âm</span>
                   </button>
 
                   <!-- Check Answer Button -->
-                  <button class="btn ghost btn-check-item" data-id="${it.id}" data-vi="${esc(it.vi)}" data-ref="${esc(refText)}" style="padding:4px 9px;font-size:12px;color:#2563EB;border-color:rgba(37,99,235,0.4)">
+                  <button class="btn practice-check-btn btn-check-item" data-id="${it.id}" data-vi="${esc(it.vi)}" data-ref="${esc(refText)}">
                     ${isChecked ? 'Ẩn đáp án' : '🔍 Check đáp án'}
                   </button>
                 </div>
@@ -275,7 +274,7 @@ function renderUnitsSection(container) {
         <div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25);border-radius:8px;padding:10px 14px;font-size:13.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
             <span style="font-weight:700;color:#059669">💡 Đáp án chuẩn tham khảo:</span>
-            ${ref ? `<button class="btn icon-btn btn-speak-ref" data-say="${esc(ref)}" title="Nghe đáp án mẫu" style="padding:2px 6px;font-size:11.5px">🔊 Nghe mẫu</button>` : ''}
+            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Nghe đáp án mẫu" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">🔊 Nghe mẫu</button>` : ''}
           </div>
           <div style="font-size:14.5px;font-weight:600;color:var(--ink);margin-bottom:6px">
             ${esc(ref || 'Đang cập nhật đáp án mẫu')}
@@ -350,23 +349,22 @@ function renderParasSection(container) {
         ${currentPara.segments.map(seg => {
           const val = userAnswers[seg.id] || '';
           const isChecked = Boolean(checkedMap[seg.id]);
-          const targetRecText = val || seg.vi;
           const recSlotId = `slot-prac-p-${currentPara.id}-${seg.id}`;
 
           return `
             <div style="padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
                 <span style="font-weight:700;font-size:13.5px;color:#059669">Phần ${seg.id}</span>
-                <div style="display:flex;align-items:center;gap:6px">
-                  ${val ? `<button class="btn icon-btn btn-speak-seg" data-id="${seg.id}" title="Nghe phát âm câu đã dịch" style="padding:3px 7px;font-size:12px">🔊 Nghe</button>` : ''}
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  ${val ? `<button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Nghe phát âm câu đã dịch">🔊 Nghe</button>` : ''}
                   
-                  <!-- Voice Recording -->
-                  <button class="btn icon-btn rec-btn" data-rec-text="${esc(targetRecText)}" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Ghi âm đọc đoạn này" style="padding:3px 8px;font-size:12px;display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.12);color:#D97706;border:1px solid rgba(245,158,11,0.3)">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                  <!-- Voice Recording (Nói tiếng Anh để nhận diện) -->
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Bấm để nói tiếng Anh - xem máy nhận diện được gì">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
                     <span>Ghi âm</span>
                   </button>
 
-                  <button class="btn ghost btn-check-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}" style="padding:3px 8px;font-size:12px;color:#2563EB;border-color:rgba(37,99,235,0.4)">
+                  <button class="btn practice-check-btn btn-check-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}">
                     ${isChecked ? 'Ẩn đáp án' : '🔍 Check đáp án'}
                   </button>
                 </div>
@@ -444,7 +442,7 @@ function renderParasSection(container) {
         <div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25);border-radius:8px;padding:10px 14px;font-size:13.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
             <span style="font-weight:700;color:#059669">💡 Bản dịch chuẩn tham khảo:</span>
-            ${ref ? `<button class="btn icon-btn btn-speak-para-ref" data-say="${esc(ref)}" title="Nghe mẫu" style="padding:2px 6px;font-size:11.5px">🔊 Nghe mẫu</button>` : ''}
+            ${ref ? `<button class="btn practice-speak-btn btn-speak-para-ref" data-say="${esc(ref)}" title="Nghe mẫu" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">🔊 Nghe mẫu</button>` : ''}
           </div>
           <div style="font-size:14px;line-height:1.6;color:var(--ink)">
             ${esc(ref || 'Đang cập nhật')}
@@ -505,7 +503,6 @@ function renderTensesSection(container) {
         ${PRACTICE_TENSES.map(it => {
           const val = userAnswers[it.id] || '';
           const isChecked = Boolean(checkedMap[it.id]);
-          const targetRecText = val || it.vi;
           const recSlotId = `slot-prac-t-${it.id}`;
 
           return `
@@ -515,15 +512,15 @@ function renderTensesSection(container) {
                   <span style="color:#059669;margin-right:6px">${it.id}.</span>
                   <span>${esc(it.vi)}</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:6px">
-                  ${val ? `<button class="btn icon-btn btn-speak-tense" data-id="${it.id}" title="Nghe phát âm" style="padding:3px 7px;font-size:12px">🔊 Nghe</button>` : ''}
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  ${val ? `<button class="btn practice-speak-btn btn-speak-tense" data-id="${it.id}" title="Nghe câu bạn đã dịch">🔊 Nghe</button>` : ''}
                   
-                  <button class="btn icon-btn rec-btn" data-rec-text="${esc(targetRecText)}" data-rec-id="prac-t-${it.id}" title="Ghi âm đọc câu này" style="padding:3px 8px;font-size:12px;display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.12);color:#D97706;border:1px solid rgba(245,158,11,0.3)">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-t-${it.id}" title="Bấm để nói tiếng Anh - xem máy nhận diện được gì">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
                     <span>Ghi âm</span>
                   </button>
 
-                  <button class="btn ghost btn-check-tense" data-id="${it.id}" data-vi="${esc(it.vi)}" style="padding:3px 8px;font-size:12px;color:#2563EB;border-color:rgba(37,99,235,0.4)">
+                  <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(it.vi)}">
                     ${isChecked ? 'Ẩn đáp án' : '🔍 Check đáp án'}
                   </button>
                 </div>
@@ -595,7 +592,7 @@ function renderTensesSection(container) {
         <div style="background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.25);border-radius:8px;padding:10px 14px;font-size:13.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
             <span style="font-weight:700;color:#059669">💡 Đáp án chuẩn tham khảo:</span>
-            ${ref ? `<button class="btn icon-btn btn-speak-tense-ref" data-say="${esc(ref)}" title="Nghe mẫu" style="padding:2px 6px;font-size:11.5px">🔊 Nghe mẫu</button>` : ''}
+            ${ref ? `<button class="btn practice-speak-btn btn-speak-tense-ref" data-say="${esc(ref)}" title="Nghe mẫu" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">🔊 Nghe mẫu</button>` : ''}
           </div>
           <div style="font-size:14.5px;font-weight:600;color:var(--ink)">
             ${esc(ref || 'Đang cập nhật')}

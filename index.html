@@ -141,6 +141,81 @@
   70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
   100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
 }
+
+/* Các nút điều khiển riêng của phần Luyện dịch phản xạ (tránh co cụm & tràn viền) */
+.practice-rec-btn {
+  width: auto !important;
+  height: 32px !important;
+  min-width: 82px !important;
+  padding: 4px 10px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #D97706 !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+.practice-rec-btn:hover {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border-color: #D97706 !important;
+}
+.practice-rec-btn.recording {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border-color: #DC2626 !important;
+}
+.practice-check-btn {
+  width: auto !important;
+  height: 32px !important;
+  padding: 4px 11px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  color: #2563EB !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+  border: 1px solid rgba(37, 99, 235, 0.35) !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+.practice-check-btn:hover {
+  background: rgba(37, 99, 235, 0.18) !important;
+  border-color: #2563EB !important;
+}
+.practice-speak-btn {
+  width: auto !important;
+  height: 32px !important;
+  padding: 4px 9px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
 .rec-slot, .rec-slot-row {
   margin-top: 8px;
   width: 100%;
@@ -7662,7 +7737,21 @@ const RecorderManager = (function() {
           currentStream = null;
         }
 
-        const assessment = assessPronunciation(recognizedTranscript, currentTargetText, recognizedAlternatives);
+        const isPractice = currentRecId && currentRecId.startsWith('prac-');
+        const transcript = (recognizedTranscript || '').trim();
+
+        let assessment;
+        if (isPractice) {
+          assessment = {
+            isPractice: true,
+            spoken: transcript,
+            score: 100,
+            words: []
+          };
+        } else {
+          assessment = assessPronunciation(recognizedTranscript, currentTargetText, recognizedAlternatives);
+        }
+
         const rawName = currentTargetText ? cleanWord(currentTargetText).slice(0, 20).replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') : 'Record';
         const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
         const fileName = `TOEIC_${rawName}_${Date.now()}.${ext}`;
@@ -7672,8 +7761,10 @@ const RecorderManager = (function() {
           audioUrl,
           duration: durationSec,
           assessment,
+          transcript,
+          alternatives: recognizedAlternatives || [],
           fileName,
-          targetText: currentTargetText,
+          targetText: isPractice ? '' : currentTargetText,
           blob,
           createdAt: Date.now()
         };
@@ -7787,7 +7878,33 @@ const RecorderManager = (function() {
       if (btn.id === 'sel-rec') span.textContent = 'Nói';
       else if (btn.dataset.recId && btn.dataset.recId.startsWith('gap-')) span.textContent = 'Ghi âm đọc cả đoạn';
       else if (btn.dataset.recId && btn.dataset.recId.startsWith('tr-')) span.textContent = 'Luyện đọc câu này';
+      else if (btn.dataset.recId && btn.dataset.recId.startsWith('prac-')) span.textContent = 'Ghi âm';
       else span.textContent = '';
+    }
+  }
+
+  function fillRecognizedSpeechIntoInput(recId, text) {
+    if (!text) return;
+    let targetInput = null;
+    if (recId.startsWith('prac-u-')) {
+      const parts = recId.split('-');
+      const itemId = parts[parts.length - 1];
+      targetInput = document.querySelector(`.practice-input[data-item="${itemId}"]`);
+    } else if (recId.startsWith('prac-p-')) {
+      const parts = recId.split('-');
+      const segId = parts[parts.length - 1];
+      targetInput = document.querySelector(`.para-input[data-seg="${segId}"]`);
+    } else if (recId.startsWith('prac-t-')) {
+      const parts = recId.split('-');
+      const itemId = parts[parts.length - 1];
+      targetInput = document.querySelector(`.tense-input[data-item="${itemId}"]`);
+    }
+
+    if (targetInput) {
+      targetInput.value = text;
+      targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+      targetInput.focus();
+      showToast('✓ Đã điền câu nhận diện vào ô làm bài!');
     }
   }
 
@@ -7797,6 +7914,76 @@ const RecorderManager = (function() {
     if (!data) return;
 
     slot.style.display = 'block';
+
+    // Chế độ Luyện dịch phản xạ: Hiển thị văn bản nhận diện được (STT), không chấm điểm đáp án
+    if (recId.startsWith('prac-')) {
+      const transcript = data.transcript || (data.assessment && data.assessment.spoken) || '';
+      slot.innerHTML = `
+        <div class="rec-result-card practice-stt-card" style="padding:12px 14px;border-radius:10px;background:var(--surface);border:1.5px solid rgba(37,99,235,0.25);margin-top:10px">
+          <!-- Thanh nút thao tác -->
+          <div class="rec-player-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="rec-play-btn" data-play-id="${recId}" title="Bấm để nghe lại giọng đọc của bạn" style="background:#2563EB;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:600">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Nghe lại giọng bạn (${data.duration}s)</span>
+            </button>
+            <button class="rec-retry-btn" data-retry-id="${recId}" title="Thu âm lại" style="background:var(--sunk);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 11px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:600">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+              <span>Thu lại</span>
+            </button>
+            <button class="rec-close-btn" data-close-slot="${recId}" title="Đóng" style="margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 8px;font-weight:700">
+              ✕
+            </button>
+          </div>
+
+          <!-- Kết quả nhận diện giọng nói tiếng Anh -->
+          ${transcript ? `
+            <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.22);border-radius:8px;padding:11px 13px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px;flex-wrap:wrap">
+                <span style="font-weight:700;color:#2563EB;font-size:13.5px;display:inline-flex;align-items:center;gap:5px">
+                  🎙️ Nội dung máy nhận diện được:
+                </span>
+                <button class="btn-fill-input" data-rec-id="${recId}" data-text="${esc(transcript)}" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px" title="Bấm để tự động điền câu này vào ô dịch">
+                  ✏️ Điền vào ô dịch
+                </button>
+              </div>
+              <div style="font-size:15px;font-weight:700;color:var(--ink);padding:8px 12px;background:var(--bg);border-radius:6px;border:1px solid var(--line);word-break:break-word;line-height:1.4">
+                "${esc(transcript)}"
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:6px">
+                💡 Bạn có thể bấm nút <b>[✏️ Điền vào ô dịch]</b> để tự động dán văn bản nhận diện được vào ô làm bài!
+              </div>
+            </div>
+          ` : `
+            <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:11px 13px">
+              <div style="font-weight:700;color:#D97706;font-size:13px;margin-bottom:4px">
+                ⚠️ Chưa nhận diện rõ âm thanh giọng nói tiếng Anh
+              </div>
+              <div style="font-size:12.5px;color:var(--ink);line-height:1.4">
+                Trình duyệt chưa bắt được từ tiếng Anh nào. Bạn hãy đưa micro lại gần hơn, nói to rõ ràng và bấm <b>[Thu lại]</b> nhé!
+              </div>
+            </div>
+          `}
+        </div>
+      `;
+
+      const fillBtn = slot.querySelector('.btn-fill-input');
+      if (fillBtn) {
+        fillBtn.onclick = () => {
+          fillRecognizedSpeechIntoInput(recId, fillBtn.dataset.text);
+        };
+      }
+
+      const closeBtn = slot.querySelector('.rec-close-btn');
+      if (closeBtn) {
+        closeBtn.onclick = () => {
+          slot.style.display = 'none';
+          slot.innerHTML = '';
+        };
+      }
+
+      return;
+    }
+
     const assessment = data.assessment || {};
     const gradeClass = assessment.grade || 'fair';
     const scorePillTxt = assessment.score >= 80 ? '✓ Đạt chuẩn' : (assessment.score >= 50 ? '👍 Khá tốt' : '⚠️ Cần luyện thêm');

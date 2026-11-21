@@ -1936,6 +1936,34 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-btn-audio{display:inline-flex;align-items:center;gap:6px;padding:8px 16px}
 .sl-btn-audio svg{width:18px;height:18px}
 .sl-icon{width:18px;height:18px}
+.sl-blanks-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;margin:16px 0}
+.sl-blank-box{width:28px;height:36px;border-bottom:2.5px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;color:transparent;background:var(--sunk);border-radius:4px 4px 0 0}
+.sl-blank-space{width:16px}
+.sl-form{gap:10px;margin-top:12px;align-items:center;justify-content:center}
+.sl-input{font-size:1.15rem;font-weight:600;text-align:center;max-width:380px}
+.sl-diff-row{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;justify-content:center;margin:16px 0}
+.sl-diff-item{display:flex;flex-direction:column;align-items:center;min-width:32px;font-size:1.5rem;font-weight:700;line-height:1.2}
+.sl-diff-char{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:40px;padding:0 4px;border-radius:6px}
+.sl-diff-sub{font-size:0.75rem;font-weight:600;margin-top:2px;text-transform:lowercase}
+.sl-diff-item.ok .sl-diff-char{background:rgba(16,185,129,0.15);color:var(--ok,#10b981);border:1.5px solid var(--ok,#10b981)}
+.sl-diff-item.ok .sl-diff-sub{display:none}
+.sl-diff-item.wrong .sl-diff-char{background:rgba(239,68,68,0.15);color:var(--danger,#ef4444);border:1.5px solid var(--danger,#ef4444);text-decoration:underline wavy var(--danger,#ef4444)}
+.sl-diff-item.wrong .sl-diff-sub{color:var(--ok,#10b981);font-weight:700}
+.sl-diff-item.missing .sl-diff-char{background:transparent;color:var(--danger,#ef4444);border:2px dashed var(--danger,#ef4444);opacity:0.85}
+.sl-diff-item.missing .sl-diff-sub{color:var(--muted);font-size:0.7rem}
+.sl-diff-item.extra .sl-diff-char{background:rgba(148,163,184,0.15);color:var(--muted);border:1.5px solid var(--line);text-decoration:line-through;opacity:0.7}
+.sl-diff-item.extra .sl-diff-sub{color:var(--muted);font-size:0.7rem}
+.sl-diff-legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;font-size:0.8rem;color:var(--muted);margin-top:8px}
+.sl-leg-item{display:inline-flex;align-items:center;gap:5px}
+.sl-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sl-dot.ok{background:var(--ok,#10b981)}
+.sl-dot.wrong{background:var(--danger,#ef4444)}
+.sl-dot.missing{border:1px dashed var(--danger,#ef4444);background:transparent}
+.sl-dot.extra{background:var(--muted);text-decoration:line-through}
+.sl-retype-box{margin-top:16px;padding:16px;border-radius:10px;background:var(--sunk);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;align-items:center}
+.sl-retype-target{font-size:1.6rem;font-weight:700;color:var(--ink);letter-spacing:0.04em;display:flex;flex-wrap:wrap;gap:2px;justify-content:center}
+.sl-char-mistake{border-bottom:3px solid var(--danger,#ef4444);color:var(--danger,#ef4444)}
+.sl-retype-counter{font-weight:700;color:var(--accent);font-size:0.95rem}
 </style>
 
 <div class="app">
@@ -4724,6 +4752,85 @@ function spellLetters(target, onHighlight, onDone) {
   }
 }
 
+function alignDiff(input, target) {
+  const s = String(input || '');
+  const t = String(target || '');
+  const m = s.length;
+  const n = t.length;
+
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (s[i - 1].toLowerCase() === t[j - 1].toLowerCase()) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j - 1] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  let i = m;
+  let j = n;
+  const diff = [];
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && s[i - 1].toLowerCase() === t[j - 1].toLowerCase() && dp[i][j] === dp[i - 1][j - 1]) {
+      diff.push({ ch: s[i - 1], correctCh: t[j - 1], type: 'ok' });
+      i--;
+      j--;
+    } else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + 1) {
+      diff.push({ ch: s[i - 1], correctCh: t[j - 1], type: 'wrong' });
+      i--;
+      j--;
+    } else if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) {
+      diff.push({ ch: t[j - 1], correctCh: t[j - 1], type: 'missing' });
+      j--;
+    } else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) {
+      diff.push({ ch: s[i - 1], type: 'extra' });
+      i--;
+    } else {
+      if (i > 0 && j > 0) {
+        diff.push({ ch: s[i - 1], correctCh: t[j - 1], type: 'wrong' });
+        i--;
+        j--;
+      } else if (j > 0) {
+        diff.push({ ch: t[j - 1], correctCh: t[j - 1], type: 'missing' });
+        j--;
+      } else {
+        diff.push({ ch: s[i - 1], type: 'extra' });
+        i--;
+      }
+    }
+  }
+
+  return diff.reverse();
+}
+window.alignDiff = alignDiff;
+
+function getTargetMistakeIndices(diff) {
+  const mistakeIndices = new Set();
+  let tIdx = 0;
+  for (const d of diff) {
+    if (d.type === 'ok') {
+      tIdx++;
+    } else if (d.type === 'wrong') {
+      mistakeIndices.add(tIdx);
+      tIdx++;
+    } else if (d.type === 'missing') {
+      mistakeIndices.add(tIdx);
+      tIdx++;
+    }
+  }
+  return mistakeIndices;
+}
+
 function spellLab(t, box) {
   const pool = t.vocab.filter(v => v.vi);
   if (!pool.length) {
@@ -4873,7 +4980,207 @@ function spellLab(t, box) {
   }
 
   function renderCoverStep() {
-    box.innerHTML = `<div class="card sl-card"><div class="eyebrow">Cover &amp; Write</div><p>Cover &amp; Write step...</p></div>`;
+    const v = sessionWords[curWordIdx];
+    const target = v.target;
+
+    box.innerHTML = `<div class="card sl-card">
+      <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
+      ${renderStepper('cover')}
+      <div class="row between">
+        <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
+        ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
+      </div>
+
+      <div class="sl-word-meta" style="margin-top:8px">
+        <span class="vi" style="font-size:1.15rem;font-weight:600">${esc(formatVi(v.vi, v.pos))}</span>
+      </div>
+
+      <div class="sl-blanks-row" aria-label="Word letter blanks">
+        ${target.split('').map(c => c === ' ' ? '<span class="sl-blank-space"> </span>' : '<span class="sl-blank-box">_</span>').join('')}
+      </div>
+
+      <p class="hint" style="text-align:center;margin:4px 0">Write it on paper first, then type it here.</p>
+
+      <form id="sl-write-form" class="row sl-form" autocomplete="off">
+        <input class="field sl-input" id="sl-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type the word here...">
+        <button class="btn primary" type="submit" id="sl-btn-submit">Check</button>
+      </form>
+    </div>`;
+
+    const inp = box.querySelector('#sl-input');
+    inp.focus();
+
+    box.querySelector('#sl-write-form').onsubmit = (ev) => {
+      ev.preventDefault();
+      const inputVal = inp.value.trim();
+      if (!inputVal) return;
+      handleWordSubmission(inputVal);
+    };
+  }
+
+  function handleWordSubmission(inputVal) {
+    const v = sessionWords[curWordIdx];
+    const target = v.target;
+    const isOk = isSpellAnswerCorrect(v.w, inputVal);
+
+    if (isOk) {
+      score++;
+      currentStep = 'check';
+      renderCorrectCheck(inputVal);
+    } else {
+      mistakes.push({ v, target, typo: inputVal });
+      store.addReviewWord(v, t.id, 'spell');
+      currentStep = 'check';
+      renderIncorrectCheck(inputVal);
+    }
+  }
+
+  function renderCorrectCheck(inputVal) {
+    const v = sessionWords[curWordIdx];
+    const target = v.target;
+    speak(target);
+
+    box.innerHTML = `<div class="card sl-card">
+      <div class="qprog"><i style="width:${((curWordIdx + 1) / sessionWords.length) * 100}%"></i></div>
+      ${renderStepper('check')}
+      <div class="row between">
+        <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
+        ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
+      </div>
+
+      <div style="text-align:center;margin:16px 0">
+        <div class="fb ok" style="font-size:1.35rem;font-weight:700">✓ Correct</div>
+        <h2 class="sl-target" style="font-size:2rem;color:var(--ok,#10b981);margin:10px 0">${esc(target)}</h2>
+        <div class="vi">${esc(formatVi(v.vi, v.pos))}</div>
+      </div>
+
+      <div class="row" style="justify-content:center;margin-top:16px">
+        <button class="btn primary" id="sl-btn-next-word" type="button">Next Word →</button>
+      </div>
+    </div>`;
+
+    const nextBtn = box.querySelector('#sl-btn-next-word');
+    nextBtn.focus();
+    nextBtn.onclick = () => {
+      curWordIdx++;
+      if (curWordIdx < sessionWords.length) {
+        currentStep = 'look';
+        renderLookStep();
+      } else {
+        currentStep = 'log';
+        renderLogStep();
+      }
+    };
+  }
+
+  function renderIncorrectCheck(inputVal) {
+    const v = sessionWords[curWordIdx];
+    const target = v.target;
+    const diff = alignDiff(inputVal, target);
+    const mistakeIndices = getTargetMistakeIndices(diff);
+    let retypeRound = 1;
+
+    function drawRetypeUI() {
+      box.innerHTML = `<div class="card sl-card">
+        <div class="qprog"><i style="width:${(curWordIdx / sessionWords.length) * 100}%"></i></div>
+        ${renderStepper('check')}
+        <div class="row between">
+          <span class="eyebrow">Word ${curWordIdx + 1}/${sessionWords.length} · Correct ${score}</span>
+          ${v.pos ? `<span class="pos">${esc(v.pos)}</span>` : ''}
+        </div>
+
+        <div style="text-align:center;margin-top:6px">
+          <div class="fb no" style="font-weight:600">Incorrect spelling</div>
+        </div>
+
+        <div class="sl-diff-row" aria-label="Spelling comparison">
+          ${diff.map(d => {
+            if (d.type === 'ok') return `<div class="sl-diff-item ok"><span class="sl-diff-char">${esc(d.ch)}</span></div>`;
+            if (d.type === 'wrong') return `<div class="sl-diff-item wrong"><span class="sl-diff-char">${esc(d.ch)}</span><span class="sl-diff-sub">${esc(d.correctCh)}</span></div>`;
+            if (d.type === 'missing') return `<div class="sl-diff-item missing"><span class="sl-diff-char">${esc(d.correctCh)}</span><span class="sl-diff-sub">missing</span></div>`;
+            return `<div class="sl-diff-item extra"><span class="sl-diff-char">${esc(d.ch)}</span><span class="sl-diff-sub">extra</span></div>`;
+          }).join('')}
+        </div>
+
+        <div class="sl-diff-legend">
+          <span class="sl-leg-item ok"><i class="sl-dot ok"></i> Correct</span>
+          <span class="sl-leg-item wrong"><i class="sl-dot wrong"></i> Wrong (correct below)</span>
+          <span class="sl-leg-item missing"><i class="sl-dot missing"></i> Missing letter</span>
+          <span class="sl-leg-item extra"><i class="sl-dot extra"></i> Extra letter</span>
+        </div>
+
+        <div class="sl-retype-box">
+          <div class="sl-retype-counter">Retype ${retypeRound}/3</div>
+          ${retypeRound === 1 ? `
+            <div class="sl-retype-target" aria-label="Target with mistake spots underlined">
+              ${target.split('').map((c, i) => mistakeIndices.has(i) ? `<span class="sl-char-mistake">${c === ' ' ? '&nbsp;' : esc(c)}</span>` : `<span>${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('')}
+            </div>
+            <p class="hint" style="margin:2px 0">Notice the underlined letters you missed, then retype the word.</p>
+          ` : `
+            <div class="sl-blanks-row" style="margin:4px 0">
+              ${target.split('').map(c => c === ' ' ? '<span class="sl-blank-space"> </span>' : '<span class="sl-blank-box">_</span>').join('')}
+            </div>
+            <p class="hint" style="margin:2px 0">Word covered — type it from memory.</p>
+          `}
+
+          <form id="sl-retype-form" class="row sl-form" autocomplete="off" style="width:100%">
+            <input class="field sl-input" id="sl-retype-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type here...">
+            <button class="btn primary" type="submit" id="sl-btn-retype-submit">Check</button>
+          </form>
+          <div class="fb" id="sl-retype-fb" style="min-height:22px"></div>
+        </div>
+      </div>`;
+
+      const rInp = box.querySelector('#sl-retype-input');
+      rInp.focus();
+      const rFb = box.querySelector('#sl-retype-fb');
+
+      box.querySelector('#sl-retype-form').onsubmit = (ev) => {
+        ev.preventDefault();
+        const val = rInp.value.trim();
+        if (!val) return;
+        if (isSpellAnswerCorrect(v.w, val)) {
+          if (retypeRound < 3) {
+            retypeRound++;
+            drawRetypeUI();
+          } else {
+            speak(target);
+            const rBox = box.querySelector('.sl-retype-box');
+            rBox.innerHTML = `
+              <div class="fb ok" style="font-size:1.15rem;font-weight:700">✓ Retype 3/3 completed! Well done.</div>
+              <div class="row" style="margin-top:8px">
+                <button class="btn primary" id="sl-btn-next-word" type="button">Next Word →</button>
+              </div>
+            `;
+            const nBtn = box.querySelector('#sl-btn-next-word');
+            nBtn.focus();
+            nBtn.onclick = () => {
+              curWordIdx++;
+              if (curWordIdx < sessionWords.length) {
+                currentStep = 'look';
+                renderLookStep();
+              } else {
+                currentStep = 'log';
+                renderLogStep();
+              }
+            };
+          }
+        } else {
+          rInp.classList.add('no');
+          rFb.className = 'fb no';
+          rFb.textContent = 'Incorrect, try typing again.';
+          setTimeout(() => rInp.classList.remove('no'), 600);
+          rInp.value = '';
+          rInp.focus();
+        }
+      };
+    }
+
+    drawRetypeUI();
+  }
+
+  function renderLogStep() {
+    box.innerHTML = `<div class="card sl-card"><div class="eyebrow">Session Completed</div><div class="big">${score}/${sessionWords.length}</div></div>`;
   }
 
   function renderStart() {

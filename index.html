@@ -1974,6 +1974,17 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-right-text{color:var(--ok,#10b981);font-weight:700}
 .sl-wrong-badge{margin-left:auto;font-size:0.8rem;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:2px 8px}
 .sl-summary-mistakes{margin-top:16px;text-align:left;display:flex;flex-direction:column;gap:8px}
+.sl-boxes-wrapper{position:relative;display:inline-flex;justify-content:center;align-items:center;width:100%;cursor:text;padding:4px 0}
+.sl-real-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:text;font-size:16px;z-index:2}
+.sl-boxes-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;width:100%;pointer-events:none}
+.sl-box{width:clamp(22px,5.5vw,34px);height:clamp(32px,8vw,44px);display:inline-flex;align-items:center;justify-content:center;font-size:clamp(1.2rem,5vw,1.6rem);font-weight:700;border:1.5px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);transition:border-color .15s,box-shadow .15s,background .15s}
+.sl-box.sl-box-filled{color:var(--ink);background:var(--surface)}
+.sl-box.sl-box-ghost{color:var(--muted);opacity:0.45}
+.sl-box.sl-box-cursor{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.sl-box.sl-box-extra{border:2px dashed var(--danger,#ef4444);color:var(--danger,#ef4444)}
+.sl-box.sl-box-active-letter{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sl-box-space{width:clamp(12px,3vw,18px);height:clamp(32px,8vw,44px);display:inline-flex;align-items:center;justify-content:center}
+.sl-box-space.sl-box-cursor::after{content:'';width:8px;height:2.5px;background:var(--accent);border-radius:2px}
 </style>
 
 <div class="app">
@@ -4865,6 +4876,81 @@ function getTargetMistakeIndices(diff) {
     }
   }
   return mistakeIndices;
+}
+
+function mountLetterBoxes(container, target, { ghost = new Set(), onSubmit } = {}) {
+  container.innerHTML = `
+    <div class="sl-boxes-wrapper" tabindex="-1">
+      <input type="text" class="sl-real-input" aria-label="Type the word" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="sl-boxes-row" aria-hidden="true"></div>
+    </div>
+  `;
+
+  const wrapper = container.querySelector('.sl-boxes-wrapper');
+  const input = container.querySelector('.sl-real-input');
+  const row = container.querySelector('.sl-boxes-row');
+  let highlightedIdx = -1;
+
+  function update() {
+    const val = input.value;
+    const targetChars = target.split('');
+    const N = targetChars.length;
+    const L = val.length;
+    let html = '';
+
+    for (let i = 0; i < N; i++) {
+      const tChar = targetChars[i];
+      if (tChar === ' ') {
+        const isCur = i === L;
+        html += `<span class="sl-box-space ${isCur ? 'sl-box-cursor' : ''}" data-idx="${i}"></span>`;
+        continue;
+      }
+
+      const isCurrent = i === L;
+      const isHighlighted = i === highlightedIdx;
+
+      if (i < L) {
+        html += `<span class="sl-box sl-box-filled ${isCurrent ? 'sl-box-cursor' : ''} ${isHighlighted ? 'sl-box-active-letter' : ''}" data-idx="${i}">${esc(val[i])}</span>`;
+      } else {
+        const isGhost = ghost && ghost.has(i);
+        html += `<span class="sl-box ${isGhost ? 'sl-box-ghost' : 'sl-box-empty'} ${isCurrent ? 'sl-box-cursor' : ''} ${isHighlighted ? 'sl-box-active-letter' : ''}" data-idx="${i}">${isGhost ? esc(tChar) : ''}</span>`;
+      }
+    }
+
+    if (L > N) {
+      for (let i = N; i < L; i++) {
+        html += `<span class="sl-box sl-box-extra" data-idx="${i}">${esc(val[i])}</span>`;
+      }
+    }
+
+    row.innerHTML = html;
+  }
+
+  input.addEventListener('input', update);
+  input.addEventListener('compositionend', update);
+  wrapper.addEventListener('click', () => input.focus());
+
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      const trimmed = input.value.trim();
+      if (trimmed && onSubmit) onSubmit(trimmed);
+    }
+  });
+
+  update();
+
+  return {
+    input,
+    wrapper,
+    focus: () => input.focus(),
+    getValue: () => input.value.trim(),
+    clear: () => { input.value = ''; update(); },
+    highlightBox: (idx) => {
+      highlightedIdx = idx;
+      update();
+    }
+  };
 }
 
 function spellLab(t, box) {

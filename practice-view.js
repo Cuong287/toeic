@@ -822,7 +822,7 @@ function renderParasSection(container) {
             <div style="padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
                 <div style="font-weight:700;font-size:13.5px;color:#059669;display:inline-flex;align-items:center;gap:6px">
-                  <span>Part ${seg.id}</span>
+                  <span>Sentence ${seg.id}</span>
                   <span id="badge-para-${seg.id}" class="item-status-badge">
                     ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
                   </span>
@@ -831,16 +831,16 @@ function renderParasSection(container) {
                   ${val ? `<button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Listen to your translation">Listen</button>` : ''}
                   
                   <!-- Voice Recording -->
-                  <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Record your speech in English">
+                  <button class="btn rec-btn practice-rec-btn" data-rec-text="${esc(seg.en || '')}" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Record your speech in English">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
                     <span>Record</span>
                   </button>
 
-                  <button class="btn ghost practice-reveal-btn btn-reveal-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}" title="Reveal reference answer">
+                  <button class="btn ghost practice-reveal-btn btn-reveal-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}" data-en="${esc(seg.en || '')}" title="Reveal reference answer">
                     Reveal
                   </button>
 
-                  <button class="btn practice-check-btn btn-check-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}">
+                  <button class="btn practice-check-btn btn-check-para-seg" data-seg="${seg.id}" data-vi="${esc(seg.vi)}" data-en="${esc(seg.en || '')}">
                     ${isChecked ? 'Hide Answer' : 'Check Answer'}
                   </button>
                 </div>
@@ -849,7 +849,7 @@ function renderParasSection(container) {
               <div style="font-size:14px;line-height:1.6;color:var(--ink);background:var(--sunk);padding:10px 12px;border-radius:6px;margin-bottom:10px;white-space:pre-wrap">
                 ${esc(cleanPassageText(seg.vi))}
               </div>
-              <textarea class="para-input" data-seg="${seg.id}" rows="3" placeholder="Type English translation for this section..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;resize:vertical;font-family:inherit;transition:border-color 0.15s,background 0.15s">${esc(val)}</textarea>
+              <textarea class="para-input" data-seg="${seg.id}" rows="2" placeholder="Type English translation for this sentence..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:6px;border:${borderStyle};background:${bgStyle};color:var(--ink);font-size:14px;outline:none;resize:vertical;font-family:inherit;transition:border-color 0.15s,background 0.15s">${esc(val)}</textarea>
 
               <div id="${recSlotId}" class="rec-slot" style="margin-top:8px"></div>
               <div id="check-para-box-${seg.id}" class="practice-check-box" style="margin-top:8px;display:${isChecked ? 'block' : 'none'}">
@@ -924,7 +924,7 @@ function renderParasSection(container) {
       btn.textContent = 'Hide';
       chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Loading reference translation...</div>';
 
-      const ref = await fetchSuggestedTranslation(viText);
+      const ref = btn.dataset.en || await fetchSuggestedTranslation(viText);
 
       chkBox.innerHTML = `
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
@@ -1208,7 +1208,7 @@ function renderTensesSection(container) {
       btn.textContent = 'Hide';
       chkBox.innerHTML = '<div class="hint" style="padding:10px 14px;background:var(--sunk);border-radius:8px">Loading reference translation...</div>';
 
-      const ref = await fetchSuggestedTranslation(viText);
+      const ref = btn.dataset.en || await fetchSuggestedTranslation(viText);
 
       chkBox.innerHTML = `
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">

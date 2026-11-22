@@ -1971,6 +1971,18 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .sl-box-space.sl-box-cursor::after{content:'';width:8px;height:2.5px;background:var(--accent);border-radius:2px}
 .sl-mode-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
 .sl-hint-used-badge{display:inline-flex;align-items:center;font-size:0.75rem;font-weight:600;color:var(--muted);background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:2px 8px;margin-left:4px}
+
+/* Homework & Assignment Styles */
+.hw-badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.hw-badge-ok{background:rgba(16,185,129,0.15);color:#059669}
+.hw-badge-warn{background:rgba(245,158,11,0.15);color:#D97706}
+.hw-badge-bad{background:rgba(239,68,68,0.15);color:#DC2626}
+.hw-badge-info{background:rgba(37,99,235,0.12);color:#2563EB}
+.hw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px}
+.hw-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm);transition:border-color .15s,transform .15s}
+.hw-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.hw-type-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--sunk);color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.hw-instructions{font-size:12.5px;color:var(--muted);background:var(--sunk);border:1px solid var(--line);padding:8px 12px;border-radius:8px;line-height:1.45}
 </style>
 
 <div class="app">
@@ -2013,6 +2025,7 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </span>
         <span class="nm">Home Dashboard</span>
+        <span class="badge" id="snav-hw-badge" hidden style="background:var(--warn);color:#FFF;font-size:10px;padding:1px 6px">HW</span>
       </a>
       <a href="#pronun" class="snav-item" id="snav-pronun">
         <span class="icon">
@@ -2146,7 +2159,7 @@ let currentUid = (() => {
     return 'guest';
   }
 })();
-const LOCAL_ONLY_KEYS = /^(last|rate|qdir|trhide:|_pending_dirty|synced_choice|p0_sub_|p0_filter_|t0_scope|t0_mode|t0_qdir|spell_log_)/;
+const LOCAL_ONLY_KEYS = /^(last|rate|qdir|trhide:|_pending_dirty|synced_choice|p0_sub_|p0_filter_|t0_scope|t0_mode|t0_qdir|spell_log_|hw_|assignments_cache)/;
 
 function migrateLegacyStorage() {
   try {
@@ -2187,6 +2200,13 @@ const store = {
     try {
       localStorage.setItem(`toeic45:${currentUid}:${k}`, JSON.stringify(v));
       markDirty(k);
+      if (k.startsWith('grammar_ex:')) {
+        const gTopicId = k.slice('grammar_ex:'.length);
+        if (typeof checkGrammarHomeworkProgress === 'function') setTimeout(() => checkGrammarHomeworkProgress(gTopicId, v), 100);
+      } else if (k.startsWith('practice_ex:')) {
+        const pExId = k.slice('practice_ex:'.length);
+        if (typeof checkPracticeHomeworkProgress === 'function') setTimeout(() => checkPracticeHomeworkProgress(pExId, v), 100);
+      }
     } catch (e) {}
   },
   remove(k) {
@@ -2533,6 +2553,9 @@ function goTo(route){
   render();
   try { window.scrollTo({ top: 0 }); } catch(e){ window.scrollTo(0,0); }
 }
+window.go = go;
+window.goTo = goTo;
+window.store = store;
 
 window.addEventListener('hashchange', () => { readHash(); render(); });
 
@@ -2542,6 +2565,368 @@ function updateReviewBadge() {
   const count = store.getReviewList().length;
   badge.textContent = count;
   badge.hidden = count === 0;
+}
+
+// ---------- Homework Assignment Helpers ----------
+function fmtDue(val) {
+  if (!val) return '—';
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return String(val);
+  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return `${time} ${date}`;
+}
+
+function getTypeTagLabel(type) {
+  switch (type) {
+    case 'vocab_quiz': return 'TOEIC Quiz';
+    case 'vocab_spell': return 'Spelling Lab';
+    case 'grammar': return 'Ngữ pháp';
+    case 'practice_passage': return 'Luyện dịch';
+    case 'practice_unit': return 'Phản xạ câu';
+    default: return type;
+  }
+}
+
+function getHomeworkTargetLabel(type, targetId) {
+  if (type === 'vocab_quiz' || type === 'vocab_spell') {
+    const t = TOPICS.find(x => x.id === Number(targetId));
+    const prefix = type === 'vocab_quiz' ? 'Quiz' : 'Spelling Lab';
+    return t ? `Topic ${String(t.id).padStart(2, '0')}: ${splitTitle(t).main} (${prefix})` : `Topic ${targetId} (${prefix})`;
+  }
+  if (type === 'grammar') {
+    const g = GRAMMAR_TOPICS.find(x => x.id === targetId);
+    return g ? `Ngữ pháp: ${g.title.split('(')[0].trim()}` : `Ngữ pháp: ${targetId}`;
+  }
+  if (type === 'practice_passage') {
+    const idx = Number(targetId) || 0;
+    const p = PRACTICE_PARAGRAPHS[idx];
+    return p ? `Đoạn văn ${idx + 1}: ${p.title || ('Passage ' + (idx + 1))}` : `Đoạn văn ${idx + 1}`;
+  }
+  if (type === 'practice_unit') {
+    const idx = Number(targetId) || 0;
+    const u = PRACTICE_UNITS[idx];
+    return u ? `Unit ${idx + 1}: ${u.title || ('Unit ' + (idx + 1))}` : `Unit ${idx + 1}`;
+  }
+  return String(targetId);
+}
+
+async function getHomeworkAssignments() {
+  let list = [];
+  try {
+    if (fbDb && firestoreModules) {
+      const snap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'assignments')).catch(() => null);
+      if (snap && !snap.empty) {
+        snap.forEach(d => {
+          list.push({ id: d.id, ...d.data() });
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc assignments từ Firestore:', e);
+  }
+
+  const localList = store.get('assignments_cache', []);
+  if (list.length === 0 && localList.length > 0) {
+    list = localList;
+  } else if (list.length > 0) {
+    store.set('assignments_cache', list);
+  }
+
+  list.sort((a, b) => {
+    const ta = (a.createdAt && a.createdAt.toMillis) ? a.createdAt.toMillis() : (a.createdAt || 0);
+    const tb = (b.createdAt && b.createdAt.toMillis) ? b.createdAt.toMillis() : (b.createdAt || 0);
+    return tb - ta;
+  });
+  return list;
+}
+
+async function saveHomeworkAssignment(hwData) {
+  const currentList = store.get('assignments_cache', []);
+  const idx = currentList.findIndex(x => x.id === hwData.id);
+  if (idx >= 0) currentList[idx] = hwData;
+  else currentList.unshift(hwData);
+  store.set('assignments_cache', currentList);
+
+  if (fbDb && firestoreModules && currentUser && currentUid !== 'guest') {
+    try {
+      await firestoreModules.setDoc(
+        firestoreModules.doc(fbDb, 'assignments', hwData.id),
+        {
+          ...hwData,
+          createdAt: firestoreModules.serverTimestamp ? firestoreModules.serverTimestamp() : Date.now()
+        }
+      );
+    } catch (e) {
+      console.warn('Lỗi ghi assignment lên Firestore:', e);
+    }
+  }
+  updateHomeworkBadges();
+}
+
+async function deleteHomeworkAssignment(hwId) {
+  const currentList = store.get('assignments_cache', []).filter(x => x.id !== hwId);
+  store.set('assignments_cache', currentList);
+
+  if (fbDb && firestoreModules && currentUser && currentUid !== 'guest') {
+    try {
+      await firestoreModules.deleteDoc(firestoreModules.doc(fbDb, 'assignments', hwId));
+    } catch (e) {
+      console.warn('Lỗi xóa assignment trên Firestore:', e);
+    }
+  }
+  updateHomeworkBadges();
+}
+
+async function getAssignmentSubmissions(hwId) {
+  const subMap = {};
+  if (fbDb && firestoreModules) {
+    try {
+      const snap = await firestoreModules.getDocs(
+        firestoreModules.collection(fbDb, 'assignments', hwId, 'submissions')
+      ).catch(() => null);
+      if (snap) {
+        snap.forEach(d => {
+          const data = d.data();
+          const submittedAt = (data.submittedAt && data.submittedAt.toMillis) ? data.submittedAt.toMillis() : (data.submittedAt || null);
+          subMap[d.id] = { ...data, submittedAt };
+        });
+      }
+    } catch (e) {}
+  }
+
+  const localSub = store.get('hw_sub_' + hwId, null);
+  if (localSub && currentUid) {
+    if (!subMap[currentUid]) {
+      subMap[currentUid] = {
+        uid: currentUid,
+        displayName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Local User',
+        email: (currentUser && currentUser.email) || '',
+        score: localSub.score,
+        submittedAt: localSub.submittedAt,
+        isLate: localSub.isLate,
+        status: 'completed'
+      };
+    }
+  }
+  return subMap;
+}
+
+async function recordHomeworkCompletion(type, targetId, score) {
+  try {
+    const assignments = await getHomeworkAssignments();
+    const matching = assignments.filter(hw => hw.type === type && String(hw.targetId) === String(targetId));
+    if (!matching || matching.length === 0) return;
+
+    for (const hw of matching) {
+      const minScore = typeof hw.minScore === 'number' ? hw.minScore : 80;
+      if (score < minScore) continue;
+
+      const isLate = hw.dueDate ? Date.now() > new Date(hw.dueDate).getTime() : false;
+      const subRecord = {
+        score,
+        submittedAt: Date.now(),
+        isLate,
+        status: 'completed'
+      };
+
+      store.set('hw_sub_' + hw.id, subRecord);
+
+      if (currentUser && currentUid !== 'guest' && fbDb && firestoreModules) {
+        const studentName = currentUser.displayName || currentUser.email || 'Student';
+        const studentEmail = currentUser.email || '';
+        try {
+          await firestoreModules.setDoc(
+            firestoreModules.doc(fbDb, 'assignments', hw.id, 'submissions', currentUid),
+            {
+              uid: currentUid,
+              displayName: studentName,
+              email: studentEmail,
+              score,
+              submittedAt: firestoreModules.serverTimestamp ? firestoreModules.serverTimestamp() : new Date(),
+              isLate,
+              status: 'completed'
+            },
+            { merge: true }
+          );
+          await firestoreModules.setDoc(
+            firestoreModules.doc(fbDb, 'users', currentUid, 'meta', 'submissions'),
+            { [hw.id]: { score, submittedAt: Date.now(), isLate } },
+            { merge: true }
+          );
+        } catch (err) {
+          console.warn('Lỗi lưu submission lên Firestore:', err);
+        }
+      }
+
+      showToast(`🎉 Đã nộp bài tập về nhà: "${hw.title}" (Điểm: ${score}%)!`);
+    }
+    updateHomeworkBadges();
+  } catch (err) {
+    console.warn('recordHomeworkCompletion error:', err);
+  }
+}
+window.recordHomeworkCompletion = recordHomeworkCompletion;
+window.getHomeworkTargetLabel = getHomeworkTargetLabel;
+window.getHomeworkAssignments = getHomeworkAssignments;
+window.saveHomeworkAssignment = saveHomeworkAssignment;
+window.deleteHomeworkAssignment = deleteHomeworkAssignment;
+window.getAssignmentSubmissions = getAssignmentSubmissions;
+window.startHomeworkExercise = startHomeworkExercise;
+window.updateHomeworkBadges = updateHomeworkBadges;
+
+function checkGrammarHomeworkProgress(gTopicId, state) {
+  try {
+    const t = GRAMMAR_TOPICS.find(x => x.id === gTopicId);
+    if (!t) return;
+    const answers = (state && state.answers) || {};
+    let correct = 0, graded = 0;
+    t.questions.forEach(q => {
+      if (q.answer && answers[q.id]) {
+        graded++;
+        if (answers[q.id] === q.answer) correct++;
+      }
+    });
+    if (graded >= Math.min(5, t.questions.length)) {
+      const pct = Math.round((correct / graded) * 100);
+      recordHomeworkCompletion('grammar', gTopicId, pct);
+    }
+  } catch (e) {}
+}
+
+function checkPracticeHomeworkProgress(pExId, state) {
+  try {
+    if (pExId.startsWith('para_')) {
+      const idx = PRACTICE_PARAGRAPHS.findIndex(p => p.id === pExId);
+      const evals = Object.values((state && state.eval) || {});
+      if (evals.length > 0) {
+        const avg = Math.round(evals.reduce((s, e) => s + (e.score || 0), 0) / evals.length);
+        recordHomeworkCompletion('practice_passage', String(idx >= 0 ? idx : pExId), avg);
+      }
+    } else if (pExId.startsWith('unit_')) {
+      const idx = PRACTICE_UNITS.findIndex(u => u.id === pExId);
+      const checked = Object.keys((state && state.checked) || {}).length;
+      if (checked >= 2) {
+        recordHomeworkCompletion('practice_unit', String(idx >= 0 ? idx : pExId), 100);
+      }
+    }
+  } catch (e) {}
+}
+
+function getStudentTargetProgress(type, targetId) {
+  try {
+    if (type === 'vocab_quiz') {
+      const b = store.get('best:' + targetId, null);
+      const p0 = store.get('p0_best:' + targetId, null);
+      const mx = Math.max(b || 0, p0 || 0);
+      return mx > 0 ? mx : null;
+    }
+    if (type === 'vocab_spell') {
+      const log = store.get('spell_log_' + targetId, null);
+      if (log && log.words) {
+        const words = Object.values(log.words);
+        if (words.length > 0) {
+          const correct = words.filter(w => (w.correct || 0) > 0).length;
+          return Math.round((correct / words.length) * 100);
+        }
+      }
+      return null;
+    }
+    if (type === 'grammar') {
+      const gState = store.get('grammar_ex:' + targetId, null);
+      const t = GRAMMAR_TOPICS.find(x => x.id === targetId);
+      if (gState && t) {
+        const answers = gState.answers || {};
+        let correct = 0, graded = 0;
+        t.questions.forEach(q => {
+          if (q.answer && answers[q.id]) {
+            graded++;
+            if (answers[q.id] === q.answer) correct++;
+          }
+        });
+        return graded > 0 ? Math.round((correct / graded) * 100) : null;
+      }
+      return null;
+    }
+    if (type === 'practice_passage') {
+      const idx = Number(targetId) || 0;
+      const p = PRACTICE_PARAGRAPHS[idx];
+      if (p) {
+        const pState = store.get('practice_ex:' + p.id, null);
+        const evals = Object.values((pState && pState.eval) || {});
+        if (evals.length > 0) {
+          return Math.round(evals.reduce((s, e) => s + (e.score || 0), 0) / evals.length);
+        }
+      }
+      return null;
+    }
+    if (type === 'practice_unit') {
+      const idx = Number(targetId) || 0;
+      const u = PRACTICE_UNITS[idx];
+      if (u) {
+        const uState = store.get('practice_ex:' + u.id, null);
+        const checked = Object.keys((uState && uState.checked) || {}).length;
+        return checked > 0 ? 100 : null;
+      }
+      return null;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function startHomeworkExercise(hw) {
+  if (hw.type === 'vocab_quiz') {
+    const topId = Number(hw.targetId) || 1;
+    go(topId, 1);
+    S.sub = 'quiz';
+    render();
+  } else if (hw.type === 'vocab_spell') {
+    const topId = Number(hw.targetId) || 1;
+    go(topId, 1);
+    S.sub = 'spell';
+    render();
+  } else if (hw.type === 'grammar') {
+    goTo('grammar');
+    setTimeout(() => {
+      const btn = document.querySelector(`.btn-select-topic[data-tid="${hw.targetId}"]`);
+      if (btn) btn.click();
+    }, 100);
+  } else if (hw.type === 'practice_passage') {
+    goTo('practice');
+    setTimeout(() => {
+      const pTab = document.querySelector('#btn-ptab-paragraphs');
+      if (pTab) pTab.click();
+      setTimeout(() => {
+        const pBtn = document.querySelector(`.btn-select-para[data-idx="${hw.targetId}"]`);
+        if (pBtn) pBtn.click();
+      }, 60);
+    }, 100);
+  } else if (hw.type === 'practice_unit') {
+    goTo('practice');
+    setTimeout(() => {
+      const uTab = document.querySelector('#btn-ptab-units');
+      if (uTab) uTab.click();
+      setTimeout(() => {
+        const uBtn = document.querySelector(`.btn-select-unit[data-idx="${hw.targetId}"]`);
+        if (uBtn) uBtn.click();
+      }, 60);
+    }, 100);
+  }
+}
+
+async function updateHomeworkBadges() {
+  try {
+    const badge = $('#snav-hw-badge');
+    if (!badge) return;
+    const assignments = await getHomeworkAssignments();
+    const pendingCount = assignments.filter(hw => !store.get('hw_sub_' + hw.id)).length;
+    if (pendingCount > 0) {
+      badge.textContent = pendingCount;
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  } catch (e) {}
 }
 
 // ---------- Modal Helpers ----------
@@ -2672,6 +3057,10 @@ let fbDb = null;
 let currentUser = null;
 let isAdminUser = false;
 let isTeacherUser = false;
+window.setIsTeacherUser = (val) => { isTeacherUser = val; };
+window.setIsAdminUser = (val) => { isAdminUser = val; };
+window.setCurrentUser = (val) => { currentUser = val; if (val) currentUid = val.uid; };
+window.getS = () => S;
 let authModules = null;
 let firestoreModules = null;
 
@@ -4440,6 +4829,10 @@ function quiz(t, box){
         }).catch(err => console.warn('Lỗi lưu tiến độ:', err));
       }
 
+      if (typeof recordHomeworkCompletion === 'function') {
+        recordHomeworkCompletion('vocab_quiz', String(t.id), pct);
+      }
+
       box.innerHTML = `<div class="card"><div class="eyebrow">Quiz Results</div><div class="big">${score}/${qs.length}</div>
         <div class="hint">This Quiz Score: <b>${pct}%</b> · Topic Highest Score: <b>${newBest}%</b></div>
         ${newBest >= 80 ? '<div class="fb ok" style="margin-top:10px">✓ Outstanding! Topic completed (≥ 80%).</div>' : '<div class="hint" style="margin-top:8px">Score 80% or higher to master this topic.</div>'}
@@ -5208,6 +5601,10 @@ function spellLab(t, box) {
   }
 
   function renderLogStep() {
+    const spellPct = Math.round((score / sessionWords.length) * 100);
+    if (typeof recordHomeworkCompletion === 'function') {
+      recordHomeworkCompletion('vocab_spell', String(t.id), spellPct);
+    }
     box.innerHTML = `<div class="card sl-card">
       <div class="qprog"><i style="width:100%"></i></div>
       ${renderStepper('log')}
@@ -6018,6 +6415,9 @@ function renderT0Quiz(container, rawPool) {
         }).catch(err => {
           console.warn('Lỗi lưu điểm Tab 0 lên Firestore:', err);
         });
+      }
+      if (typeof recordHomeworkCompletion === 'function') {
+        recordHomeworkCompletion('vocab_quiz', String(topId), pct);
       }
       flushDirtyKeys();
 
@@ -8466,6 +8866,8 @@ function exportStudentsCSV(users) {
   showToast('✓ Exported CSV report (Excel compatible)!');
 }
 
+let currentAdminTab = 'roster'; // 'roster' | 'homework'
+
 async function renderAdmin(box) {
   if (!currentUser || !isTeacherUser) {
     box.innerHTML = `
@@ -8479,72 +8881,68 @@ async function renderAdmin(box) {
   }
 
   box.innerHTML = `
-    <div class="thead" style="margin-bottom:18px">
+    <div class="thead" style="margin-bottom:14px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
           <div class="eyebrow" style="color:#2563EB;font-weight:700">${isAdminUser ? 'Admin & Instructor Portal' : 'Instructor Portal'}</div>
           <h1 style="font-size:28px;margin:4px 0">Classroom Management & Submissions</h1>
           <div class="meta">
-            <span>Real-time student progress tracking across 45 TOEIC topics and Cambridge pronunciation units.</span>
+            <span>Quản lý học viên, giao bài tập về nhà và theo dõi tiến độ học tập trên toàn bộ nền tảng.</span>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="btn-admin-refresh" style="font-size:13px">Refresh</button>
-          <button class="btn" id="btn-admin-export" style="font-size:13px" disabled>Export CSV</button>
+          <button class="btn" id="btn-admin-export" style="font-size:13px" ${currentAdminTab === 'roster' ? '' : 'style="display:none"'}>Export CSV</button>
           ${isAdminUser ? `<button class="btn primary" id="btn-manage-teachers" style="font-size:13px">Manage Instructors</button>` : ''}
+          ${currentAdminTab === 'homework' ? `<button class="btn primary" id="btn-admin-create-hw" style="font-size:13px">+ Giao bài tập mới</button>` : ''}
         </div>
       </div>
     </div>
 
-    <div id="admin-stats" class="stat-grid" style="margin-bottom:16px"></div>
-
-    <div class="card" style="margin-bottom:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <input type="search" id="admin-search" placeholder="Search student name, email, or UID..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
-      <select id="admin-filter" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
-        <option value="all">All Students</option>
-        <option value="active7d">Active in past 7 days</option>
-        <option value="has_pronun">Completed Pronunciation</option>
-        <option value="inactive">No activity yet</option>
-      </select>
-      <select id="admin-sort" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
-        <option value="recent">Sort: Recently active</option>
-        <option value="score">Sort: Highest TOEIC score</option>
-        <option value="pronun">Sort: Most pronunciation units</option>
-        <option value="name">Sort: Name A → Z</option>
-        <option value="joined">Sort: Newly joined</option>
-      </select>
+    <!-- Sub-navigation Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;overflow-x:auto">
+      <button class="btn ${currentAdminTab === 'roster' ? 'primary' : 'ghost'}" id="admin-tab-btn-roster" style="font-size:13.5px;padding:7px 16px;display:inline-flex;align-items:center;gap:6px">
+        <span>👥 Danh sách học viên (Roster)</span>
+      </button>
+      <button class="btn ${currentAdminTab === 'homework' ? 'primary' : 'ghost'}" id="admin-tab-btn-hw" style="font-size:13.5px;padding:7px 16px;display:inline-flex;align-items:center;gap:6px">
+        <span>📝 Bài tập về nhà (Homework)</span>
+        <span class="badge" id="admin-hw-tab-badge" style="background:var(--accent-soft);color:var(--accent);font-size:11px;padding:1px 7px;border-radius:10px">...</span>
+      </button>
     </div>
 
-    <div id="admin-user-list">
-      <div class="card" style="text-align:center;padding:32px">
-        <div class="hint">Loading student roster from Firestore…</div>
-      </div>
-    </div>`;
+    <div id="admin-tab-main-content">
+      <div class="card" style="text-align:center;padding:32px"><div class="hint">Đang tải dữ liệu lớp học…</div></div>
+    </div>
+  `;
 
-  const container = box.querySelector('#admin-user-list');
-  const statsEl = box.querySelector('#admin-stats');
-  const exportBtn = box.querySelector('#btn-admin-export');
   box.querySelector('#btn-admin-refresh').onclick = () => renderAdmin(box);
+  box.querySelector('#admin-tab-btn-roster').onclick = () => { currentAdminTab = 'roster'; renderAdmin(box); };
+  box.querySelector('#admin-tab-btn-hw').onclick = () => { currentAdminTab = 'homework'; renderAdmin(box); };
+  const createHwBtn = box.querySelector('#btn-admin-create-hw');
+  if (createHwBtn) createHwBtn.onclick = () => openCreateAssignmentModal(() => renderAdmin(box));
+
+  const tabContainer = box.querySelector('#admin-tab-main-content');
+  const exportBtn = box.querySelector('#btn-admin-export');
+  const hwTabBadge = box.querySelector('#admin-hw-tab-badge');
 
   try {
-    const [userDocsSnap, teachersSnap, adminsSnap] = await Promise.all([
-      firestoreModules.getDocs(firestoreModules.query(firestoreModules.collection(fbDb, 'users'), firestoreModules.limit(200))),
+    const [userDocsSnap, teachersSnap, adminsSnap, assignments] = await Promise.all([
+      firestoreModules.getDocs(firestoreModules.query(firestoreModules.collection(fbDb, 'users'), firestoreModules.limit(200))).catch(() => null),
       firestoreModules.getDocs(firestoreModules.collection(fbDb, 'teachers')).catch(() => null),
-      firestoreModules.getDocs(firestoreModules.collection(fbDb, 'admins')).catch(() => null)
+      firestoreModules.getDocs(firestoreModules.collection(fbDb, 'admins')).catch(() => null),
+      getHomeworkAssignments()
     ]);
+
+    if (hwTabBadge) {
+      hwTabBadge.textContent = String(assignments.length);
+    }
 
     const teacherSet = new Set();
     const adminSet = new Set();
     if (teachersSnap) teachersSnap.forEach(d => teacherSet.add(d.id));
     if (adminsSnap) adminsSnap.forEach(d => adminSet.add(d.id));
 
-    if (userDocsSnap.empty) {
-      container.innerHTML = '<div class="card"><div class="empty">No students registered yet.</div></div>';
-      return;
-    }
-
-    // Đọc meta/summary theo từng lô 10 học viên song song (nhanh gấp 10 lần và giảm tới 95% lượt đọc Firestore)
-    const docs = userDocsSnap.docs;
+    const docs = userDocsSnap ? userDocsSnap.docs : [];
     const users = [];
     const BATCH_SIZE = 10;
 
@@ -8583,7 +8981,6 @@ async function renderAdmin(box) {
               u.lastActiveAt = Math.max(u.lastActiveAt || 0, s.updatedAt.toMillis());
             }
           } else {
-            // Fallback cho tài khoản cũ chưa có meta/summary
             const pSnap = await firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', d.id, 'progress'));
             u.topicsAttempted = pSnap.size;
             pSnap.forEach(pd => {
@@ -8602,43 +8999,98 @@ async function renderAdmin(box) {
       users.push(...chunkUsers);
     }
 
-    // Tổng hợp thống kê lớp học
-    const weekAgo = Date.now() - 7 * 86400000;
-    const active7d = users.filter(u => u.lastActiveAt && u.lastActiveAt >= weekAgo).length;
-    const sumCompleted = users.reduce((s, u) => s + (u.completedCount || 0), 0);
-    const sumPronunFilled = users.reduce((s, u) => s + (u.pronunExFilled || 0), 0);
-
-    statsEl.innerHTML = `
-      <div class="stat-card">
-        <div class="val">${users.length}</div>
-        <div class="lbl">Total Students</div>
-      </div>
-      <div class="stat-card">
-        <div class="val" style="color:var(--good)">${active7d}</div>
-        <div class="lbl">Active (7 Days)</div>
-      </div>
-      <div class="stat-card">
-        <div class="val" style="color:var(--accent)">${sumCompleted}</div>
-        <div class="lbl">TOEIC Completed</div>
-      </div>
-      <div class="stat-card">
-        <div class="val" style="color:#E11D48">${sumPronunFilled}</div>
-        <div class="lbl">Pronunciation Completed</div>
-      </div>
-    `;
-
-    exportBtn.disabled = false;
-    exportBtn.onclick = () => exportStudentsCSV(users);
+    if (users.length === 0 && currentUser) {
+      users.push({
+        uid: currentUser.uid,
+        displayName: currentUser.displayName || 'Student',
+        email: currentUser.email || '',
+        totalBest: 0,
+        completedCount: 0,
+        topicsAttempted: 0,
+        pronunUnitsDone: 0,
+        isAdmin: isAdminUser,
+        isTeacher: isTeacherUser
+      });
+    }
 
     const manageBtn = box.querySelector('#btn-manage-teachers');
     if (manageBtn) {
       manageBtn.onclick = () => openTeacherRoleModal(users, () => renderAdmin(box));
     }
 
+    if (currentAdminTab === 'homework') {
+      if (exportBtn) exportBtn.style.display = 'none';
+      renderAdminHomeworkView(tabContainer, assignments, users, () => renderAdmin(box));
+      return;
+    }
+
+    // TAB: ROSTER
+    if (exportBtn) {
+      exportBtn.style.display = '';
+      exportBtn.disabled = users.length === 0;
+      exportBtn.onclick = () => exportStudentsCSV(users);
+    }
+
+    const weekAgo = Date.now() - 7 * 86400000;
+    const active7d = users.filter(u => u.lastActiveAt && u.lastActiveAt >= weekAgo).length;
+    const sumCompleted = users.reduce((s, u) => s + (u.completedCount || 0), 0);
+    const sumPronunFilled = users.reduce((s, u) => s + (u.pronunExFilled || 0), 0);
+
+    tabContainer.innerHTML = `
+      <div id="admin-stats" class="stat-grid" style="margin-bottom:16px">
+        <div class="stat-card">
+          <div class="val">${users.length}</div>
+          <div class="lbl">Total Students</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" style="color:var(--good)">${active7d}</div>
+          <div class="lbl">Active (7 Days)</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" style="color:var(--accent)">${sumCompleted}</div>
+          <div class="lbl">TOEIC Completed</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" style="color:#E11D48">${sumPronunFilled}</div>
+          <div class="lbl">Pronunciation Completed</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <input type="search" id="admin-search" placeholder="Search student name, email, or UID..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+        <select id="admin-filter" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
+          <option value="all">All Students</option>
+          <option value="active7d">Active in past 7 days</option>
+          <option value="has_pronun">Completed Pronunciation</option>
+          <option value="inactive">No activity yet</option>
+        </select>
+        <select id="admin-sort" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
+          <option value="recent">Sort: Recently active</option>
+          <option value="score">Sort: Highest TOEIC score</option>
+          <option value="pronun">Sort: Most pronunciation units</option>
+          <option value="name">Sort: Name A → Z</option>
+          <option value="joined">Sort: Newly joined</option>
+        </select>
+      </div>
+
+      <div id="admin-user-list">
+        <div class="card" style="text-align:center;padding:32px">
+          <div class="hint">Loading student roster…</div>
+        </div>
+      </div>
+    `;
+
+    const userListContainer = tabContainer.querySelector('#admin-user-list');
+
+    if (users.length === 0) {
+      userListContainer.innerHTML = '<div class="card"><div class="empty">No students registered yet.</div></div>';
+      return;
+    }
+
     function renderTable() {
-      const qTxt = (box.querySelector('#admin-search').value || '').trim().toLowerCase();
-      const flt = box.querySelector('#admin-filter').value;
-      const srt = box.querySelector('#admin-sort').value;
+      const qTxt = (tabContainer.querySelector('#admin-search').value || '').trim().toLowerCase();
+      const flt = tabContainer.querySelector('#admin-filter').value;
+      const srt = tabContainer.querySelector('#admin-sort').value;
 
       let list = users.filter(u => {
         if (qTxt) {
@@ -8661,11 +9113,11 @@ async function renderAdmin(box) {
       });
 
       if (list.length === 0) {
-        container.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="hint">No students matched the selected filter.</div></div>';
+        userListContainer.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="hint">No students matched the selected filter.</div></div>';
         return;
       }
 
-      container.innerHTML = `
+      userListContainer.innerHTML = `
         <div class="card" style="padding:0;overflow-x:auto">
           <table class="lb-table" style="margin:0;width:100%">
             <thead>
@@ -8710,19 +9162,537 @@ async function renderAdmin(box) {
           </table>
         </div>`;
 
-      container.querySelectorAll('[data-inspect]').forEach(b => {
+      userListContainer.querySelectorAll('[data-inspect]').forEach(b => {
         b.onclick = () => openAdminUserInspector(b.dataset.inspect, b.dataset.name);
       });
     }
 
-    box.querySelector('#admin-search').oninput = renderTable;
-    box.querySelector('#admin-filter').onchange = renderTable;
-    box.querySelector('#admin-sort').onchange = renderTable;
+    tabContainer.querySelector('#admin-search').oninput = renderTable;
+    tabContainer.querySelector('#admin-filter').onchange = renderTable;
+    tabContainer.querySelector('#admin-sort').onchange = renderTable;
     renderTable();
   } catch (err) {
     console.error('Lỗi tải danh sách thành viên:', err);
-    container.innerHTML = `<div class="card"><div class="fb no">Error loading data: ${esc(err.message)}</div></div>`;
+    tabContainer.innerHTML = `<div class="card"><div class="fb no">Error loading data: ${esc(err.message)}</div></div>`;
   }
+}
+window.renderAdmin = renderAdmin;
+
+async function renderAdminHomeworkView(container, assignments, users, onRefresh) {
+  container.innerHTML = `
+    <div id="admin-hw-stats" class="stat-grid" style="margin-bottom:16px"></div>
+
+    <div class="card" style="margin-bottom:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <input type="search" id="admin-hw-search" placeholder="Tìm kiếm bài tập theo tiêu đề hoặc chủ đề..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+      <select id="admin-hw-filter-type" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
+        <option value="all">Tất cả loại bài</option>
+        <option value="vocab_quiz">Trắc nghiệm từ vựng (Quiz)</option>
+        <option value="vocab_spell">Luyện chính tả (Spelling Lab)</option>
+        <option value="grammar">Ngữ pháp TOEIC</option>
+        <option value="practice_passage">Luyện dịch đoạn văn</option>
+        <option value="practice_unit">Luyện phản xạ câu</option>
+      </select>
+      <select id="admin-hw-filter-status" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
+        <option value="all">Tất cả trạng thái</option>
+        <option value="active">Đang mở (Active)</option>
+        <option value="expired">Đã hết hạn (Expired)</option>
+      </select>
+      <button class="btn primary" id="btn-create-hw-in-tab" style="font-size:13px;display:inline-flex;align-items:center;gap:6px">
+        <span>+ Giao bài tập mới</span>
+      </button>
+    </div>
+
+    <div id="admin-hw-list">
+      <div class="card" style="text-align:center;padding:32px"><div class="hint">Đang tải danh sách bài tập…</div></div>
+    </div>
+  `;
+
+  container.querySelector('#btn-create-hw-in-tab').onclick = () => openCreateAssignmentModal(onRefresh);
+
+  const hwListEl = container.querySelector('#admin-hw-list');
+  const hwStatsEl = container.querySelector('#admin-hw-stats');
+
+  const now = Date.now();
+  const activeCount = assignments.filter(h => !h.dueDate || new Date(h.dueDate).getTime() >= now).length;
+  const expiredCount = assignments.length - activeCount;
+
+  hwStatsEl.innerHTML = `
+    <div class="stat-card">
+      <div class="val">${assignments.length}</div>
+      <div class="lbl">Tổng bài tập đã tạo</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" style="color:var(--good)">${activeCount}</div>
+      <div class="lbl">Đang mở (Active)</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" style="color:var(--muted)">${expiredCount}</div>
+      <div class="lbl">Đã hết hạn (Expired)</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" style="color:var(--accent)" id="admin-hw-total-subs-val">...</div>
+      <div class="lbl">Lượt nộp từ học viên</div>
+    </div>
+  `;
+
+  if (assignments.length === 0) {
+    hwListEl.innerHTML = `
+      <div class="card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:42px;margin-bottom:8px">📝</div>
+        <h3 style="margin:0 0 6px;font-size:18px">Chưa có bài tập nào được giao</h3>
+        <p class="hint" style="max-width:500px;margin:0 auto 18px;line-height:1.5">
+          Giáo viên có thể giao bài tập trắc nghiệm từ vựng, chính tả, ngữ pháp hoặc luyện dịch. Hệ thống sẽ tự động chấm điểm và tổng hợp kết quả của từng học viên.
+        </p>
+        <button class="btn primary" id="btn-empty-create-hw" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;font-size:14px">
+          <span>+ Giao bài tập đầu tiên</span>
+        </button>
+      </div>
+    `;
+    const emptyBtn = hwListEl.querySelector('#btn-empty-create-hw');
+    if (emptyBtn) emptyBtn.onclick = () => openCreateAssignmentModal(onRefresh);
+    const totalSubsVal = hwStatsEl.querySelector('#admin-hw-total-subs-val');
+    if (totalSubsVal) totalSubsVal.textContent = '0';
+    return;
+  }
+
+  const subsMapPerHw = {};
+  let totalSubmissionsCount = 0;
+  await Promise.all(assignments.map(async (hw) => {
+    try {
+      const subs = await getAssignmentSubmissions(hw.id);
+      subsMapPerHw[hw.id] = subs;
+      totalSubmissionsCount += Object.keys(subs).length;
+    } catch (e) {
+      subsMapPerHw[hw.id] = {};
+    }
+  }));
+
+  const totalSubsVal = hwStatsEl.querySelector('#admin-hw-total-subs-val');
+  if (totalSubsVal) totalSubsVal.textContent = String(totalSubmissionsCount);
+
+  function renderHwTable() {
+    const qTxt = (container.querySelector('#admin-hw-search').value || '').trim().toLowerCase();
+    const typeFlt = container.querySelector('#admin-hw-filter-type').value;
+    const statusFlt = container.querySelector('#admin-hw-filter-status').value;
+
+    let filtered = assignments.filter(hw => {
+      if (qTxt) {
+        const hay = `${hw.title} ${hw.targetLabel} ${hw.instructions || ''}`.toLowerCase();
+        if (!hay.includes(qTxt)) return false;
+      }
+      if (typeFlt !== 'all' && hw.type !== typeFlt) return false;
+      const isExpired = hw.dueDate ? new Date(hw.dueDate).getTime() < Date.now() : false;
+      if (statusFlt === 'active' && isExpired) return false;
+      if (statusFlt === 'expired' && !isExpired) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      hwListEl.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="hint">Không tìm thấy bài tập nào phù hợp với bộ lọc.</div></div>';
+      return;
+    }
+
+    hwListEl.innerHTML = `
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="lb-table" style="margin:0;width:100%">
+          <thead>
+            <tr>
+              <th style="padding-left:16px">Bài tập & Chủ đề</th>
+              <th>Yêu cầu</th>
+              <th>Hạn nộp</th>
+              <th style="text-align:center">Lượt nộp</th>
+              <th style="text-align:right;padding-right:16px">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(hw => {
+              const subs = subsMapPerHw[hw.id] || {};
+              const subCount = Object.keys(subs).length;
+              const isExpired = hw.dueDate ? new Date(hw.dueDate).getTime() < Date.now() : false;
+              const pctSub = users.length > 0 ? Math.round((subCount / users.length) * 100) : 0;
+              return `
+                <tr class="lb-row">
+                  <td style="padding-left:16px">
+                    <div style="font-weight:700;font-size:14.5px;color:var(--ink)">${esc(hw.title)}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">
+                      <span class="hw-type-tag">${esc(getTypeTagLabel(hw.type))}</span>
+                      <span style="font-size:12.5px;color:var(--muted)">${esc(hw.targetLabel)}</span>
+                    </div>
+                    ${hw.instructions ? `<div class="hint" style="font-size:11.5px;margin-top:3px;font-style:italic">“${esc(hw.instructions)}”</div>` : ''}
+                  </td>
+                  <td style="font-size:12.5px">
+                    <div><b>${hw.minScore > 0 ? `≥ ${hw.minScore}%` : 'Hoàn thành'}</b></div>
+                    <div class="hint" style="font-size:11px">${hw.minScore > 0 ? 'Điểm tối thiểu' : 'Chỉ cần nộp bài'}</div>
+                  </td>
+                  <td style="font-size:12.5px">
+                    <div>${fmtDue(hw.dueDate)}</div>
+                    <div><span class="badge ${isExpired ? 'bad' : 'ok'}" style="font-size:10.5px">${isExpired ? 'Đã hết hạn' : 'Đang mở'}</span></div>
+                  </td>
+                  <td style="text-align:center">
+                    <div style="font-weight:700;font-size:13.5px">${subCount} / ${users.length}</div>
+                    <div class="hint" style="font-size:11px;color:${subCount > 0 ? 'var(--good)' : 'var(--muted)'}">${pctSub}% học viên</div>
+                  </td>
+                  <td style="text-align:right;padding-right:16px;white-space:nowrap">
+                    <button class="btn primary btn-view-hw-subs" data-hw-id="${esc(hw.id)}" style="padding:4px 10px;font-size:12px;margin-right:6px">Xem nộp bài</button>
+                    <button class="btn ghost btn-del-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;color:var(--bad);border-color:var(--bad)">Xóa</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    hwListEl.querySelectorAll('.btn-view-hw-subs').forEach(btn => {
+      btn.onclick = () => {
+        const hw = assignments.find(x => x.id === btn.dataset.hwId);
+        if (hw) openAssignmentSubmissionsModal(hw, users, subsMapPerHw[hw.id] || {});
+      };
+    });
+
+    hwListEl.querySelectorAll('.btn-del-hw').forEach(btn => {
+      btn.onclick = async () => {
+        const hw = assignments.find(x => x.id === btn.dataset.hwId);
+        if (!hw) return;
+        const ok = await confirmModal({
+          title: 'Xóa bài tập về nhà?',
+          message: `Bạn có chắc muốn xóa bài tập "${hw.title}"? Dữ liệu nộp bài của học viên cho bài này cũng sẽ bị xóa.`,
+          confirmText: 'Xóa bài tập',
+          cancelText: 'Hủy',
+          danger: true
+        });
+        if (!ok) return;
+        await deleteHomeworkAssignment(hw.id);
+        showToast('✓ Đã xóa bài tập về nhà.');
+        if (onRefresh) onRefresh();
+      };
+    });
+  }
+
+  container.querySelector('#admin-hw-search').oninput = renderHwTable;
+  container.querySelector('#admin-hw-filter-type').onchange = renderHwTable;
+  container.querySelector('#admin-hw-filter-status').onchange = renderHwTable;
+  renderHwTable();
+}
+
+function openCreateAssignmentModal(onDone) {
+  const defaultDue = new Date(Date.now() + 3 * 86400000);
+  defaultDue.setHours(23, 59, 0, 0);
+  const dueDefaultStr = defaultDue.toISOString().slice(0, 16);
+
+  openModal(`
+    <div class="modal-backdrop">
+      <div class="modal-box wide" style="max-height:88vh;overflow-y:auto">
+        <button class="modal-close" aria-label="Close">✕</button>
+        <h3 style="margin:0 0 6px;font-size:20px">Giao bài tập về nhà mới</h3>
+        <p class="hint" style="margin:0 0 16px;line-height:1.5">
+          Chọn nội dung từ vựng, chính tả, ngữ pháp hoặc bài đọc để giao cho học viên. Hệ thống tự động chấm điểm khi học viên hoàn thành.
+        </p>
+
+        <form id="create-hw-form" style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">1. Tiêu đề bài tập *</label>
+            <input type="text" id="new-hw-title" required placeholder="vd: Ôn tập Từ vựng Topic 05: Đặt hàng (Quiz)" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px" />
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div>
+              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">2. Loại bài tập *</label>
+              <select id="new-hw-type" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px">
+                <option value="vocab_quiz">Trắc nghiệm từ vựng (TOEIC Quiz)</option>
+                <option value="vocab_spell">Luyện viết chính tả (Spelling Lab)</option>
+                <option value="grammar">Ngữ pháp TOEIC (13 Chuyên đề ETS)</option>
+                <option value="practice_passage">Luyện dịch đoạn văn (15 Passages)</option>
+                <option value="practice_unit">Luyện phản xạ câu (16 Units)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">3. Chọn chủ đề / nội dung *</label>
+              <select id="new-hw-target" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px"></select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div>
+              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">4. Yêu cầu điểm số tối thiểu *</label>
+              <select id="new-hw-min-score" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px">
+                <option value="80" selected>Đạt từ 80% điểm trở lên (Khuyên dùng)</option>
+                <option value="90">Đạt từ 90% điểm trở lên (Nâng cao)</option>
+                <option value="100">Đạt 100% điểm tuyệt đối</option>
+                <option value="0">Chỉ cần hoàn thành (Không giới hạn điểm)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">5. Hạn chót nộp bài (Due Date) *</label>
+              <input type="datetime-local" id="new-hw-due-date" value="${dueDefaultStr}" required style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+            </div>
+          </div>
+
+          <div>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">6. Lời dặn dò của giáo viên (tùy chọn)</label>
+            <textarea id="new-hw-instructions" rows="2" placeholder="vd: Các em chú ý làm kỹ và xem giải thích câu sai nhé!" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;resize:vertical"></textarea>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+            <button type="button" class="btn ghost" id="btn-cancel-create-hw">Hủy</button>
+            <button type="submit" class="btn primary" id="btn-submit-create-hw" style="padding:9px 20px">Tạo & Giao bài tập</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `);
+
+  const typeEl = document.querySelector('#new-hw-type');
+  const targetEl = document.querySelector('#new-hw-target');
+  const titleEl = document.querySelector('#new-hw-title');
+  const form = document.querySelector('#create-hw-form');
+  const cancelBtn = document.querySelector('#btn-cancel-create-hw');
+
+  cancelBtn.onclick = () => closeModal();
+
+  function updateTargetOptions() {
+    const type = typeEl.value;
+    let html = '';
+    if (type === 'vocab_quiz' || type === 'vocab_spell') {
+      html = TOPICS.map(t => `<option value="${t.id}">Topic ${String(t.id).padStart(2, '0')}: ${esc(splitTitle(t).main)}</option>`).join('');
+    } else if (type === 'grammar') {
+      html = GRAMMAR_TOPICS.map(g => `<option value="${g.id}">Chuyên đề: ${esc(g.title.split('(')[0].trim())}</option>`).join('');
+    } else if (type === 'practice_passage') {
+      html = PRACTICE_PARAGRAPHS.map((p, idx) => `<option value="${idx}">Đoạn văn ${idx + 1}: ${esc(p.title || ('Passage ' + (idx + 1)))}</option>`).join('');
+    } else if (type === 'practice_unit') {
+      html = PRACTICE_UNITS.map((u, idx) => `<option value="${idx}">Unit ${idx + 1}: ${esc(u.title || ('Unit ' + (idx + 1)))}</option>`).join('');
+    }
+    targetEl.innerHTML = html;
+    updateDefaultTitle();
+  }
+
+  function updateDefaultTitle() {
+    const type = typeEl.value;
+    const opt = targetEl.options[targetEl.selectedIndex];
+    const targetText = opt ? opt.textContent : '';
+    if (type === 'vocab_quiz') titleEl.value = `Ôn tập ${targetText} (Quiz)`;
+    else if (type === 'vocab_spell') titleEl.value = `Luyện chính tả ${targetText} (Spelling Lab)`;
+    else if (type === 'grammar') titleEl.value = `Bài tập ${targetText}`;
+    else if (type === 'practice_passage') titleEl.value = `Luyện dịch ${targetText}`;
+    else if (type === 'practice_unit') titleEl.value = `Luyện phản xạ ${targetText}`;
+  }
+
+  typeEl.onchange = updateTargetOptions;
+  targetEl.onchange = updateDefaultTitle;
+  updateTargetOptions();
+
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const title = titleEl.value.trim();
+    if (!title) return;
+    const type = typeEl.value;
+    const targetId = targetEl.value;
+    const minScore = Number(document.querySelector('#new-hw-min-score').value) || 0;
+    const dueDate = document.querySelector('#new-hw-due-date').value;
+    const instructions = (document.querySelector('#new-hw-instructions').value || '').trim();
+
+    const submitBtn = document.querySelector('#btn-submit-create-hw');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Đang tạo…';
+
+    const newHw = {
+      id: `hw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      type,
+      targetId,
+      targetLabel: getHomeworkTargetLabel(type, targetId),
+      minScore,
+      dueDate,
+      instructions,
+      createdAt: Date.now(),
+      createdBy: (currentUser && currentUser.uid) || 'teacher',
+      teacherName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Instructor'
+    };
+
+    await saveHomeworkAssignment(newHw);
+    showToast(`✓ Đã tạo bài tập: "${title}"`);
+    closeModal();
+    if (onDone) onDone();
+  };
+}
+
+function openAssignmentSubmissionsModal(assignment, users, submissionsMap) {
+  openModal(`
+    <div class="modal-backdrop">
+      <div class="modal-box wide" style="max-height:88vh;overflow-y:auto">
+        <button class="modal-close" aria-label="Close">✕</button>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+          <div>
+            <div class="eyebrow" style="color:var(--accent);font-weight:700">Chi tiết nộp bài tập</div>
+            <h3 style="margin:4px 0;font-size:20px">${esc(assignment.title)}</h3>
+            <div class="hint" style="font-size:12.5px">
+              ${esc(assignment.targetLabel)} · Yêu cầu: <b>≥ ${assignment.minScore}%</b> · Hạn nộp: <b>${fmtDue(assignment.dueDate)}</b>
+            </div>
+          </div>
+          <div>
+            <button class="btn" id="btn-export-hw-subs" style="font-size:12.5px">Xuất CSV</button>
+          </div>
+        </div>
+
+        <div id="modal-hw-stats" class="stat-grid" style="margin-bottom:14px"></div>
+
+        <div style="margin-bottom:12px">
+          <input type="search" id="modal-hw-search" placeholder="Tìm kiếm học viên..." style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+        </div>
+
+        <div id="modal-hw-table-container"></div>
+      </div>
+    </div>
+  `);
+
+  const statsBox = document.querySelector('#modal-hw-stats');
+  const tableBox = document.querySelector('#modal-hw-table-container');
+  const searchInput = document.querySelector('#modal-hw-search');
+  const exportBtn = document.querySelector('#btn-export-hw-subs');
+
+  exportBtn.onclick = () => exportHomeworkSubmissionsCSV(assignment, users, submissionsMap);
+
+  const totalStudents = users.length;
+  let submittedCount = 0;
+  let onTimeCount = 0;
+  let lateCount = 0;
+
+  users.forEach(u => {
+    const s = submissionsMap[u.uid];
+    if (s) {
+      submittedCount++;
+      if (s.isLate) lateCount++;
+      else onTimeCount++;
+    }
+  });
+
+  const missingCount = totalStudents - submittedCount;
+  const pctSubmitted = totalStudents > 0 ? Math.round((submittedCount / totalStudents) * 100) : 0;
+
+  statsBox.innerHTML = `
+    <div class="stat-card">
+      <div class="val">${submittedCount}<span style="font-size:15px;color:var(--muted);font-weight:600"> / ${totalStudents}</span></div>
+      <div class="lbl">Đã nộp bài (${pctSubmitted}%)</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" style="color:var(--good)">${onTimeCount}</div>
+      <div class="lbl">Đúng hạn</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" style="color:var(--warn)">${lateCount}</div>
+      <div class="lbl">Nộp muộn</div>
+    </div>
+    <div class="stat-card">
+      <div class="val" style="color:var(--muted)">${missingCount}</div>
+      <div class="lbl">Chưa nộp</div>
+    </div>
+  `;
+
+  function renderStudents() {
+    const q = (searchInput.value || '').trim().toLowerCase();
+    const filteredUsers = users.filter(u => {
+      if (!q) return true;
+      const hay = `${u.displayName} ${u.email} ${u.uid}`.toLowerCase();
+      return hay.includes(q);
+    });
+
+    if (filteredUsers.length === 0) {
+      tableBox.innerHTML = '<div class="hint" style="text-align:center;padding:24px">Không tìm thấy học viên nào.</div>';
+      return;
+    }
+
+    tableBox.innerHTML = `
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="lb-table" style="margin:0;width:100%">
+          <thead>
+            <tr>
+              <th style="padding-left:14px">Học viên</th>
+              <th>Trạng thái</th>
+              <th style="text-align:center">Điểm số</th>
+              <th style="text-align:right;padding-right:14px">Thời gian nộp</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredUsers.map(u => {
+              const s = submissionsMap[u.uid];
+              const isSubmitted = Boolean(s);
+              const isLate = s ? s.isLate : false;
+              const isPassed = s ? s.score >= assignment.minScore : false;
+
+              let statusBadge = '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Chưa nộp</span>';
+              if (isSubmitted) {
+                if (isLate) statusBadge = '<span class="badge warn" style="font-size:11px">⚠ Nộp muộn</span>';
+                else statusBadge = '<span class="badge ok" style="font-size:11px">✓ Đúng hạn</span>';
+              }
+
+              return `
+                <tr class="lb-row">
+                  <td style="padding-left:14px">
+                    <div style="font-weight:700">${esc(u.displayName)}</div>
+                    <div style="font-size:12px;color:var(--muted)">${esc(u.email || u.uid)}</div>
+                  </td>
+                  <td>${statusBadge}</td>
+                  <td style="text-align:center">
+                    ${isSubmitted ? `
+                      <span style="font-weight:800;color:${isPassed ? 'var(--good)' : 'var(--bad)'}">${s.score}%</span>
+                      <div class="hint" style="font-size:10.5px">${isPassed ? 'Đạt' : 'Chưa đạt'}</div>
+                    ` : '<span style="color:var(--muted)">—</span>'}
+                  </td>
+                  <td style="text-align:right;padding-right:14px;font-size:12.5px;color:var(--muted)">
+                    ${isSubmitted && s.submittedAt ? `
+                      <div>${fmtDue(s.submittedAt)}</div>
+                      <div style="font-size:11px;opacity:.8">${fmtRelativeTime(s.submittedAt)}</div>
+                    ` : '—'}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  searchInput.oninput = renderStudents;
+  renderStudents();
+}
+
+function exportHomeworkSubmissionsCSV(assignment, users, submissionsMap) {
+  const headers = ['Học viên', 'Email', 'Trạng thái', 'Điểm số (%)', 'Đạt yêu cầu', 'Thời gian nộp', 'Hạn nộp'];
+  const escCsv = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = users.map(u => {
+    const sub = submissionsMap[u.uid];
+    const isSubmitted = Boolean(sub);
+    const isLate = sub ? sub.isLate : false;
+    const statusText = !isSubmitted ? 'Chưa nộp' : (isLate ? 'Nộp muộn' : 'Đúng hạn');
+    const scoreVal = sub ? sub.score : '';
+    const passedText = sub ? (sub.score >= assignment.minScore ? 'Đạt' : 'Chưa đạt') : '';
+    const submitTime = sub && sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('vi-VN') : '';
+    return [
+      u.displayName,
+      u.email,
+      statusText,
+      scoreVal,
+      passedText,
+      submitTime,
+      assignment.dueDate ? new Date(assignment.dueDate).toLocaleString('vi-VN') : ''
+    ].map(escCsv).join(',');
+  });
+
+  const csvContent = '\uFEFF' + headers.map(escCsv).join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TOEIC_Homework_${assignment.id}_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ Đã xuất file CSV kết quả nộp bài!');
 }
 
 function openTeacherRoleModal(users, onUpdated) {
@@ -8831,13 +9801,19 @@ async function openAdminUserInspector(targetUid, userName) {
     const grammarAnswers = {};
     let review = null;
     let teacherNote = null;
+    let studentHwSubs = {};
 
-    const [progSnap, ansSnap, revDoc, noteDoc] = await Promise.all([
+    const [progSnap, ansSnap, revDoc, noteDoc, hwDoc, allHw] = await Promise.all([
       firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', targetUid, 'progress')).catch(() => null),
       firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', targetUid, 'answers')).catch(() => null),
       firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'review')).catch(() => null),
-      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'teacher_note')).catch(() => null)
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'teacher_note')).catch(() => null),
+      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'submissions')).catch(() => null),
+      getHomeworkAssignments()
     ]);
+
+    if (hwDoc && hwDoc.exists()) studentHwSubs = hwDoc.data() || {};
+    const allAssignmentsList = allHw || [];
 
     if (progSnap) progSnap.forEach(d => { progress[Number(d.id)] = d.data(); });
     if (ansSnap) {
@@ -8880,6 +9856,7 @@ async function openAdminUserInspector(targetUid, userName) {
           <button class="btn ${activeTab === 'pronun' ? 'primary' : 'ghost'}" data-itab="pronun" style="font-size:13px">Pronunciation (${pronunUnitIds.length} Units)</button>
           <button class="btn ${activeTab === 'practice' ? 'primary' : 'ghost'}" data-itab="practice" style="font-size:13px">Practice Drills (${practiceExIds.length})</button>
           <button class="btn ${activeTab === 'grammar' ? 'primary' : 'ghost'}" data-itab="grammar" style="font-size:13px">Grammar (${grammarTopicIds.length} Topics)</button>
+          <button class="btn ${activeTab === 'homework' ? 'primary' : 'ghost'}" data-itab="homework" style="font-size:13px">Bài tập về nhà (${allAssignmentsList.length})</button>
           <button class="btn ${activeTab === 'feedback' ? 'primary' : 'ghost'}" data-itab="feedback" style="font-size:13px">Feedback & Saved Words (${activeReviewItems.length})</button>
         </div>
         <div id="insp-tab-content"></div>
@@ -9136,6 +10113,57 @@ async function openAdminUserInspector(targetUid, userName) {
           selGrammarTopicId = e.target.value;
           renderInspector();
         };
+      } else if (activeTab === 'homework') {
+        const studentAssignments = allAssignmentsList || [];
+        tabBox.innerHTML = `
+          <div style="margin-bottom:12px;font-size:13.5px;color:var(--muted)">
+            Danh sách tất cả bài tập về nhà đã giao và trạng thái nộp bài của học viên <b>${esc(userName)}</b>:
+          </div>
+          ${studentAssignments.length === 0 ? '<div class="hint" style="padding:16px;background:var(--sunk);border-radius:8px">Chưa có bài tập về nhà nào trong hệ thống.</div>' : `
+            <div class="card" style="padding:0;overflow-x:auto">
+              <table class="lb-table" style="margin:0;width:100%">
+                <thead>
+                  <tr>
+                    <th style="padding-left:14px">Bài tập</th>
+                    <th>Yêu cầu</th>
+                    <th>Hạn nộp</th>
+                    <th>Trạng thái</th>
+                    <th style="text-align:right;padding-right:14px">Điểm & Thời gian nộp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${studentAssignments.map(hw => {
+                    let sub = (studentHwSubs && studentHwSubs[hw.id]) || null;
+                    if (!sub && targetUid === currentUid) sub = store.get('hw_sub_' + hw.id, null);
+                    const isSubmitted = Boolean(sub);
+                    const isPassed = sub ? sub.score >= hw.minScore : false;
+                    return `
+                      <tr class="lb-row">
+                        <td style="padding-left:14px">
+                          <div style="font-weight:700">${esc(hw.title)}</div>
+                          <div style="font-size:12px;color:var(--muted)">${esc(hw.targetLabel)}</div>
+                        </td>
+                        <td style="font-size:12.5px">${hw.minScore > 0 ? `≥ ${hw.minScore}%` : 'Hoàn thành'}</td>
+                        <td style="font-size:12px;color:var(--muted)">${fmtDue(hw.dueDate)}</td>
+                        <td>
+                          ${isSubmitted
+                            ? (sub.isLate ? '<span class="badge warn" style="font-size:11px">⚠ Nộp muộn</span>' : '<span class="badge ok" style="font-size:11px">✓ Đúng hạn</span>')
+                            : '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Chưa nộp</span>'}
+                        </td>
+                        <td style="text-align:right;padding-right:14px;font-size:12.5px">
+                          ${isSubmitted ? `
+                            <div style="font-weight:700;color:${isPassed ? 'var(--good)' : 'var(--bad)'}">${sub.score}% ${isPassed ? '(Đạt)' : '(Chưa đạt)'}</div>
+                            <div class="hint" style="font-size:11px">${sub.submittedAt ? fmtDue(sub.submittedAt) : ''}</div>
+                          ` : '<span style="color:var(--muted)">—</span>'}
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        `;
       } else {
         tabBox.innerHTML = `
           <div style="display:flex;flex-direction:column;gap:16px">
@@ -9190,6 +10218,151 @@ async function openAdminUserInspector(targetUid, userName) {
     renderInspector();
   } catch (err) {
     $('#inspector-body').innerHTML = `<div class="fb no">Error: ${esc(err.message)}</div>`;
+  }
+}
+
+async function renderDashboardHomework(container) {
+  if (!container) return;
+  try {
+    const assignments = await getHomeworkAssignments();
+    if (!assignments || assignments.length === 0) {
+      if (isTeacherUser) {
+        container.innerHTML = `
+          <div class="card" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--surface);border-left:4px solid var(--accent)">
+            <div>
+              <div style="font-weight:700;font-size:14.5px">👨‍🏫 Bảng tin Giáo viên: Quản lý bài tập về nhà</div>
+              <div class="hint" style="font-size:12.5px">Bạn chưa giao bài tập nào. Bấm vào Quản lý lớp học để tạo bài tập cho học viên.</div>
+            </div>
+            <button class="btn primary" id="dash-btn-teacher-hw" style="font-size:12.5px;padding:6px 14px">Giao bài tập mới →</button>
+          </div>
+        `;
+        const tBtn = container.querySelector('#dash-btn-teacher-hw');
+        if (tBtn) tBtn.onclick = () => { currentAdminTab = 'homework'; goTo('admin'); };
+      } else {
+        container.innerHTML = '';
+      }
+      return;
+    }
+
+    // Tự động nhận diện bài tập đã hoàn thành từ tiến độ cá nhân
+    assignments.forEach(hw => {
+      let sub = store.get('hw_sub_' + hw.id, null);
+      if (!sub) {
+        const autoScore = getStudentTargetProgress(hw.type, hw.targetId);
+        if (autoScore != null && autoScore >= (hw.minScore || 80)) {
+          const autoSub = { score: autoScore, submittedAt: Date.now(), isLate: false, autoDetected: true };
+          store.set('hw_sub_' + hw.id, autoSub);
+          if (currentUser && currentUid !== 'guest' && fbDb && firestoreModules) {
+            try {
+              firestoreModules.setDoc(
+                firestoreModules.doc(fbDb, 'assignments', hw.id, 'submissions', currentUid),
+                {
+                  uid: currentUid,
+                  displayName: currentUser.displayName || currentUser.email || 'Student',
+                  email: currentUser.email || '',
+                  score: autoScore,
+                  submittedAt: firestoreModules.serverTimestamp ? firestoreModules.serverTimestamp() : new Date(),
+                  isLate: false,
+                  status: 'completed'
+                },
+                { merge: true }
+              );
+            } catch (e) {}
+          }
+        }
+      }
+    });
+
+    const pendingCount = assignments.filter(hw => !store.get('hw_sub_' + hw.id)).length;
+    updateHomeworkBadges();
+
+    container.innerHTML = `
+      <div class="card" style="padding:18px 20px;border-left:4px solid ${pendingCount > 0 ? 'var(--warn)' : 'var(--good)'}">
+        <div class="row between" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:22px">📝</span>
+            <div>
+              <h2 class="sec" style="margin:0;font-size:18px;line-height:1.2">Bài tập về nhà (Assigned Homework)</h2>
+              <div class="hint" style="font-size:12.5px">Hoàn thành bài tập trước hạn chót để ghi nhận điểm vào hệ thống lớp học.</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${pendingCount > 0 ? `
+              <span class="hw-badge hw-badge-warn">⏰ Có ${pendingCount} bài cần làm</span>
+            ` : `
+              <span class="hw-badge hw-badge-ok">✓ Đã hoàn thành tất cả</span>
+            `}
+            ${isTeacherUser ? `
+              <button class="btn ghost" id="dash-btn-manage-hw" style="font-size:12px;padding:4px 10px">Quản lý bài tập →</button>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="hw-grid">
+          ${assignments.map(hw => {
+            const sub = store.get('hw_sub_' + hw.id, null);
+            const isDone = Boolean(sub);
+            const isExpired = hw.dueDate ? Date.now() > new Date(hw.dueDate).getTime() : false;
+            const dueDiff = hw.dueDate ? new Date(hw.dueDate).getTime() - Date.now() : 0;
+            const isDueToday = !isExpired && dueDiff > 0 && dueDiff <= 86400000;
+
+            let badgeHtml = '';
+            if (isDone) {
+              badgeHtml = `<span class="hw-badge hw-badge-ok">✓ Đã nộp (${sub.score}%)</span>`;
+            } else if (isExpired) {
+              badgeHtml = `<span class="hw-badge hw-badge-bad">⚠ Đã quá hạn</span>`;
+            } else if (isDueToday) {
+              badgeHtml = `<span class="hw-badge hw-badge-warn">⏰ Hôm nay hết hạn</span>`;
+            } else {
+              badgeHtml = `<span class="hw-badge hw-badge-info">📅 Hạn: ${fmtDue(hw.dueDate)}</span>`;
+            }
+
+            return `
+              <div class="hw-card">
+                <div class="row between" style="gap:6px">
+                  <span class="hw-type-tag">${esc(getTypeTagLabel(hw.type))}</span>
+                  ${badgeHtml}
+                </div>
+                <div style="font-weight:700;font-size:15px;color:var(--ink);line-height:1.35">${esc(hw.title)}</div>
+                <div style="font-size:12.5px;color:var(--muted)">${esc(hw.targetLabel)}</div>
+                
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);background:var(--sunk);padding:6px 10px;border-radius:6px;gap:6px;flex-wrap:wrap">
+                  <span>Yêu cầu: <b>${hw.minScore > 0 ? `≥ ${hw.minScore}%` : 'Hoàn thành'}</b></span>
+                  <span>Hạn: <b>${fmtDue(hw.dueDate)}</b></span>
+                </div>
+
+                ${hw.instructions ? `
+                  <div class="hw-instructions">“${esc(hw.instructions)}”</div>
+                ` : ''}
+
+                <div style="margin-top:auto;display:flex;gap:8px">
+                  <button class="btn ${isDone ? 'ghost' : 'primary'} btn-start-hw" data-hw-id="${esc(hw.id)}" style="flex:1;justify-content:center;font-size:13px;padding:8px 12px">
+                    ${isDone ? 'Làm lại / Luyện thêm →' : 'Làm bài ngay →'}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    const manageBtn = container.querySelector('#dash-btn-manage-hw');
+    if (manageBtn) {
+      manageBtn.onclick = () => {
+        currentAdminTab = 'homework';
+        goTo('admin');
+      };
+    }
+
+    container.querySelectorAll('.btn-start-hw').forEach(btn => {
+      btn.onclick = () => {
+        const hw = assignments.find(x => x.id === btn.dataset.hwId);
+        if (hw) startHomeworkExercise(hw);
+      };
+    });
+  } catch (err) {
+    console.warn('renderDashboardHomework error:', err);
   }
 }
 
@@ -9270,6 +10443,8 @@ function renderDashboard(box) {
         </button>
       </div>
     </div>
+
+    <div id="dash-homework-container" style="margin:16px 0"></div>
 
     ${hasProgress ? `
       <div class="stat-grid" style="margin-bottom:4px">
@@ -9408,7 +10583,10 @@ function renderDashboard(box) {
       go(Number(card.dataset.tid), 1);
     };
   });
+  const hwContainer = box.querySelector('#dash-homework-container');
+  if (hwContainer) renderDashboardHomework(hwContainer);
 }
+window.renderDashboard = renderDashboard;
 
 // ---------- Render Dispatcher ----------
 function render(){

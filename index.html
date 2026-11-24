@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2563EB">
   <style>body{margin:0}[hidden]{display:none!important}</style>
-  <link rel="stylesheet" href="./styles.css?v=42">
+  <link rel="stylesheet" href="./styles.css?v=43">
 <title>TOEIC Prep Hub — Complete TOEIC Learning Platform</title>
 <meta name="description" content="Master TOEIC across 45 topics with vocabulary, word families, sentence translations, listening drills, Cambridge pronunciation, and core grammar.">
 <meta property="og:title" content="TOEIC Prep Hub — Complete TOEIC Learning Platform">
@@ -123,6 +123,12 @@
     <div class="side-sep"></div>
     <div class="side-label">45 TOEIC Topics</div>
     <input id="search" class="search" type="search" placeholder="Search topics or vocabulary..." autocomplete="off">
+    <div style="padding:6px 0 2px">
+      <button id="btn-check-update-sidebar" class="theme-btn" onclick="forceAppUpdate()" title="Kiểm tra và tải bản cập nhật mới nhất" style="width:100%;justify-content:center;gap:6px;font-size:11.5px;padding:6px 8px;border-radius:6px">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+        <span>Cập nhật ứng dụng (PWA)</span>
+      </button>
+    </div>
     <ul id="tlist" class="tlist"></ul>
   </aside>
   <div id="side-backdrop" class="side-backdrop" hidden></div>
@@ -1780,7 +1786,11 @@ function renderAuthBox() {
             <div class="auth-avatar">${avatar}</div>
             <div class="auth-info" style="min-width:0">
               <span class="auth-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(currentUser.displayName || currentUser.email || 'Người học')}</span>
-              <span class="auth-status" id="sync-status-txt">Synced</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span class="auth-status" id="sync-status-txt">Synced</span>
+                <span style="color:var(--muted);font-size:11px">•</span>
+                <button type="button" class="btn-check-update" onclick="event.stopPropagation();forceAppUpdate()" title="Cập nhật ứng dụng lên phiên bản mới nhất" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0;text-decoration:underline">Cập nhật</button>
+              </div>
             </div>
           </div>
           <button class="btn-sync-icon" id="btn-manual-sync" title="Sync progress with cloud now">
@@ -1841,6 +1851,10 @@ function openMobileUserMenu() {
             <span id="m-sync-txt">Sync with Cloud Now</span>
           </button>
           <div id="m-sync-sub" class="hint" style="text-align:center;font-size:12px;margin:2px 0 6px">Pull latest progress from cloud to this device</div>
+          <button class="btn" id="m-btn-update-app" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;font-weight:600" onclick="closeModal();forceAppUpdate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+            <span>Kiểm tra & Cập nhật ứng dụng</span>
+          </button>
           
           <a href="#pronun" class="btn" style="text-decoration:none;display:flex;align-items:center;gap:8px;padding:10px 12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-color:var(--accent)" onclick="closeModal()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
@@ -4065,11 +4079,89 @@ try { window.speechSynthesis && window.speechSynthesis.getVoices(); } catch(e){}
 initFirebase();
 render();
 
+// Global function to manually check and force an update on mobile / desktop
+async function forceAppUpdate() {
+  if (typeof showToast === 'function') {
+    showToast('🔍 Đang kiểm tra bản cập nhật mới nhất...', 2500);
+  }
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        await reg.update().catch(() => {});
+        if (reg.waiting) {
+          reg.waiting.postMessage({ action: 'skipWaiting' });
+        }
+      }
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if (typeof showToast === 'function') {
+      showToast('✨ Đã cập nhật bản mới nhất! Đang tải lại...', 1500);
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 600);
+  } catch (err) {
+    console.error('Update failed:', err);
+    window.location.reload();
+  }
+}
+window.forceAppUpdate = forceAppUpdate;
+
 try {
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(reg => {
-        reg.update();
+        reg.update().catch(() => {});
+
+        function promptUserToUpdate(worker) {
+          if (document.getElementById('pwa-update-banner')) return;
+          const banner = document.createElement('div');
+          banner.id = 'pwa-update-banner';
+          banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F172A;color:#FFFFFF;padding:12px 18px;border-radius:12px;box-shadow:0 14px 35px rgba(0,0,0,0.55),0 0 0 1.5px #38BDF8;display:flex;align-items:center;gap:12px;z-index:9999999;font-size:13.5px;max-width:calc(100vw - 32px);box-sizing:border-box;';
+          banner.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;flex:1">
+              <span style="font-size:18px">🚀</span>
+              <span><b>Đã có bản cập nhật mới!</b> Nhấn để làm mới dữ liệu.</span>
+            </div>
+            <button id="pwa-update-btn" style="background:#4F46E5;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap">Cập nhật ngay</button>
+            <button id="pwa-update-dismiss" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:16px;padding:2px 6px">✕</button>
+          `;
+          document.body.appendChild(banner);
+
+          banner.querySelector('#pwa-update-btn').onclick = () => {
+            if (worker) worker.postMessage({ action: 'skipWaiting' });
+            banner.remove();
+            setTimeout(() => window.location.reload(), 300);
+          };
+          banner.querySelector('#pwa-update-dismiss').onclick = () => {
+            banner.remove();
+          };
+        }
+
+        if (reg.waiting) {
+          promptUserToUpdate(reg.waiting);
+        }
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              promptUserToUpdate(newWorker);
+            }
+          });
+        });
       }).catch(() => {});
     });
   }
@@ -4955,19 +5047,25 @@ const RecorderManager = (function() {
     // Mặc định hiển thị DƯỚI dòng chữ đã quét để hoàn toàn tránh menu Edge
     let posY = rect.bottom + scrollY + 8;
 
-    const popWidth = Math.max(340, popover.offsetWidth || 340);
-    const minLeft = popWidth / 2 + 16;
-    const maxLeft = Math.max(minLeft, window.innerWidth - popWidth / 2 - 16);
-    if (posX < minLeft) posX = minLeft;
-    if (posX > maxLeft) posX = maxLeft;
+    const isMobile = window.innerWidth <= 600;
+    if (isMobile) {
+      popover.style.left = '50%';
+      popover.style.transform = 'translateX(-50%)';
+      popover.style.maxWidth = 'calc(100vw - 20px)';
+    } else {
+      const popWidth = Math.max(340, popover.offsetWidth || 340);
+      const minLeft = popWidth / 2 + 16;
+      const maxLeft = Math.max(minLeft, window.innerWidth - popWidth / 2 - 16);
+      if (posX < minLeft) posX = minLeft;
+      if (posX > maxLeft) posX = maxLeft;
+      popover.style.left = posX + 'px';
+    }
 
     // Chỉ đưa lên trên nếu ở sát đáy màn hình VÀ phía trên còn nhiều khoảng trống
     if (rect.bottom + 140 > window.innerHeight && rect.top > 120) {
       popover.classList.remove('below');
       posY = rect.top + scrollY - 8;
     }
-
-    popover.style.left = posX + 'px';
     popover.style.top = posY + 'px';
 
     const speakBtn = popover.querySelector('#sel-speak');
@@ -5194,7 +5292,32 @@ const RecorderManager = (function() {
 
   document.addEventListener('touchend', (e) => {
     if (popover && popover.contains(e.target)) return;
-    setTimeout(handleSelection, 250);
+    setTimeout(handleSelection, 200);
+  });
+
+  // Chặn menu ngữ cảnh mặc định của trình duyệt điện thoại khi bôi đen / nhấn giữ text
+  document.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.toString().trim()) {
+      e.preventDefault();
+      setTimeout(handleSelection, 20);
+    } else if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      e.preventDefault();
+      setTimeout(handleSelection, 50);
+    }
+  }, { passive: false });
+
+  // Tự động nhận diện khi người dùng điều chỉnh vùng chọn trên màn hình cảm ứng
+  let selDebounce = null;
+  document.addEventListener('selectionchange', () => {
+    if (!('ontouchstart' in window || navigator.maxTouchPoints > 0)) return;
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) return;
+    clearTimeout(selDebounce);
+    selDebounce = setTimeout(() => {
+      handleSelection();
+    }, 300);
   });
 
   document.addEventListener('mousedown', (e) => {
@@ -5202,6 +5325,12 @@ const RecorderManager = (function() {
       removePopover();
     }
   });
+
+  document.addEventListener('touchstart', (e) => {
+    if (popover && !popover.contains(e.target)) {
+      removePopover();
+    }
+  }, { passive: true });
 
   window.addEventListener('hashchange', removePopover);
 })();

@@ -1,5 +1,5 @@
 // TOEIC Prep Hub: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v42';
+const V = 'so-tu-toeic-v43';
 const CORE = [
   './',
   './index.html',
@@ -47,6 +47,12 @@ self.addEventListener('activate', e => {
       )
     ).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data && (e.data.action === 'skipWaiting' || e.data.type === 'SKIP_WAITING')) {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', e => {

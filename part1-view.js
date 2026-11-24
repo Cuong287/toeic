@@ -1,5 +1,5 @@
 // part1-view.js - Giao diện Luyện từ vựng Part 1 qua tranh ảnh (Picture Description & ETS Drill)
-import { PART1_TOPICS } from './part1-data.js?v=46';
+import { PART1_TOPICS } from './part1-data.js?v=47';
 
 let appStore = null;
 let appEsc = null;
@@ -274,7 +274,7 @@ export function renderPart1(container) {
               <!-- Hotspot Popover Card (When clicked) -->
               <div class="part1-hotspot-popover" id="part1-hotspot-popover" hidden>
                 <div class="popover-content" id="popover-content"></div>
-                <button class="popover-close" id="popover-close">✕</button>
+                <button class="popover-close" id="popover-close" aria-label="Đóng chi tiết">✕</button>
               </div>
             </div>
 

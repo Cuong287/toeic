@@ -1986,7 +1986,8 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 .hw-type-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--sunk);color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 .hw-instructions{font-size:12.5px;color:var(--muted);background:var(--sunk);border:1px solid var(--line);padding:8px 12px;border-radius:8px;line-height:1.45}
 .hw-text-content{font-size:13.5px;line-height:1.6;color:var(--ink);background:var(--sunk);border:1px solid var(--line);padding:10px 14px;border-radius:8px;white-space:pre-wrap;word-break:break-word}
-
+
+
 
 /* ============================================================
    PART 1: PICTURE DESCRIPTION & ETS DRILL STYLES
@@ -2038,6 +2039,77 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   color: var(--muted);
   line-height: 1.5;
   margin: 0;
+}
+
+/* Topic Selector Navigation (5 Topics) */
+.part1-topic-nav {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.part1-topic-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.part1-topic-pill:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+.part1-topic-pill.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+}
+.topic-pill-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+.topic-pill-title {
+  letter-spacing: -0.01em;
+}
+.topic-pill-badge {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sunk);
+  color: var(--muted);
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+.part1-topic-pill.is-active .topic-pill-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+.topic-pill-done {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #10B981;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+.part1-topic-pill.is-active .topic-pill-done {
+  background: #FFFFFF;
+  color: #059669;
 }
 
 /* Scene Navigation Tabs */

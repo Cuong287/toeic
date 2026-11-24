@@ -1,5 +1,5 @@
 // part1-view.js - Giao diện Luyện từ vựng Part 1 qua tranh ảnh (Picture Description & ETS Drill)
-import { PART1_TOPICS } from './part1-data.js?v=44';
+import { PART1_TOPICS } from './part1-data.js?v=46';
 
 let appStore = null;
 let appEsc = null;
@@ -33,6 +33,10 @@ export function initPart1View(context) {
   // Restore saved state from localStorage if available
   try {
     if (appStore) {
+      const savedTopic = appStore.get('part1_cur_topic', 0);
+      if (typeof savedTopic === 'number' && savedTopic >= 0 && savedTopic < PART1_TOPICS.length) {
+        curTopicIdx = savedTopic;
+      }
       const savedScene = appStore.get('part1_cur_scene', 0);
       if (typeof savedScene === 'number') curSceneIdx = savedScene;
       const savedMode = appStore.get('part1_cur_mode', 'describe');
@@ -160,8 +164,10 @@ export function renderPart1(container) {
   if (!container) return;
   stopSequentialDrill();
 
+  if (curTopicIdx < 0 || curTopicIdx >= PART1_TOPICS.length) curTopicIdx = 0;
   const topic = PART1_TOPICS[curTopicIdx] || PART1_TOPICS[0];
   const scenes = topic.scenes || [];
+  if (curSceneIdx < 0 || curSceneIdx >= scenes.length) curSceneIdx = 0;
   const currentScene = scenes[curSceneIdx] || scenes[0];
 
   if (!drillState[currentScene.id]) {
@@ -187,6 +193,23 @@ export function renderPart1(container) {
         <h1 class="part1-title">${appEsc(topic.title)}</h1>
         <p class="part1-desc">${appEsc(topic.desc)}</p>
       </header>
+
+      <!-- Topic Selector Tabs / Pills (5 Topics) -->
+      <nav class="part1-topic-nav" aria-label="Part 1 Topics">
+        ${PART1_TOPICS.map((top, tIdx) => {
+          const isActive = tIdx === curTopicIdx;
+          const completedCount = (top.scenes || []).filter(
+            (sc) => drillState[sc.id] && drillState[sc.id].selected && drillState[sc.id].selected === sc.drill.correct
+          ).length;
+          return `
+            <button class="part1-topic-pill ${isActive ? 'is-active' : ''}" data-topic-idx="${tIdx}">
+              <span class="topic-pill-icon">${top.icon || '📌'}</span>
+              <span class="topic-pill-title">${appEsc(top.title.split('(')[0].trim())}</span>
+              ${completedCount > 0 ? `<span class="topic-pill-done" title="${completedCount} tranh hoàn thành">✓ ${completedCount}/${top.scenes.length}</span>` : `<span class="topic-pill-badge">${top.scenes ? top.scenes.length : 0} tranh</span>`}
+            </button>
+          `;
+        }).join('')}
+      </nav>
 
       <!-- Scene Navigation Tabs -->
       <nav class="part1-scene-tabs" aria-label="Part 1 Scenes">
@@ -524,6 +547,26 @@ export function renderPart1(container) {
 }
 
 function bindPart1Events(container, currentScene) {
+  // 0. Topic Selector Tabs / Pills
+  container.querySelectorAll('.part1-topic-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const idx = parseInt(pill.dataset.topicIdx, 10);
+      if (!isNaN(idx) && idx !== curTopicIdx) {
+        curTopicIdx = idx;
+        curSceneIdx = 0;
+        activeHotspotId = null;
+        stopSequentialDrill();
+        if (appStore) {
+          try {
+            appStore.set('part1_cur_topic', curTopicIdx);
+            appStore.set('part1_cur_scene', 0);
+          } catch (e) {}
+        }
+        renderPart1(container);
+      }
+    });
+  });
+
   // 1. Scene Navigation Tabs
   container.querySelectorAll('.part1-scene-tab').forEach((tab) => {
     tab.addEventListener('click', () => {

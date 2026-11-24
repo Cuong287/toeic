@@ -1,5 +1,5 @@
 // TOEIC Prep Hub: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v41';
+const V = 'so-tu-toeic-v42';
 const CORE = [
   './',
   './index.html',

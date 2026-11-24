@@ -1,14 +1,11 @@
 // admin-view.js - Classroom & Teacher Management Portal
 import {
   fmtDue,
-  getTypeTagLabel,
-  getHomeworkTargetLabel,
   getHomeworkAssignments,
   saveHomeworkAssignment,
   deleteHomeworkAssignment,
-  getAssignmentSubmissions,
-  startHomeworkExercise
-} from './homework-service.js?v=41';
+  getAssignmentSubmissions
+} from './homework-service.js?v=42';
 
 let store = null;
 let esc = s => s;
@@ -433,15 +430,7 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
     <div id="admin-hw-stats" class="stat-grid" style="margin-bottom:16px"></div>
 
     <div class="card" style="margin-bottom:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <input type="search" id="admin-hw-search" placeholder="Tìm kiếm bài tập theo tiêu đề hoặc chủ đề..." style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
-      <select id="admin-hw-filter-type" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
-        <option value="all">Tất cả loại bài</option>
-        <option value="vocab_quiz">Trắc nghiệm từ vựng (Quiz)</option>
-        <option value="vocab_spell">Luyện chính tả (Spelling Lab)</option>
-        <option value="grammar">Ngữ pháp TOEIC</option>
-        <option value="practice_passage">Luyện dịch đoạn văn</option>
-        <option value="practice_unit">Luyện phản xạ câu</option>
-      </select>
+      <input type="search" id="admin-hw-search" placeholder="Tìm kiếm bài tập theo tiêu đề hoặc nội dung..." style="flex:1;min-width:220px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
       <select id="admin-hw-filter-status" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
         <option value="all">Tất cả trạng thái</option>
         <option value="active">Đang mở (Active)</option>
@@ -481,7 +470,7 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
     </div>
     <div class="stat-card">
       <div class="val" style="color:var(--accent)" id="admin-hw-total-subs-val">...</div>
-      <div class="lbl">Lượt nộp từ học viên</div>
+      <div class="lbl">Lượt hoàn thành từ học viên</div>
     </div>
   `;
 
@@ -491,7 +480,7 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
         <div style="font-size:42px;margin-bottom:8px">📝</div>
         <h3 style="margin:0 0 6px;font-size:18px">Chưa có bài tập nào được giao</h3>
         <p class="hint" style="max-width:500px;margin:0 auto 18px;line-height:1.5">
-          Giáo viên có thể giao bài tập trắc nghiệm từ vựng, chính tả, ngữ pháp hoặc luyện dịch. Hệ thống sẽ tự động chấm điểm và tổng hợp kết quả của từng học viên.
+          Giáo viên chỉ cần điền nội dung bài tập vào ô text và bấm Giao bài tập. Học viên sẽ thấy ngay trên Trang chủ để xem và bấm hoàn thành.
         </p>
         <button class="btn primary" id="btn-empty-create-hw" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;font-size:14px">
           <span>+ Giao bài tập đầu tiên</span>
@@ -522,15 +511,13 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
 
   function renderHwTable() {
     const qTxt = (container.querySelector('#admin-hw-search').value || '').trim().toLowerCase();
-    const typeFlt = container.querySelector('#admin-hw-filter-type').value;
     const statusFlt = container.querySelector('#admin-hw-filter-status').value;
 
     let filtered = assignments.filter(hw => {
       if (qTxt) {
-        const hay = `${hw.title} ${hw.targetLabel} ${hw.instructions || ''}`.toLowerCase();
+        const hay = `${hw.title || ''} ${hw.content || ''} ${hw.instructions || ''}`.toLowerCase();
         if (!hay.includes(qTxt)) return false;
       }
-      if (typeFlt !== 'all' && hw.type !== typeFlt) return false;
       const isExpired = hw.dueDate ? new Date(hw.dueDate).getTime() < Date.now() : false;
       if (statusFlt === 'active' && isExpired) return false;
       if (statusFlt === 'expired' && !isExpired) return false;
@@ -547,10 +534,9 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
         <table class="lb-table" style="margin:0;width:100%">
           <thead>
             <tr>
-              <th style="padding-left:16px">Bài tập & Chủ đề</th>
-              <th>Yêu cầu</th>
+              <th style="padding-left:16px;width:50%">Bài tập & Nội dung</th>
               <th>Hạn nộp</th>
-              <th style="text-align:center">Lượt nộp</th>
+              <th style="text-align:center">Hoàn thành</th>
               <th style="text-align:right;padding-right:16px">Thao tác</th>
             </tr>
           </thead>
@@ -560,19 +546,12 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
               const subCount = Object.keys(subs).length;
               const isExpired = hw.dueDate ? new Date(hw.dueDate).getTime() < Date.now() : false;
               const pctSub = users.length > 0 ? Math.round((subCount / users.length) * 100) : 0;
+              const contentText = hw.content || hw.instructions || '';
               return `
                 <tr class="lb-row">
                   <td style="padding-left:16px">
-                    <div style="font-weight:700;font-size:14.5px;color:var(--ink)">${esc(hw.title)}</div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap">
-                      <span class="hw-type-tag">${esc(getTypeTagLabel(hw.type))}</span>
-                      <span style="font-size:12.5px;color:var(--muted)">${esc(hw.targetLabel)}</span>
-                    </div>
-                    ${hw.instructions ? `<div class="hint" style="font-size:11.5px;margin-top:3px;font-style:italic">“${esc(hw.instructions)}”</div>` : ''}
-                  </td>
-                  <td style="font-size:12.5px">
-                    <div><b>${hw.minScore > 0 ? `≥ ${hw.minScore}%` : 'Hoàn thành'}</b></div>
-                    <div class="hint" style="font-size:11px">${hw.minScore > 0 ? 'Điểm tối thiểu' : 'Chỉ cần nộp bài'}</div>
+                    <div style="font-weight:700;font-size:15px;color:var(--ink)">${esc(hw.title || 'Bài tập về nhà')}</div>
+                    <div class="hint" style="font-size:12.5px;margin-top:4px;white-space:pre-wrap;line-height:1.5;max-height:85px;overflow-y:auto;background:var(--sunk);padding:6px 10px;border-radius:6px">${esc(contentText)}</div>
                   </td>
                   <td style="font-size:12.5px">
                     <div>${fmtDue(hw.dueDate)}</div>
@@ -584,6 +563,7 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
                   </td>
                   <td style="text-align:right;padding-right:16px;white-space:nowrap">
                     <button class="btn primary btn-view-hw-subs" data-hw-id="${esc(hw.id)}" style="padding:4px 10px;font-size:12px;margin-right:6px">Xem nộp bài</button>
+                    <button class="btn ghost btn-edit-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;margin-right:6px">Sửa</button>
                     <button class="btn ghost btn-del-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;color:var(--bad);border-color:var(--bad)">Xóa</button>
                   </td>
                 </tr>
@@ -601,13 +581,20 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
       };
     });
 
+    hwListEl.querySelectorAll('.btn-edit-hw').forEach(btn => {
+      btn.onclick = () => {
+        const hw = assignments.find(x => x.id === btn.dataset.hwId);
+        if (hw) openCreateAssignmentModal(onRefresh, hw);
+      };
+    });
+
     hwListEl.querySelectorAll('.btn-del-hw').forEach(btn => {
       btn.onclick = async () => {
         const hw = assignments.find(x => x.id === btn.dataset.hwId);
         if (!hw) return;
         const ok = await confirmModal({
           title: 'Xóa bài tập về nhà?',
-          message: `Bạn có chắc muốn xóa bài tập "${hw.title}"? Dữ liệu nộp bài của học viên cho bài này cũng sẽ bị xóa.`,
+          message: `Bạn có chắc muốn xóa bài tập "${hw.title || 'Bài tập này'}"? Dữ liệu hoàn thành của học viên cho bài này cũng sẽ bị xóa.`,
           confirmText: 'Xóa bài tập',
           cancelText: 'Hủy',
           danger: true
@@ -621,171 +608,121 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
   }
 
   container.querySelector('#admin-hw-search').oninput = renderHwTable;
-  container.querySelector('#admin-hw-filter-type').onchange = renderHwTable;
   container.querySelector('#admin-hw-filter-status').onchange = renderHwTable;
   renderHwTable();
 }
 
-export function openCreateAssignmentModal(onDone) {
+export function openCreateAssignmentModal(onDone, existingHw = null) {
+  const isEdit = Boolean(existingHw);
   const defaultDue = new Date(Date.now() + 3 * 86400000);
   defaultDue.setHours(23, 59, 0, 0);
-  const dueDefaultStr = defaultDue.toISOString().slice(0, 16);
+  const dueDefaultStr = existingHw && existingHw.dueDate
+    ? new Date(existingHw.dueDate).toISOString().slice(0, 16)
+    : defaultDue.toISOString().slice(0, 16);
 
   openModal(`
     <div class="modal-backdrop">
-      <div class="modal-box wide" style="max-height:88vh;overflow-y:auto">
+      <div class="modal-box" style="max-width:580px;width:95%">
         <button class="modal-close" aria-label="Close">✕</button>
-        <h3 style="margin:0 0 6px;font-size:20px">Giao bài tập về nhà mới</h3>
+        <h3 style="margin:0 0 6px;font-size:20px">${isEdit ? 'Chỉnh sửa bài tập về nhà' : 'Giao bài tập về nhà'}</h3>
         <p class="hint" style="margin:0 0 16px;line-height:1.5">
-          Chọn nội dung từ vựng, chính tả, ngữ pháp hoặc bài đọc để giao cho học viên. Hệ thống tự động chấm điểm khi học viên hoàn thành.
+          Nhập nội dung bài tập giáo viên muốn giao. Học viên sẽ thấy thông báo và nội dung này trực tiếp trên Trang chủ.
         </p>
 
         <form id="create-hw-form" style="display:flex;flex-direction:column;gap:14px">
           <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">1. Tiêu đề bài tập *</label>
-            <input type="text" id="new-hw-title" required placeholder="vd: Ôn tập Từ vựng Topic 05: Đặt hàng (Quiz)" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px" />
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
-            <div>
-              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">2. Loại bài tập *</label>
-              <select id="new-hw-type" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px">
-                <option value="vocab_quiz">Trắc nghiệm từ vựng (TOEIC Quiz)</option>
-                <option value="vocab_spell">Luyện viết chính tả (Spelling Lab)</option>
-                <option value="grammar">Ngữ pháp TOEIC (13 Chuyên đề ETS)</option>
-                <option value="practice_passage">Luyện dịch đoạn văn (15 Passages)</option>
-                <option value="practice_unit">Luyện phản xạ câu (16 Units)</option>
-              </select>
-            </div>
-
-            <div>
-              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">3. Chọn chủ đề / nội dung *</label>
-              <select id="new-hw-target" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px"></select>
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
-            <div>
-              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">4. Yêu cầu điểm số tối thiểu *</label>
-              <select id="new-hw-min-score" style="width:100%;box-sizing:border-box;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px">
-                <option value="80" selected>Đạt từ 80% điểm trở lên (Khuyên dùng)</option>
-                <option value="90">Đạt từ 90% điểm trở lên (Nâng cao)</option>
-                <option value="100">Đạt 100% điểm tuyệt đối</option>
-                <option value="0">Chỉ cần hoàn thành (Không giới hạn điểm)</option>
-              </select>
-            </div>
-
-            <div>
-              <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">5. Hạn chót nộp bài (Due Date) *</label>
-              <input type="datetime-local" id="new-hw-due-date" value="${dueDefaultStr}" required style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
-            </div>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Tiêu đề bài tập</label>
+            <input type="text" id="new-hw-title" placeholder="vd: Bài tập tuần 3: Ôn từ vựng & Dịch câu Topic 03..." value="${esc(existingHw?.title || '')}" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px" />
           </div>
 
           <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">6. Lời dặn dò của giáo viên (tùy chọn)</label>
-            <textarea id="new-hw-instructions" rows="2" placeholder="vd: Các em chú ý làm kỹ và xem giải thích câu sai nhé!" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;resize:vertical"></textarea>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Nội dung bài tập * (Vùng điền text chính)</label>
+            <textarea id="new-hw-content" rows="7" required placeholder="Nhập chi tiết bài tập cần làm, yêu cầu, dặn dò...&#10;Ví dụ:&#10;- Học kỹ 15 từ vựng của Topic 03: Recommendation&#10;- Dịch 7 câu bài tập trong tab Translation&#10;- Luyện phát âm các từ mới và chuẩn bị bài cho buổi học tới..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;resize:vertical">${esc(existingHw?.content || existingHw?.instructions || '')}</textarea>
           </div>
 
-          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+          <div>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Hạn nộp (tùy chọn)</label>
+            <input type="datetime-local" id="new-hw-due-date" value="${dueDefaultStr}" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
             <button type="button" class="btn ghost" id="btn-cancel-create-hw">Hủy</button>
-            <button type="submit" class="btn primary" id="btn-submit-create-hw" style="padding:9px 20px">Tạo & Giao bài tập</button>
+            <button type="submit" class="btn primary" id="btn-submit-create-hw" style="padding:9px 22px">
+              ${isEdit ? 'Lưu thay đổi' : 'Giao bài tập'}
+            </button>
           </div>
         </form>
       </div>
     </div>
   `);
 
-  const typeEl = document.querySelector('#new-hw-type');
-  const targetEl = document.querySelector('#new-hw-target');
-  const titleEl = document.querySelector('#new-hw-title');
   const form = document.querySelector('#create-hw-form');
+  const titleEl = document.querySelector('#new-hw-title');
+  const contentEl = document.querySelector('#new-hw-content');
+  const dueDateEl = document.querySelector('#new-hw-due-date');
   const cancelBtn = document.querySelector('#btn-cancel-create-hw');
 
-  cancelBtn.onclick = () => closeModal();
-
-  function updateTargetOptions() {
-    const type = typeEl.value;
-    let html = '';
-    if (type === 'vocab_quiz' || type === 'vocab_spell') {
-      html = TOPICS.map(t => `<option value="${t.id}">Topic ${String(t.id).padStart(2, '0')}: ${esc(splitTitle(t).main)}</option>`).join('');
-    } else if (type === 'grammar') {
-      html = GRAMMAR_TOPICS.map(g => `<option value="${g.id}">Chuyên đề: ${esc(g.title.split('(')[0].trim())}</option>`).join('');
-    } else if (type === 'practice_passage') {
-      html = PRACTICE_PARAGRAPHS.map((p, idx) => `<option value="${idx}">Đoạn văn ${idx + 1}: ${esc(p.title || ('Passage ' + (idx + 1)))}</option>`).join('');
-    } else if (type === 'practice_unit') {
-      html = PRACTICE_UNITS.map((u, idx) => `<option value="${idx}">Unit ${idx + 1}: ${esc(u.title || ('Unit ' + (idx + 1)))}</option>`).join('');
-    }
-    targetEl.innerHTML = html;
-    updateDefaultTitle();
-  }
-
-  function updateDefaultTitle() {
-    const type = typeEl.value;
-    const opt = targetEl.options[targetEl.selectedIndex];
-    const targetText = opt ? opt.textContent : '';
-    if (type === 'vocab_quiz') titleEl.value = `Ôn tập ${targetText} (Quiz)`;
-    else if (type === 'vocab_spell') titleEl.value = `Luyện chính tả ${targetText} (Spelling Lab)`;
-    else if (type === 'grammar') titleEl.value = `Bài tập ${targetText}`;
-    else if (type === 'practice_passage') titleEl.value = `Luyện dịch ${targetText}`;
-    else if (type === 'practice_unit') titleEl.value = `Luyện phản xạ ${targetText}`;
-  }
-
-  typeEl.onchange = updateTargetOptions;
-  targetEl.onchange = updateDefaultTitle;
-  updateTargetOptions();
+  if (cancelBtn) cancelBtn.onclick = () => closeModal();
 
   form.onsubmit = async (e) => {
     e.preventDefault();
-    const title = titleEl.value.trim();
-    if (!title) return;
-    const type = typeEl.value;
-    const targetId = targetEl.value;
-    const minScore = Number(document.querySelector('#new-hw-min-score').value) || 0;
-    const dueDate = document.querySelector('#new-hw-due-date').value;
-    const instructions = (document.querySelector('#new-hw-instructions').value || '').trim();
+    const content = contentEl.value.trim();
+    if (!content) {
+      showToast('Vui lòng nhập nội dung bài tập');
+      return;
+    }
+    const title = titleEl.value.trim() || 'Bài tập về nhà';
+    const dueDate = dueDateEl.value ? new Date(dueDateEl.value).toISOString() : null;
 
     const submitBtn = document.querySelector('#btn-submit-create-hw');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Đang tạo…';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = isEdit ? 'Đang lưu…' : 'Đang giao…';
+    }
 
-    const newHw = {
-      id: `hw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    const hwObj = {
+      id: existingHw ? existingHw.id : `hw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       title,
-      type,
-      targetId,
-      targetLabel: getHomeworkTargetLabel(type, targetId),
-      minScore,
+      content,
+      instructions: content,
       dueDate,
-      instructions,
-      createdAt: Date.now(),
+      createdAt: existingHw ? (existingHw.createdAt || Date.now()) : Date.now(),
+      updatedAt: Date.now(),
       createdBy: (currentUser && currentUser.uid) || 'teacher',
-      teacherName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Instructor'
+      teacherName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Giáo viên'
     };
 
-    await saveHomeworkAssignment(newHw);
-    showToast(`✓ Đã tạo bài tập: "${title}"`);
+    await saveHomeworkAssignment(hwObj);
+    showToast(`✓ Đã ${isEdit ? 'cập nhật' : 'giao'} bài tập: "${title}"`);
     closeModal();
     if (onDone) onDone();
   };
 }
 
 export function openAssignmentSubmissionsModal(assignment, users, submissionsMap) {
+  const contentText = assignment.content || assignment.instructions || '';
   openModal(`
     <div class="modal-backdrop">
       <div class="modal-box wide" style="max-height:88vh;overflow-y:auto">
         <button class="modal-close" aria-label="Close">✕</button>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
           <div>
-            <div class="eyebrow" style="color:var(--accent);font-weight:700">Chi tiết nộp bài tập</div>
-            <h3 style="margin:4px 0;font-size:20px">${esc(assignment.title)}</h3>
+            <div class="eyebrow" style="color:var(--accent);font-weight:700">Chi tiết hoàn thành bài tập</div>
+            <h3 style="margin:4px 0;font-size:20px">${esc(assignment.title || 'Bài tập về nhà')}</h3>
             <div class="hint" style="font-size:12.5px">
-              ${esc(assignment.targetLabel)} · Yêu cầu: <b>≥ ${assignment.minScore}%</b> · Hạn nộp: <b>${fmtDue(assignment.dueDate)}</b>
+              Hạn nộp: <b>${fmtDue(assignment.dueDate)}</b> · Người giao: <b>${esc(assignment.teacherName || 'Giáo viên')}</b>
             </div>
           </div>
           <div>
             <button class="btn" id="btn-export-hw-subs" style="font-size:12.5px">Xuất CSV</button>
           </div>
         </div>
+
+        ${contentText ? `
+          <div style="white-space:pre-wrap;line-height:1.5;font-size:13px;color:var(--ink);background:var(--sunk);padding:10px 14px;border-radius:8px;margin-bottom:14px;border:1px solid var(--line)">
+            <b>Nội dung bài tập:</b><br>${esc(contentText)}
+          </div>
+        ` : ''}
 
         <div id="modal-hw-stats" class="stat-grid" style="margin-bottom:14px"></div>
 
@@ -807,16 +744,10 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
 
   const totalStudents = users.length;
   let submittedCount = 0;
-  let onTimeCount = 0;
-  let lateCount = 0;
 
   users.forEach(u => {
     const s = submissionsMap[u.uid];
-    if (s) {
-      submittedCount++;
-      if (s.isLate) lateCount++;
-      else onTimeCount++;
-    }
+    if (s) submittedCount++;
   });
 
   const missingCount = totalStudents - submittedCount;
@@ -825,19 +756,11 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
   statsBox.innerHTML = `
     <div class="stat-card">
       <div class="val">${submittedCount}<span style="font-size:15px;color:var(--muted);font-weight:600"> / ${totalStudents}</span></div>
-      <div class="lbl">Đã nộp bài (${pctSubmitted}%)</div>
-    </div>
-    <div class="stat-card">
-      <div class="val" style="color:var(--good)">${onTimeCount}</div>
-      <div class="lbl">Đúng hạn</div>
-    </div>
-    <div class="stat-card">
-      <div class="val" style="color:var(--warn)">${lateCount}</div>
-      <div class="lbl">Nộp muộn</div>
+      <div class="lbl">Đã hoàn thành (${pctSubmitted}%)</div>
     </div>
     <div class="stat-card">
       <div class="val" style="color:var(--muted)">${missingCount}</div>
-      <div class="lbl">Chưa nộp</div>
+      <div class="lbl">Chưa hoàn thành</div>
     </div>
   `;
 
@@ -861,21 +784,17 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
             <tr>
               <th style="padding-left:14px">Học viên</th>
               <th>Trạng thái</th>
-              <th style="text-align:center">Điểm số</th>
-              <th style="text-align:right;padding-right:14px">Thời gian nộp</th>
+              <th style="text-align:right;padding-right:14px">Thời gian hoàn thành</th>
             </tr>
           </thead>
           <tbody>
             ${filteredUsers.map(u => {
               const s = submissionsMap[u.uid];
               const isSubmitted = Boolean(s);
-              const isLate = s ? s.isLate : false;
-              const isPassed = s ? s.score >= assignment.minScore : false;
 
-              let statusBadge = '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Chưa nộp</span>';
+              let statusBadge = '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Chưa hoàn thành</span>';
               if (isSubmitted) {
-                if (isLate) statusBadge = '<span class="badge warn" style="font-size:11px">⚠ Nộp muộn</span>';
-                else statusBadge = '<span class="badge ok" style="font-size:11px">✓ Đúng hạn</span>';
+                statusBadge = '<span class="badge ok" style="font-size:11px">✓ Đã hoàn thành</span>';
               }
 
               return `
@@ -885,12 +804,6 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
                     <div style="font-size:12px;color:var(--muted)">${esc(u.email || u.uid)}</div>
                   </td>
                   <td>${statusBadge}</td>
-                  <td style="text-align:center">
-                    ${isSubmitted ? `
-                      <span style="font-weight:800;color:${isPassed ? 'var(--good)' : 'var(--bad)'}">${s.score}%</span>
-                      <div class="hint" style="font-size:10.5px">${isPassed ? 'Đạt' : 'Chưa đạt'}</div>
-                    ` : '<span style="color:var(--muted)">—</span>'}
-                  </td>
                   <td style="text-align:right;padding-right:14px;font-size:12.5px;color:var(--muted)">
                     ${isSubmitted && s.submittedAt ? `
                       <div>${fmtDue(s.submittedAt)}</div>
@@ -911,22 +824,17 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
 }
 
 export function exportHomeworkSubmissionsCSV(assignment, users, submissionsMap) {
-  const headers = ['Học viên', 'Email', 'Trạng thái', 'Điểm số (%)', 'Đạt yêu cầu', 'Thời gian nộp', 'Hạn nộp'];
+  const headers = ['Học viên', 'Email', 'Trạng thái', 'Thời gian hoàn thành', 'Hạn nộp'];
   const escCsv = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const rows = users.map(u => {
     const sub = submissionsMap[u.uid];
     const isSubmitted = Boolean(sub);
-    const isLate = sub ? sub.isLate : false;
-    const statusText = !isSubmitted ? 'Chưa nộp' : (isLate ? 'Nộp muộn' : 'Đúng hạn');
-    const scoreVal = sub ? sub.score : '';
-    const passedText = sub ? (sub.score >= assignment.minScore ? 'Đạt' : 'Chưa đạt') : '';
+    const statusText = isSubmitted ? 'Đã hoàn thành' : 'Chưa hoàn thành';
     const submitTime = sub && sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('vi-VN') : '';
     return [
       u.displayName,
       u.email,
       statusText,
-      scoreVal,
-      passedText,
       submitTime,
       assignment.dueDate ? new Date(assignment.dueDate).toLocaleString('vi-VN') : ''
     ].map(escCsv).join(',');
@@ -1469,4 +1377,11 @@ export async function openAdminUserInspector(targetUid, userName) {
   } catch (err) {
     $('#inspector-body').innerHTML = `<div class="fb no">Error: ${esc(err.message)}</div>`;
   }
-}
+}
+
+window.renderAdmin = renderAdmin;
+window.renderAdminHomeworkView = renderAdminHomeworkView;
+window.openCreateAssignmentModal = openCreateAssignmentModal;
+window.openAssignmentSubmissionsModal = openAssignmentSubmissionsModal;
+window.openAdminUserInspector = openAdminUserInspector;
+

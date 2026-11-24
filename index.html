@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2563EB">
   <style>body{margin:0}[hidden]{display:none!important}</style>
-  <link rel="stylesheet" href="./styles.css?v=41">
+  <link rel="stylesheet" href="./styles.css?v=42">
 <title>TOEIC Prep Hub — Complete TOEIC Learning Platform</title>
 <meta name="description" content="Master TOEIC across 45 topics with vocabulary, word families, sentence translations, listening drills, Cambridge pronunciation, and core grammar.">
 <meta property="og:title" content="TOEIC Prep Hub — Complete TOEIC Learning Platform">
@@ -196,8 +196,8 @@ import { IPA_DATA, MINIMAL_PAIRS, PRONUN_UNITS } from './pronunciation-data.js?v
 import { PRACTICE_UNITS, PRACTICE_PARAGRAPHS, PRACTICE_TENSES } from './practice-data.js?v=40';
 import { GRAMMAR_TOPICS } from './grammar-data.js?v=40';
 import { getWordClue } from './vocab-clues.js?v=40';
-import { initPracticeView, renderPractice, getPracticeExState, resetPracticeExState } from './practice-view.js?v=41';
-import { initGrammarView, renderGrammar, getGrammarTopicState, resetGrammarTopicState } from './grammar-view.js?v=41';
+import { initPracticeView, renderPractice, getPracticeExState, resetPracticeExState } from './practice-view.js?v=42';
+import { initGrammarView, renderGrammar, getGrammarTopicState, resetGrammarTopicState } from './grammar-view.js?v=42';
 import {
   initHomeworkService,
   updateHomeworkUserContext,
@@ -208,6 +208,7 @@ import {
   saveHomeworkAssignment,
   deleteHomeworkAssignment,
   getAssignmentSubmissions,
+  toggleHomeworkCompletion,
   recordHomeworkCompletion,
   checkGrammarHomeworkProgress,
   checkPracticeHomeworkProgress,
@@ -215,26 +216,26 @@ import {
   startHomeworkExercise,
   updateHomeworkBadges,
   renderDashboardHomework
-} from './homework-service.js?v=41';
+} from './homework-service.js?v=42';
 import {
   initAdminView,
   updateAdminUserContext,
   renderAdmin,
   openAdminUserInspector
-} from './admin-view.js?v=41';
+} from './admin-view.js?v=42';
 import {
   initSpellingView,
   spellLab,
   getSpellTarget,
   isSpellAnswerCorrect,
   mountLetterBoxes
-} from './spelling-view.js?v=41';
+} from './spelling-view.js?v=42';
 import {
   initPronunciationView,
   renderPronunciation,
   getUnitExState,
   saveUnitExState
-} from './pronunciation-view.js?v=41';
+} from './pronunciation-view.js?v=42';
 
 const TOPICS = DATA.topics, ENR = DATA.enrich, AUD = DATA.audio || {};
 Object.values(ENR).forEach(e => { e.vocab = e.vocab || {}; e.usage = e.usage || []; e.forms = e.forms || []; e.tr = e.tr || {}; e.gap = e.gap || {}; });

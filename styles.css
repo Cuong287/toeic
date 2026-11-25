@@ -4067,3 +4067,748 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
     justify-content: space-between;
   }
 }
+
+/* ==========================================================================
+   ETS 2026 Practice Test Module (.ets-*)
+   ========================================================================== */
+
+.ets-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ets-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ets-header h1,
+.ets-header h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.ets-header p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+/* Catalog Grid */
+.ets-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+  gap: 14px;
+}
+
+.ets-test-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.ets-test-card:not(.is-soon):hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.ets-test-card.is-soon {
+  opacity: 0.62;
+  background: var(--sunk);
+  border-style: dashed;
+  cursor: default;
+}
+
+.ets-test-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ets-test-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.ets-test-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.ets-test-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.ets-test-card.is-soon .ets-test-badge {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.ets-test-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+/* Setup Card & Part Selection */
+.ets-setup-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ets-part-picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.ets-part-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--sunk);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  user-select: none;
+}
+
+.ets-part-pick:hover {
+  border-color: var(--accent);
+}
+
+.ets-part-pick.is-checked,
+.ets-part-pick:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.ets-part-pick input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Sticky Exam Top Bar */
+.ets-exam-bar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+}
+
+.ets-exam-bar-left,
+.ets-exam-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ets-exam-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ets-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ets-timer.is-warn {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.ets-timer.is-danger {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+/* Main Exam Workspace (Main Pane + Palette) */
+.ets-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 16px;
+  align-items: start;
+}
+
+.ets-main-pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Split Pane: Exam Page Viewer + Answer Sheet */
+.ets-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ets-page-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ets-page-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  cursor: zoom-in;
+  background: #ffffff;
+}
+
+/* Fullscreen Lightbox Overlay */
+.ets-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  cursor: zoom-out;
+}
+
+.ets-lightbox[hidden] {
+  display: none !important;
+}
+
+.ets-lightbox img {
+  max-width: 96vw;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.ets-lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.ets-lightbox-close:hover {
+  background: rgba(37, 99, 235, 0.9);
+}
+
+/* Audio Player Bar */
+.ets-audio-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+}
+
+.ets-audio-bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ets-audio-bar button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ets-audio-bar .ets-audio-play {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  min-width: 36px;
+  padding: 0 12px;
+}
+
+.ets-audio-bar .ets-audio-play:hover {
+  color: var(--accent-ink);
+  filter: brightness(1.08);
+}
+
+.ets-audio-bar input[type="range"] {
+  flex: 1 1 140px;
+  min-width: 100px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.ets-audio-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Question Rows & Answer Bubbles */
+.ets-questions-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ets-q-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: var(--sunk);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ets-q-row.is-current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ets-q-num {
+  min-width: 34px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.ets-bubbles {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.ets-bubble {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+
+.ets-bubble:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ets-bubble:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.ets-bubble.is-selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ets-bubble.is-correct {
+  background: var(--good);
+  border-color: var(--good);
+  color: #ffffff;
+}
+
+.ets-bubble.is-wrong {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #ffffff;
+}
+
+.ets-flag-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ets-flag-btn:hover {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--warn);
+}
+
+.ets-flag-btn.is-flagged {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+/* Question Palette Pane */
+.ets-palette-pane {
+  position: sticky;
+  top: 66px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 86px);
+  overflow-y: auto;
+}
+
+.ets-palette-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ets-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.ets-pal-btn {
+  height: 30px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.ets-pal-btn:hover {
+  border-color: var(--accent);
+}
+
+.ets-pal-btn.is-answered {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ets-pal-btn.is-flagged {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.ets-pal-btn.is-current {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.ets-pal-btn.is-correct {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.ets-pal-btn.is-wrong {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.ets-pal-btn.is-skipped {
+  background: var(--sunk);
+  border-style: dashed;
+  color: var(--muted);
+}
+
+/* Score Report & Breakdown */
+.ets-score-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ets-score-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.ets-score-ring {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 6px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.ets-score-ring strong {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.ets-score-ring span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ets-part-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ets-part-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ets-part-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ets-bar-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sunk);
+  overflow: hidden;
+}
+
+.ets-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.ets-bar-fill.is-good {
+  background: var(--good);
+}
+
+.ets-bar-fill.is-warn {
+  background: var(--warn);
+}
+
+.ets-bar-fill.is-bad {
+  background: var(--bad);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1099px) {
+  .ets-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .ets-workspace {
+    grid-template-columns: 1fr;
+  }
+  .ets-palette-pane {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(320px, 88vw);
+    max-height: none;
+    z-index: 1400;
+    border-radius: var(--r) 0 0 var(--r);
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.25);
+    transform: translateX(105%);
+    transition: transform 0.22s ease;
+  }
+  .ets-palette-pane.is-open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 860px) {
+  .ets-catalog-grid {
+    grid-template-columns: 1fr;
+  }
+  .ets-setup-card {
+    padding: 14px;
+  }
+  .ets-exam-bar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .ets-audio-bar {
+    padding: 8px 10px;
+  }
+  .ets-q-row {
+    padding: 7px 8px;
+  }
+  .ets-bubble {
+    width: 32px;
+    height: 32px;
+    font-size: 12.5px;
+  }
+  .ets-score-card {
+    padding: 14px;
+  }
+  .ets-score-ring {
+    width: 96px;
+    height: 96px;
+  }
+  .ets-score-ring strong {
+    font-size: 24px;
+  }
+}

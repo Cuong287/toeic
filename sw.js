@@ -1,5 +1,5 @@
 // TOEIC Prep Hub: lưu trang để mở được khi mất mạng. Audio luôn tải từ mạng.
-const V = 'so-tu-toeic-v51';
+const V = 'so-tu-toeic-v52';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const CORE = [
   './firebase-config.js',
   './part1-data.js',
   './part1-view.js',
+  './ets-data.js',
+  './ets-view.js',
   './pronunciation-data.js',
   './practice-data.js',
   './grammar-data.js',

@@ -940,7 +940,7 @@ input, textarea, [contenteditable="true"] {
   background: var(--bad-soft);
 }
 
-/* Combo Mode: Chế độ Học liên hoàn (Flashcard -> Quiz -> Writing) */
+/* Combo Mode: Sequential Word Mastery (Flashcard -> Quiz -> Writing) */
 .combo-container {
   max-width: 640px;
   margin: 0 auto;
@@ -1017,61 +1017,23 @@ input, textarea, [contenteditable="true"] {
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
-.combo-toggle-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
-  border-radius: 8px;
-  border: 1.5px solid var(--line);
-  background: var(--bg);
-  color: var(--muted);
+.combo-toggles-bar .seg button {
+  padding: 5px 12px;
   font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
 }
-.combo-toggle-chip:hover {
-  border-color: var(--accent);
-}
-.combo-toggle-chip.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+.combo-toggles-bar .seg button[aria-pressed="true"] {
+  background: var(--surface);
   color: var(--accent);
   font-weight: 700;
-}
-.combo-toggle-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1.5px solid currentColor;
-  font-size: 11px;
-  line-height: 1;
-}
-.combo-toggle-chip.active .combo-toggle-check {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .12);
 }
 .combo-stage-card {
   position: relative;
 }
-.combo-word-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-}
 .combo-stage-banner {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1116,11 +1078,10 @@ input, textarea, [contenteditable="true"] {
 .combo-quick-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 9px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--accent);
   background: var(--accent-soft);
   border: 1px solid var(--accent);
@@ -1141,10 +1102,6 @@ input, textarea, [contenteditable="true"] {
     width: 100%;
     justify-content: space-between;
     overflow-x: auto;
-  }
-  .combo-toggle-chip {
-    padding: 5px 9px;
-    font-size: 12px;
   }
 }
 
@@ -1593,9 +1550,9 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
     padding-top: 6px !important;
   }
   .fitem{grid-template-columns:minmax(0,1fr)}
-  #sub.seg{display:grid;grid-template-columns:repeat(4,1fr);width:100%}
-  #p0-sub.seg, .seg-full-mob{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
-  #sub.seg button, #p0-sub.seg button, #dir.seg button, #t0-dir.seg button{padding:7px 6px;font-size:13px;line-height:1.3;min-height:40px}
+  #sub.seg{display:grid;grid-template-columns:repeat(5,1fr);width:100%}
+  #p0-sub.seg, #t0-mode-tabs.seg, .seg-full-mob{display:grid;grid-template-columns:repeat(4,1fr);width:100%}
+  #sub.seg button, #p0-sub.seg button, #t0-mode-tabs.seg button, #dir.seg button, #t0-dir.seg button{padding:7px 4px;font-size:12.5px;line-height:1.3;min-height:40px}
   #dir.seg, #t0-dir.seg{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
   .quiz-len-seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));width:100%;margin-top:4px}
   .quiz-len-seg button{padding:6px 2px;font-size:12px;min-height:36px;text-align:center}

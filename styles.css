@@ -1157,6 +1157,10 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 
 .qprompt{font-size:24px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 .qprompt small{display:block;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
+.qcloze-box{display:flex;flex-direction:column;gap:6px}
+.cloze-sentence{font-size:20px;line-height:1.45;color:var(--ink);font-weight:600}
+.qblank{display:inline-block;padding:0 8px;border-bottom:2.5px solid var(--accent);color:var(--accent);font-weight:800}
+.quiz-len-seg button{padding:5px 10px;font-size:12.5px;font-weight:600}
 .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px}
 .opt{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:11px 14px;font-size:15px;display:flex;gap:10px;align-items:baseline}
 .opt .l{font-weight:700;color:var(--muted);font-size:13px}
@@ -1383,8 +1387,10 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   .fitem{grid-template-columns:minmax(0,1fr)}
   #sub.seg{display:grid;grid-template-columns:repeat(4,1fr);width:100%}
   #p0-sub.seg, .seg-full-mob{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
-  #sub.seg button, #p0-sub.seg button, #dir.seg button{padding:7px 6px;font-size:13px;line-height:1.3;min-height:40px}
-  #dir.seg{display:grid;grid-template-columns:repeat(2,1fr);width:100%}
+  #sub.seg button, #p0-sub.seg button, #dir.seg button, #t0-dir.seg button{padding:7px 6px;font-size:13px;line-height:1.3;min-height:40px}
+  #dir.seg, #t0-dir.seg{display:grid;grid-template-columns:repeat(3,1fr);width:100%}
+  .quiz-len-seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));width:100%;margin-top:4px}
+  .quiz-len-seg button{padding:6px 2px;font-size:12px;min-height:36px;text-align:center}
   .nav-btn{width:40px;height:40px;min-width:40px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
   .nav-btn svg{width:20px;height:20px}
   .thead h1{font-size:24px}

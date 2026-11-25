@@ -169,15 +169,29 @@ export function renderPart1(container) {
   const scenes = topic.scenes || [];
   if (curSceneIdx < 0 || curSceneIdx >= scenes.length) curSceneIdx = 0;
   const currentScene = scenes[curSceneIdx] || scenes[0];
+  const allDrills = currentScene.drills || (currentScene.drill ? [currentScene.drill] : []);
 
   if (!drillState[currentScene.id]) {
     drillState[currentScene.id] = {
+      subIdx: 0,
+      bySub: {},
       selected: null,
       isSubmitted: false,
       isPlayingAll: false
     };
   }
-  const curDrillState = drillState[currentScene.id];
+  const scDrillState = drillState[currentScene.id];
+  if (scDrillState.subIdx == null) scDrillState.subIdx = 0;
+  if (!scDrillState.bySub) scDrillState.bySub = {};
+  if (!scDrillState.bySub[scDrillState.subIdx]) {
+    scDrillState.bySub[scDrillState.subIdx] = {
+      selected: scDrillState.selected || null,
+      isSubmitted: scDrillState.isSubmitted || false
+    };
+  }
+  const activeDrillIdx = Math.min(scDrillState.subIdx, Math.max(0, allDrills.length - 1));
+  const activeDrill = allDrills[activeDrillIdx] || currentScene.drill;
+  const curDrillState = scDrillState.bySub[activeDrillIdx];
 
   const currentDesc = userDescState[currentScene.id] || '';
   const analysis = analyzeUserDescription(currentDesc, currentScene.keywords || []);
@@ -198,9 +212,12 @@ export function renderPart1(container) {
       <nav class="part1-topic-nav" aria-label="Part 1 Topics">
         ${PART1_TOPICS.map((top, tIdx) => {
           const isActive = tIdx === curTopicIdx;
-          const completedCount = (top.scenes || []).filter(
-            (sc) => drillState[sc.id] && drillState[sc.id].selected && drillState[sc.id].selected === sc.drill.correct
-          ).length;
+          const completedCount = (top.scenes || []).filter((sc) => {
+            const dList = sc.drills || (sc.drill ? [sc.drill] : []);
+            const sState = drillState[sc.id];
+            if (!sState) return false;
+            return dList.some((d, dIdx) => sState.bySub && sState.bySub[dIdx] && sState.bySub[dIdx].selected === d.correct) || (sState.selected && sc.drill && sState.selected === sc.drill.correct);
+          }).length;
           return `
             <button class="part1-topic-pill ${isActive ? 'is-active' : ''}" data-topic-idx="${tIdx}">
               <span class="topic-pill-icon">${top.icon || '📌'}</span>
@@ -214,7 +231,9 @@ export function renderPart1(container) {
       <!-- Scene Navigation Tabs -->
       <nav class="part1-scene-tabs" aria-label="Part 1 Scenes">
         ${scenes.map((sc, idx) => {
-          const isDone = drillState[sc.id] && drillState[sc.id].selected && drillState[sc.id].selected === sc.drill.correct;
+          const scDrills = sc.drills || (sc.drill ? [sc.drill] : []);
+          const scState = drillState[sc.id];
+          const isDone = scState && ((scDrills.some((d, dIdx) => scState.bySub && scState.bySub[dIdx] && scState.bySub[dIdx].selected === d.correct)) || (scState.selected && sc.drill && scState.selected === sc.drill.correct));
           const isActive = idx === curSceneIdx;
           return `
             <button class="part1-scene-tab ${isActive ? 'is-active' : ''}" data-scene-idx="${idx}">
@@ -435,8 +454,22 @@ export function renderPart1(container) {
                 <div class="head-badge-ets">ETS DRILL</div>
               </div>
 
+              ${allDrills.length > 1 ? `
+                <div class="part1-drill-nav" style="display:inline-flex;gap:4px;background:var(--sunk);padding:3px;border-radius:8px;margin-bottom:12px">
+                  ${allDrills.map((d, dIdx) => {
+                    const isDActive = dIdx === activeDrillIdx;
+                    const isSubDone = scDrillState.bySub && scDrillState.bySub[dIdx] && scDrillState.bySub[dIdx].selected === d.correct;
+                    return `
+                      <button class="part1-subdrill-btn ${isDActive ? 'is-active' : ''}" data-sub-drill="${dIdx}" style="border:0;background:${isDActive ? 'var(--surface)' : 'none'};color:${isDActive ? 'var(--accent)' : 'var(--muted)'};padding:6px 14px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer">
+                        Câu ${dIdx + 1}${isSubDone ? ' ✓' : ''}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              ` : ''}
+
               <p class="part1-card-sub">
-                ${appEsc(currentScene.drill.question)}
+                ${appEsc(activeDrill.question)}
               </p>
 
               <!-- Audio Player Toolbar -->
@@ -455,7 +488,7 @@ export function renderPart1(container) {
 
               <!-- 4 Options Cards -->
               <div class="part1-options-list">
-                ${currentScene.drill.options.map((opt) => {
+                ${activeDrill.options.map((opt) => {
                   const isChosen = curDrillState.selected === opt.id;
                   const isSubmitted = curDrillState.isSubmitted;
                   let cardClass = '';
@@ -510,12 +543,12 @@ export function renderPart1(container) {
                     Kiểm tra đáp án & Xem phân tích bẫy
                   </button>
                 ` : `
-                  <div class="drill-result-banner ${curDrillState.selected === currentScene.drill.correct ? 'banner-correct' : 'banner-wrong'}">
-                    ${curDrillState.selected === currentScene.drill.correct ? `
-                      <div class="res-title">🎉 Chính xác! Bạn đã chọn đáp án đúng (${currentScene.drill.correct})</div>
+                  <div class="drill-result-banner ${curDrillState.selected === activeDrill.correct ? 'banner-correct' : 'banner-wrong'}">
+                    ${curDrillState.selected === activeDrill.correct ? `
+                      <div class="res-title">🎉 Chính xác! Bạn đã chọn đáp án đúng (${activeDrill.correct})</div>
                       <div class="res-sub">Bạn đã phát hiện chính xác hành động thật và né được toàn bộ bẫy Being V3 của ETS.</div>
                     ` : `
-                      <div class="res-title">⚠️ Chưa chính xác. Đáp án đúng là (${currentScene.drill.correct})</div>
+                      <div class="res-title">⚠️ Chưa chính xác. Đáp án đúng là (${activeDrill.correct})</div>
                       <div class="res-sub">Hãy đọc kỹ phần phân tích bẫy ngữ pháp ở trên để nhận diện cạm bẫy trong kỳ thi thật.</div>
                     `}
                   </div>
@@ -735,13 +768,20 @@ function bindPart1Events(container, currentScene) {
   });
 
   // 9. Drill Option Selection & Submission
-  const curDrill = drillState[currentScene.id] || {};
+  container.querySelectorAll('[data-sub-drill]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      scDrillState.subIdx = Number(btn.getAttribute('data-sub-drill')) || 0;
+      stopSequentialDrill();
+      renderPart1(container);
+    });
+  });
 
   container.querySelectorAll('[data-select-opt]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      if (curDrill.isSubmitted) return;
+      if (curDrillState.isSubmitted) return;
       const optId = btn.getAttribute('data-select-opt');
-      curDrill.selected = optId;
+      curDrillState.selected = optId;
+      scDrillState.selected = optId;
 
       container.querySelectorAll('.part1-option-item').forEach((item) => {
         item.classList.toggle('is-selected', item.dataset.optId === optId);
@@ -755,11 +795,13 @@ function bindPart1Events(container, currentScene) {
   const submitDrillBtn = container.querySelector('#btn-submit-drill');
   if (submitDrillBtn) {
     submitDrillBtn.addEventListener('click', () => {
-      if (!curDrill.selected) {
+      if (!curDrillState.selected) {
         if (appShowToast) appShowToast('Vui lòng chọn 1 phương án (A, B, C hoặc D) trước khi kiểm tra.');
         return;
       }
-      curDrill.isSubmitted = true;
+      curDrillState.isSubmitted = true;
+      scDrillState.selected = curDrillState.selected;
+      scDrillState.isSubmitted = true;
       stopSequentialDrill();
       renderPart1(container);
     });
@@ -768,8 +810,10 @@ function bindPart1Events(container, currentScene) {
   const retryDrillBtn = container.querySelector('#btn-retry-drill');
   if (retryDrillBtn) {
     retryDrillBtn.addEventListener('click', () => {
-      curDrill.selected = null;
-      curDrill.isSubmitted = false;
+      curDrillState.selected = null;
+      curDrillState.isSubmitted = false;
+      scDrillState.selected = null;
+      scDrillState.isSubmitted = false;
       stopSequentialDrill();
       renderPart1(container);
     });
@@ -785,7 +829,7 @@ function bindPart1Events(container, currentScene) {
         return;
       }
 
-      const options = currentScene.drill.options || [];
+      const options = activeDrill.options || [];
       if (!options.length) return;
 
       isPlayingSequentialDrill = true;

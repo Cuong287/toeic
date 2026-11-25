@@ -1,7 +1,3 @@
-// part1-data.js - Dữ liệu Part 1: Tranh & Từ vựng TOEIC (Picture Description & ETS Drill)
-// Dữ liệu nguồn: Part 1 - LIST NHỮNG TỪ THƯỜNG GẶP TRONG PART 1 TOEIC.docx
-// Bao gồm: 5 Chủ đề lớn (15 Bức tranh SVG vector sắc nét, 150+ Target Keywords, Hotspots tương tác, và Bài luyện nghe ETS chuẩn 4 lựa chọn có phân tích bẫy ngữ pháp).
-
 export const PART1_TOPICS = [
   {
     "id": "office-workplace",
@@ -297,7 +293,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "She is adjusting the angle of her desk lamp.",
+                "vi": "Cô ấy đang điều chỉnh góc chiếu của chiếc đèn bàn.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Trong tranh tuy có đèn bàn (desk lamp) nhưng tay cô ấy không chạm vào đèn mà đang đặt trên bàn phím gõ máy tính. Đây là bẫy ETS lấy danh từ có thật trong tranh ghép với động từ sai."
+              },
+              {
+                "id": "B",
+                "text": "A woman is typing on a laptop computer.",
+                "vi": "Một người phụ nữ đang gõ trên máy tính xách tay.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Câu miêu tả chính xác hành động trọng tâm của nhân vật trong hình: người phụ nữ đang ngồi tại bàn và gõ phím trên máy tính xách tay (typing on a laptop computer)."
+              },
+              {
+                "id": "C",
+                "text": "Some papers are being shredded by a machine.",
+                "vi": "Một số giấy tờ đang được máy hủy giấy cắt nhỏ.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Bẫy kinh điển ETS Part 1)",
+                "explanation": "Cấu trúc 'are being shredded' diễn tả hành động đang được máy hủy giấy thực hiện ngay tại thời điểm chụp. Trong tranh không hề có máy hủy tài liệu và các tờ giấy chỉ đang nằm yên trên bàn."
+              },
+              {
+                "id": "D",
+                "text": "The office worker is drinking from a coffee mug.",
+                "vi": "Nhân viên văn phòng đang uống nước từ chiếc cốc cà phê.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động & Trạng thái vật",
+                "explanation": "Trên bàn có một chiếc cốc cà phê (coffee mug), nhưng nhân vật không cầm cốc và không hề có hành động uống (drinking). ETS thường dùng đồ vật có sẵn trong tranh để đặt bẫy hành động."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the objects in the workspace.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The laptop computer is being packed into a briefcase.",
+                "vi": "Chiếc máy tính xách tay đang được cất vào trong cặp tá.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Passive In-Progress Trap)",
+                "explanation": "Trong hình máy tính đang mở sẵn trên bàn và nhân viên đang làm việc, không có hành động cất máy vào cặp."
+              },
+              {
+                "id": "B",
+                "text": "A desk lamp is being turned off by the worker.",
+                "vi": "Chiếc đèn bàn đang được nhân viên tắt đi.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Tay nhân vật đặt trên phím, không chạm vào công tắc đèn bàn."
+              },
+              {
+                "id": "C",
+                "text": "Some stationery and supplies are placed on the desk.",
+                "vi": "Một số văn phòng phẩm và đồ dùng được đặt trên bàn làm việc.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Static Arrangement)",
+                "explanation": "Tranh miêu tả chính xác trạng thái tĩnh của đồ vật: đèn, cốc nước, laptop và tài liệu được sắp xếp ngay ngắn trên mặt bàn (placed on the desk)."
+              },
+              {
+                "id": "D",
+                "text": "The bulletin board has fallen off the wall.",
+                "vi": "Bảng thông báo đã bị rơi khỏi bức tường.",
+                "isCorrect": false,
+                "trapType": "Bẫy sai lệch hiện trạng (Incorrect Condition)",
+                "explanation": "Bảng thông báo vẫn đang được gắn ngay ngắn trên tường phía sau bàn làm việc."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-meeting",
@@ -555,7 +629,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "The presenter is pointing at information on a screen.",
+                "vi": "Người thuyết trình đang chỉ tay vào thông tin trên màn hình.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Câu miêu tả trực tiếp và chính xác hành động trọng tâm: người đàn ông đứng cạnh màn hình đang giơ tay/bút chỉ vào biểu đồ tăng trưởng (pointing at information on a screen)."
+              },
+              {
+                "id": "B",
+                "text": "Some chairs are being loaded onto a truck.",
+                "vi": "Một số chiếc ghế đang được chất lên xe tải.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' & Sai ngữ cảnh hoàn toàn",
+                "explanation": "Cấu trúc 'are being loaded onto a truck' là bẫy hoàn toàn xa rời ngữ cảnh phòng họp văn phòng. Ghế trong phòng họp đang có người ngồi yên vị."
+              },
+              {
+                "id": "C",
+                "text": "All of the participants are standing near the door.",
+                "vi": "Tất cả những người tham gia đều đang đứng gần cửa ra vào.",
+                "isCorrect": false,
+                "trapType": "Bẫy tư thế & Số lượng tuyệt đối (All)",
+                "explanation": "Bẫy từ 'All' (tất cả) và 'standing' (đang đứng). Trong tranh, chỉ có duy nhất người thuyết trình là đang đứng, các đồng nghiệp khác đều đang ngồi (sitting) quanh bàn họp."
+              },
+              {
+                "id": "D",
+                "text": "A document is being copied in a machine.",
+                "vi": "Một tài liệu đang được sao chép trong máy photocopy.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' & Vật thể không có trong tranh",
+                "explanation": "Trong phòng họp không có máy photocopy nào đang hoạt động. Đây là bẫy Being V3 điển hình của ETS Part 1 khi không có ai thao tác máy sao chép."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the meeting room setting.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The projector screen has been rolled up.",
+                "vi": "Màn chiếu đã được cuộn lại.",
+                "isCorrect": false,
+                "trapType": "Bẫy sai lệch hiện trạng (Incorrect Condition)",
+                "explanation": "Màn chiếu đang được hạ xuống và hiển thị biểu đồ rõ ràng, không hề bị cuộn lên."
+              },
+              {
+                "id": "B",
+                "text": "The attendees are seated around a conference table.",
+                "vi": "Những người tham dự đang ngồi quanh bàn họp.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Group Position)",
+                "explanation": "Các thành viên trong phòng họp đang ngồi ngay ngắn quanh chiếc bàn họp lớn (seated around a conference table) để theo dõi bài thuyết trình."
+              },
+              {
+                "id": "C",
+                "text": "A presentation is being prepared on the whiteboard.",
+                "vi": "Một bài thuyết trình đang được chuẩn bị trên bảng trắng.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Biểu đồ đã được chiếu sẵn trên màn hình trình chiếu, không có ai đang vẽ hay chuẩn bị trên bảng."
+              },
+              {
+                "id": "D",
+                "text": "All laptops have been placed inside drawers.",
+                "vi": "Tất cả máy tính xách tay đã được cất vào trong ngăn kéo.",
+                "isCorrect": false,
+                "trapType": "Bẫy vị trí sai (Incorrect Placement)",
+                "explanation": "Các máy tính và sổ ghi chép đều đang được đặt trực tiếp trên mặt bàn họp."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-filing",
@@ -814,7 +966,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The shelves are completely empty.",
+                "vi": "Các kệ để đồ hoàn toàn trống rỗng.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập với tranh (Opposite Detail)",
+                "explanation": "Trên kệ kim loại có rất nhiều bìa còng và thùng hồ sơ được xếp gọn gàng, hoàn toàn trái ngược với từ 'empty' (trống rỗng)."
+              },
+              {
+                "id": "B",
+                "text": "A man is reaching into an open drawer.",
+                "vi": "Một người đàn ông đang vươn tay vào một ngăn kéo đang mở.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Câu miêu tả chính xác 100% hành động của người đàn ông: đang thò tay vào ngăn kéo mở của tủ hồ sơ để tra cứu tài liệu (reaching into an open drawer)."
+              },
+              {
+                "id": "C",
+                "text": "The filing cabinet is being assembled by a worker.",
+                "vi": "Chiếc tủ hồ sơ đang được một công nhân lắp ráp.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Bẫy hành động đang diễn ra)",
+                "explanation": "Cụm từ 'is being assembled' có nghĩa là chiếc tủ đang trong quá trình lắp ráp. Thực tế tủ đã hoàn thiện từ lâu và đang được sử dụng bình thường."
+              },
+              {
+                "id": "D",
+                "text": "He is carrying a ladder across the room.",
+                "vi": "Anh ấy đang vác một chiếc thang đi ngang qua phòng.",
+                "isCorrect": false,
+                "trapType": "Bẫy vật thể không hề có trong tranh (Missing Object)",
+                "explanation": "Trong toàn bộ căn phòng không hề có chiếc thang (ladder) nào và nhân vật cũng không hề mang vác thang."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the storage room.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "Folders and binders have been arranged on the shelves.",
+                "vi": "Các tệp hồ sơ và bìa còng đã được sắp xếp ngay ngắn trên các kệ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Static Arrangement)",
+                "explanation": "Câu miêu tả chính xác trạng thái tĩnh của phòng lưu trữ: các bìa còng và hộp tài liệu được xếp thứ tự trên kệ kim loại (arranged on the shelves)."
+              },
+              {
+                "id": "B",
+                "text": "All of the drawers are tightly closed.",
+                "vi": "Tất cả các ngăn kéo đều được đóng kín.",
+                "isCorrect": false,
+                "trapType": "Bẫy trạng thái đối lập",
+                "explanation": "Ngăn kéo tủ tài liệu đang mở để nhân viên tra cứu hồ sơ, không phải đóng kín (tightly closed)."
+              },
+              {
+                "id": "C",
+                "text": "Boxes are being removed from the storage room.",
+                "vi": "Các thùng hàng đang được chuyển ra khỏi phòng kho.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Không có ai đang di dời thùng hàng ra khỏi phòng kho."
+              },
+              {
+                "id": "D",
+                "text": "The worker is sweeping the floor with a broom.",
+                "vi": "Người nhân viên đang quét sàn bằng một chiếc chổi.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động không tồn tại",
+                "explanation": "Trong tranh không có cây chổi và người đàn ông đang xem hồ sơ chứ không quét dọn."
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -1088,7 +1318,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "A shopping cart is being pushed into an elevator.",
+                "vi": "Một chiếc xe đẩy đang được đẩy vào thang máy.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động đang diễn ra sai bối cảnh)",
+                "explanation": "Trong tranh không hề có thang máy (elevator) và xe đẩy đang ở giữa lối đi siêu thị chứ không hề được đẩy vào thang máy."
+              },
+              {
+                "id": "B",
+                "text": "A customer is reaching for an item on a shelf.",
+                "vi": "Một khách hàng đang với tay lấy một món đồ trên kệ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% cánh tay phải của người phụ nữ đang vươn lên kệ hàng để lấy món đồ (reaching for an item on a shelf)."
+              },
+              {
+                "id": "C",
+                "text": "The store shelves are completely empty of merchandise.",
+                "vi": "Các kệ hàng trong tiệm hoàn toàn trống rỗng không có hàng hóa.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Các kệ để hàng bên phải và bên trái đều xếp đầy các hũ, chai lọ và hộp sản phẩm, đối lập hoàn toàn với từ 'empty'."
+              },
+              {
+                "id": "D",
+                "text": "A cashier is counting money at a checkout counter.",
+                "vi": "Một nhân viên thu ngân đang đếm tiền tại quầy thanh toán.",
+                "isCorrect": false,
+                "trapType": "Bẫy nhân vật và địa điểm không có trong tranh (Wrong Subject/Setting)",
+                "explanation": "Khung cảnh là lối đi hàng hóa (grocery aisle), không hề có quầy thu ngân (checkout counter) hay nhân viên thu ngân nào ở đây."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the merchandise display.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "Produce is being weighed on a balance scale.",
+                "vi": "Nông sản đang được cân trên chiếc cân đĩa.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Trong tranh không có chiếc cân và khách hàng không đang cân hàng."
+              },
+              {
+                "id": "B",
+                "text": "The price tags are being replaced by an employee.",
+                "vi": "Các nhãn giá đang được một nhân viên thay thế.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Không có nhân viên nào đang đổi nhãn giá hàng trong lối đi."
+              },
+              {
+                "id": "C",
+                "text": "Various packaged goods are displayed in rows on the shelves.",
+                "vi": "Nhiều mặt hàng đóng gói được trưng bày thành các hàng trên kệ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Display Description)",
+                "explanation": "Các kệ hàng trong siêu thị xếp đầy hàng hóa hộp, chai lọ thành từng hàng ngay ngắn (displayed in rows on the shelves)."
+              },
+              {
+                "id": "D",
+                "text": "A shopping cart has tipped over on the floor.",
+                "vi": "Chiếc xe đẩy hàng bị lật nhào trên sàn.",
+                "isCorrect": false,
+                "trapType": "Bẫy sai lệch hiện trạng",
+                "explanation": "Chiếc xe đẩy đang đứng vững chắc bên cạnh khách hàng."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-checkout",
@@ -1353,7 +1661,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "A customer is paying at the service counter.",
+                "vi": "Một khách hàng đang thanh toán tiền tại quầy phục vụ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Câu miêu tả chuẩn xác hành động của khách hàng đang cầm thẻ thanh toán giơ về phía máy POS tại quầy (paying at the service counter)."
+              },
+              {
+                "id": "B",
+                "text": "The cups are being washed in a sink.",
+                "vi": "Các chiếc cốc đang được rửa trong bồn rửa.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Bẫy hành động đang diễn ra)",
+                "explanation": "Cốc được xếp ngay ngắn trên kệ và đặt trên khay, không hề có hành động ai đang rửa cốc trong bồn."
+              },
+              {
+                "id": "C",
+                "text": "A cashier is packing groceries into a large box.",
+                "vi": "Một thu ngân đang đóng gói hàng hóa vào một chiếc hộp lớn.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Thu ngân đang bấm máy tính tiền/POS chứ không hề đóng gói hàng hóa vào thùng hộp."
+              },
+              {
+                "id": "D",
+                "text": "All of the tables are occupied by diners.",
+                "vi": "Tất cả các bàn ăn đều đã có khách ngồi kín chỗ.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Bàn bên trái đang trống và đang được nhân viên lau dọn, trái ngược hoàn toàn với 'occupied by diners'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the counter area.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The espresso machine is being dismantled for repairs.",
+                "vi": "Máy pha cà phê đang bị tháo dỡ để sửa chữa.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Máy pha cà phê đang nguyên vẹn trên quầy bar, không có ai đang tháo dỡ sửa chữa."
+              },
+              {
+                "id": "B",
+                "text": "Beverage cups and equipment are positioned on the counter.",
+                "vi": "Các cốc uống và thiết bị được đặt trên mặt quầy.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Static Equipment Description)",
+                "explanation": "Trên mặt quầy có máy pha cà phê, máy POS và các cốc uống được bố trí sẵn sàng (positioned on the counter)."
+              },
+              {
+                "id": "C",
+                "text": "A menu board is being taken down from above.",
+                "vi": "Bảng thực đơn đang được gỡ xuống từ bên trên.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai",
+                "explanation": "Bảng thực đơn vẫn treo cố định phía sau quầy bar."
+              },
+              {
+                "id": "D",
+                "text": "The cashier is handing a physical receipt to a colleague.",
+                "vi": "Người thu ngân đang trao hóa đơn giấy cho một đồng nghiệp.",
+                "isCorrect": false,
+                "trapType": "Bẫy đối tượng sai",
+                "explanation": "Thu ngân đang tương tác với khách hàng trước quầy, không phải đồng nghiệp."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-restaurant",
@@ -1617,7 +2003,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The dining tables are being cleared of plates.",
+                "vi": "Các bàn ăn đang được dọn sạch đĩa.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động ngược với tranh)",
+                "explanation": "Bàn đang được dọn sẵn rất đẹp và đầy đủ đĩa dao nĩa để chuẩn bị dùng bữa, chứ không phải đang bị dọn dẹp ('being cleared')."
+              },
+              {
+                "id": "B",
+                "text": "A chef is washing dishes in a sink.",
+                "vi": "Một đầu bếp đang rửa bát đĩa trong bồn rửa.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Đầu bếp ở góc xa đang chuẩn bị thức ăn trên quầy chứ không hề rửa bát đĩa."
+              },
+              {
+                "id": "C",
+                "text": "A server is pouring water into a glass.",
+                "vi": "Một người phục vụ đang rót nước vào một chiếc ly.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% người phục vụ mặc áo ghi lê đang cầm bình rót dòng nước vào ly thủy tinh (pouring water into a glass)."
+              },
+              {
+                "id": "D",
+                "text": "All of the silverware has been removed from the table.",
+                "vi": "Toàn bộ dao nĩa thìa đã bị dọn đi khỏi bàn.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Dao nĩa (knife, fork) bằng kim loại sáng bóng đang nằm ngay ngắn cạnh đĩa sứ trắng, đối lập hoàn toàn với 'has been removed'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the dining room layout.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The dining chairs have been stacked against the wall.",
+                "vi": "Các chiếc ghế ăn đã được xếp chồng vào tường.",
+                "isCorrect": false,
+                "trapType": "Bẫy hiện trạng sai",
+                "explanation": "Ghế ăn được kê ngay ngắn quanh bàn chứ không xếp chồng (stacked) lên nhau."
+              },
+              {
+                "id": "B",
+                "text": "Tableware and glasses have been arranged on the tables.",
+                "vi": "Dụng cụ ăn và ly thủy tinh đã được sắp đặt sẵn trên các bàn.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Table Setting)",
+                "explanation": "Bàn ăn trong nhà hàng được trải khăn và sắp xếp đĩa, dao nĩa cùng ly nước chỉnh chu (arranged on the tables)."
+              },
+              {
+                "id": "C",
+                "text": "All of the tablecloths are being replaced.",
+                "vi": "Tất cả khăn trải bàn đang được thay mới.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Không có ai đang gỡ hay thay mới khăn trải bàn."
+              },
+              {
+                "id": "D",
+                "text": "Patrons are standing in a long queue outside.",
+                "vi": "Thực khách đang đứng thành một hàng dài ở bên ngoài.",
+                "isCorrect": false,
+                "trapType": "Bẫy ngoài bối cảnh",
+                "explanation": "Bối cảnh là bên trong phòng ăn sang trọng của nhà hàng, thực khách đang ngồi thưởng thức bữa ăn."
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -1890,7 +2354,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The scaffold is being dismantled by the crew.",
+                "vi": "Giàn giáo đang bị tháo dỡ bởi đội thợ.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động ngược lại)",
+                "explanation": "Giàn giáo đang được dựng rất vững chắc để thi công, không hề có hành động tháo dỡ ('being dismantled')."
+              },
+              {
+                "id": "B",
+                "text": "A worker is climbing up a ladder at a construction site.",
+                "vi": "Một công nhân đang trèo lên một chiếc thang tại công trường.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% người công nhân đội mũ vàng đang trèo từng bậc thang (climbing up a ladder at a construction site)."
+              },
+              {
+                "id": "C",
+                "text": "A woman is painting a wooden fence.",
+                "vi": "Một người phụ nữ đang sơn một hàng rào gỗ.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động và vật thể sai (Wrong Action/Object)",
+                "explanation": "Trong tranh không có ai sơn (painting) và không có hàng rào (fence), mà công nhân đang dùng búa đóng đinh ghép khung gỗ."
+              },
+              {
+                "id": "D",
+                "text": "The construction area has been completely deserted.",
+                "vi": "Khu vực công trường đã hoàn toàn bị bỏ hoang vắng tanh.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Có hai công nhân đang tích cực thi công trên thang và trên sàn giàn giáo, trái ngược hoàn toàn với 'completely deserted'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the building site equipment.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "Scaffolding has been erected alongside the structure.",
+                "vi": "Hệ thống giàn giáo đã được dựng lên dọc theo kết cấu công trình.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Static Equipment Setup)",
+                "explanation": "Giàn giáo kim loại đã được lắp dựng an toàn dọc thân tòa nhà (erected alongside the structure) để thợ thi công."
+              },
+              {
+                "id": "B",
+                "text": "The ladder is lying flat on the pavement.",
+                "vi": "Chiếc thang đang nằm phẳng trên mặt đường.",
+                "isCorrect": false,
+                "trapType": "Bẫy tư thế đồ vật sai",
+                "explanation": "Chiếc thang đang được dựng đứng tựa vào giàn giáo và có người đang trèo lên."
+              },
+              {
+                "id": "C",
+                "text": "A bulldozer is digging a trench in the background.",
+                "vi": "Một chiếc máy ủi đang đào một con hào ở phía sau.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai",
+                "explanation": "Phía xa là xe cần cẩu đang vươn cao, không có máy ủi đào hào."
+              },
+              {
+                "id": "D",
+                "text": "The workers are removing their safety helmets.",
+                "vi": "Các công nhân đang tháo mũ bảo hộ của họ ra.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động đối lập",
+                "explanation": "Mọi người trên công trường đều đang đội mũ bảo hộ nghiêm chỉnh (wearing safety helmets)."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-workshop",
@@ -2154,7 +2696,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The hand tools are being thrown into a bin.",
+                "vi": "Các dụng cụ cầm tay đang bị vứt vào thùng rác.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động sai hoàn toàn)",
+                "explanation": "Dụng cụ được treo rất ngăn nắp trên bảng và đặt gọn trong hộp đồ nghề, không hề có ai vứt dụng cụ vào thùng rác."
+              },
+              {
+                "id": "B",
+                "text": "A mechanic is replacing a tire on a vehicle.",
+                "vi": "Một thợ sửa xe đang thay lốp cho một chiếc ô tô.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Có một chiếc lốp dựa bên tường nhưng người thợ không hề thay lốp xe mà đang đứng bên bàn thao tác máy."
+              },
+              {
+                "id": "C",
+                "text": "A technician is inspecting a piece of machinery on the workbench.",
+                "vi": "Một kỹ thuật viên đang kiểm tra một bộ phận máy móc trên bàn thợ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% người thợ cúi người trên bàn làm việc, đeo kính và găng tay để kiểm tra thiết bị cơ khí (inspecting a piece of machinery)."
+              },
+              {
+                "id": "D",
+                "text": "The wooden workbench is completely empty.",
+                "vi": "Chiếc bàn thợ bằng gỗ hoàn toàn trống trơn.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Trên bàn có hộp đồ nghề đỏ, máy móc, bản vẽ kỹ thuật và dụng cụ đo, đối lập hoàn toàn với từ 'empty'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the workshop interior.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The workbench has been completely cleared of equipment.",
+                "vi": "Bàn làm việc đã được dọn sạch hoàn toàn không còn thiết bị.",
+                "isCorrect": false,
+                "trapType": "Bẫy trạng thái đối lập",
+                "explanation": "Trên bàn có thiết bị cơ khí, mỏ lết, búa và hộp dụng cụ."
+              },
+              {
+                "id": "B",
+                "text": "Various hand tools are hung on a wall board.",
+                "vi": "Nhiều dụng cụ cầm tay khác nhau được treo trên bảng tường.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Wall Tool Storage)",
+                "explanation": "Bảng treo dụng cụ gắn trên tường xếp cờ lê, kìm và búa một cách rất ngăn nắp (hung on a wall board)."
+              },
+              {
+                "id": "C",
+                "text": "Safety goggles are being stored in a locked cabinet.",
+                "vi": "Kính bảo hộ đang được cất trong tủ khóa.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Người thợ đang đeo kính bảo hộ trên mắt để làm việc."
+              },
+              {
+                "id": "D",
+                "text": "A vehicle is being driven into the garage.",
+                "vi": "Một chiếc xe đang được lái vào trong xưởng.",
+                "isCorrect": false,
+                "trapType": "Bẫy ngoài bối cảnh",
+                "explanation": "Không có xe nào đang di chuyển vào xưởng cơ khí."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-roadwork",
@@ -2418,7 +3038,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "Workers are performing maintenance on a roadway.",
+                "vi": "Các công nhân đang tiến hành bảo trì trên một lòng đường.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Câu miêu tả chuẩn xác hoạt động thi công và sửa chữa mặt đường của các công nhân (performing maintenance on a roadway)."
+              },
+              {
+                "id": "B",
+                "text": "The pavement is being washed with a high-pressure hose.",
+                "vi": "Mặt đường đang được xịt rửa bằng vòi nước áp lực cao.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động sai hoàn toàn)",
+                "explanation": "Không hề có vòi xịt nước áp lực cao (high-pressure hose) nào đang xịt rửa vỉa hè."
+              },
+              {
+                "id": "C",
+                "text": "A traffic police officer is directing vehicles at a crosswalk.",
+                "vi": "Một cảnh sát giao thông đang điều tiết xe cộ tại lối qua đường.",
+                "isCorrect": false,
+                "trapType": "Bẫy nhân vật sai (Wrong Subject)",
+                "explanation": "Trong tranh là các công nhân mặc áo phản quang làm đường cầm xẻng và chổi, không phải cảnh sát giao thông."
+              },
+              {
+                "id": "D",
+                "text": "All of the safety cones have been stacked into a truck.",
+                "vi": "Tất cả các nón giao thông an toàn đã được xếp chồng vào xe tải.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Các nón bảo hộ giao thông màu cam đang được đặt rải rác trên mặt đường để phân luồng, không hề được xếp vào xe tải."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the roadwork site setup.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "Traffic cones have been knocked over by a vehicle.",
+                "vi": "Các nón giao thông đã bị một chiếc xe húc đổ.",
+                "isCorrect": false,
+                "trapType": "Bẫy trạng thái sai",
+                "explanation": "Các nón giao thông màu cam vẫn đứng thẳng hàng để phân luồng an toàn."
+              },
+              {
+                "id": "B",
+                "text": "A road barrier is being taken away by a crane.",
+                "vi": "Một rào chắn đường đang được cần cẩu chở đi.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Rào chắn đường sọc vàng đen đang đặt cố định trên mặt đường."
+              },
+              {
+                "id": "C",
+                "text": "Warning cones and barriers cordon off the work area.",
+                "vi": "Các nón cảnh báo và rào chắn ngăn cách khu vực thi công.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Safety Perimeter Setup)",
+                "explanation": "Hệ thống nón cam và biển cảnh báo được xếp thành hàng để bảo vệ công nhân (cordon off the work area)."
+              },
+              {
+                "id": "D",
+                "text": "The steamroller is parked inside an underground garage.",
+                "vi": "Xe lu đang đậu bên trong một gara ngầm.",
+                "isCorrect": false,
+                "trapType": "Bẫy vị trí sai hoàn toàn",
+                "explanation": "Xe lu đang đậu trên mặt đường công trình ngoài trời."
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -2691,7 +3389,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The fountain is being repaired by a plumber.",
+                "vi": "Đài phun nước đang được một thợ sửa ống nước sửa chữa.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động ngược với tranh)",
+                "explanation": "Đài phun nước đang phun nước rất đẹp và hoạt động bình thường, không hề có ai sửa chữa ('being repaired')."
+              },
+              {
+                "id": "B",
+                "text": "A person is sitting on a bench in the park.",
+                "vi": "Một người đang ngồi trên chiếc ghế dài trong công viên.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% người phụ nữ đang ngồi thư giãn đọc sách trên băng ghế gỗ dưới bóng cây (sitting on a bench in the park)."
+              },
+              {
+                "id": "C",
+                "text": "Bicycles are leaning against the fountain wall.",
+                "vi": "Những chiếc xe đạp đang tựa vào thành đài phun nước.",
+                "isCorrect": false,
+                "trapType": "Bẫy vật thể không có trong tranh (Missing Object)",
+                "explanation": "Trong toàn bộ công viên không hề có chiếc xe đạp (bicycles) nào tựa vào đài phun nước."
+              },
+              {
+                "id": "D",
+                "text": "All of the trees have completely shed their leaves.",
+                "vi": "Tất cả các cây cối đã rụng sạch hoàn toàn lá.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Cây sồi lớn và các lùm cây xung quanh đều xanh tươi rợp bóng mát, trái ngược hoàn toàn với 'completely shed their leaves'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the park scenery.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "Water is being drained from the fountain pool.",
+                "vi": "Nước đang được xả cạn khỏi bể đài phun nước.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Đài phun nước vẫn đầy nước và các tia nước đang phun cao."
+              },
+              {
+                "id": "B",
+                "text": "All of the benches are fully occupied by pedestrians.",
+                "vi": "Tất cả các ghế dài đều kín người đi bộ ngồi.",
+                "isCorrect": false,
+                "trapType": "Bẫy số lượng tuyệt đối (All)",
+                "explanation": "Chỉ có một người đang ngồi thư giãn trên một băng ghế, không phải kín mọi chỗ."
+              },
+              {
+                "id": "C",
+                "text": "A paved path leads past a circular fountain.",
+                "vi": "Một lối đi lát đá dẫn ngang qua đài phun nước hình tròn.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Scenic Feature Description)",
+                "explanation": "Con đường đi dạo uốn lượn lát đá chạy dọc qua đài phun nước và tán cây xanh (leads past a circular fountain)."
+              },
+              {
+                "id": "D",
+                "text": "The trees are being pruned with power saws.",
+                "vi": "Các cây xanh đang bị tỉa cành bằng cưa máy.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai",
+                "explanation": "Không có thợ làm vườn hay hoạt động cưa tỉa cành trong tranh."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-garden-lawn",
@@ -2957,7 +3733,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The lawn is being mowed by an electric tractor.",
+                "vi": "Bãi cỏ đang được cắt bằng một chiếc máy kéo chạy điện.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động sai hoàn toàn)",
+                "explanation": "Bãi cỏ đã được cắt xong gọn gàng và hiện tại chỉ có một người làm vườn đang cào lá, không có máy kéo điện nào đang cắt cỏ."
+              },
+              {
+                "id": "B",
+                "text": "A person is painting the white picket fence.",
+                "vi": "Một người đang sơn hàng rào cọc nhọn màu trắng.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Hàng rào màu trắng đã có sẵn, người làm vườn đang cào lá chứ không hề cầm cọ sơn hàng rào."
+              },
+              {
+                "id": "C",
+                "text": "A gardener is raking leaves into a pile.",
+                "vi": "Một người làm vườn đang cào lá gom thành một đống.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% người làm vườn đội mũ cói đang dùng cây cào cỏ gom lá khô thành một đống lớn (raking leaves into a pile)."
+              },
+              {
+                "id": "D",
+                "text": "All of the garden flowers have withered.",
+                "vi": "Tất cả các bông hoa trong vườn đã bị héo tàn.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Bụi hoa hồng bên phải đang nở rộ rực rỡ màu đỏ và hồng, trái ngược hoàn toàn với 'have withered'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the garden property.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The wheelbarrow is being pushed down the stairs.",
+                "vi": "Chiếc xe rùa đang được đẩy xuống các bậc thang.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Chiếc xe rùa đang dựng yên bên cạnh đống lá khô trên bãi cỏ."
+              },
+              {
+                "id": "B",
+                "text": "A wooden fence encloses the landscaped area.",
+                "vi": "Hàng rào gỗ bao quanh khu vực sân vườn.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Boundary Description)",
+                "explanation": "Hàng rào cọc gỗ màu trắng chạy dọc bao quanh khoảng sân vườn tỉa tót xanh tươi (encloses the landscaped area)."
+              },
+              {
+                "id": "C",
+                "text": "Hedge shears have been left on the driveway.",
+                "vi": "Kéo cắt tỉa cây bị bỏ quên trên lối xe chạy.",
+                "isCorrect": false,
+                "trapType": "Bẫy vị trí sai",
+                "explanation": "Không có lối xe chạy và dụng cụ cào đang được người thợ cầm trên tay."
+              },
+              {
+                "id": "D",
+                "text": "Flowers are being loaded into a delivery van.",
+                "vi": "Hoa đang được chất lên một chiếc xe van giao hàng.",
+                "isCorrect": false,
+                "trapType": "Bẫy ngoài bối cảnh",
+                "explanation": "Đây là khuôn viên sân cỏ tư nhân, không có xe tải giao hoa."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-sidewalk-cafe",
@@ -3221,7 +4075,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "Patrons are seated outdoors under a large umbrella.",
+                "vi": "Khách đang ngồi ngoài trời dưới một chiếc dù lớn.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% các vị khách đang ngồi dùng đồ uống tại bàn cà phê dưới chiếc ô che nắng ngoài sân (seated outdoors under a large umbrella)."
+              },
+              {
+                "id": "B",
+                "text": "The fabric awning is being rolled up by a worker.",
+                "vi": "Mái hiên bạt đang được cuộn lại bởi một công nhân.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động sai)",
+                "explanation": "Mái hiên kẻ sọc đỏ trắng đang được căng mở rộng để che bóng mát, không hề có ai đang cuộn mái hiên lại ('being rolled up')."
+              },
+              {
+                "id": "C",
+                "text": "Cars are parked directly on the pedestrian crosswalk.",
+                "vi": "Ô tô đang đậu ngay trên lối băng qua đường của người đi bộ.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết sai (Incorrect Detail)",
+                "explanation": "Lối băng qua đường (crosswalk) kẻ vạch trắng đang có người đi bộ băng qua, không hề có ô tô đậu đè lên vạch."
+              },
+              {
+                "id": "D",
+                "text": "The sidewalk patio is completely vacant.",
+                "vi": "Khu vực sân hiên ngoài vỉa hè hoàn toàn vắng tanh không một bóng người.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Có khách ngồi uống nước tại bàn và có người tựa vào lan can, đối lập hoàn toàn với từ 'completely vacant'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the street corner.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The cafe chairs are being stacked onto a handcart.",
+                "vi": "Những chiếc ghế cà phê đang được xếp chồng lên xe đẩy tay.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Ghế cà phê đang được khách ngồi thưởng thức đồ uống ngoài trời."
+              },
+              {
+                "id": "B",
+                "text": "The street lamps are being replaced by an electric crew.",
+                "vi": "Các đèn đường đang được đội thợ điện thay thế.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai",
+                "explanation": "Cột đèn đường cổ điển vẫn đứng yên cạnh vỉa hè."
+              },
+              {
+                "id": "C",
+                "text": "Tables and chairs are arranged on the sidewalk.",
+                "vi": "Các bàn và ghế được bố trí trên vỉa hè.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Sidewalk Arrangement)",
+                "explanation": "Khu vực ngoài trời của quán cà phê kê nhiều bàn tròn và ghế ngồi dọc theo vỉa hè lát gạch (arranged on the sidewalk)."
+              },
+              {
+                "id": "D",
+                "text": "All pedestrians are holding open rain umbrellas.",
+                "vi": "Tất cả người đi bộ đều đang giương ô che mưa.",
+                "isCorrect": false,
+                "trapType": "Bẫy thời tiết đối lập",
+                "explanation": "Trời nắng đẹp, chỉ có chiếc ô che nắng lớn cắm cố định che mát cho bàn cà phê."
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -3493,7 +4425,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The luggage is being loaded into the airplane's cargo hold.",
+                "vi": "Hành lý đang được bốc dỡ vào khoang hàng của máy bay.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động không diễn ra)",
+                "explanation": "Trong tranh không có ai đang bốc xếp hành lý vào máy bay ngoài đường băng; hành khách đang tự kéo vali trong sảnh."
+              },
+              {
+                "id": "B",
+                "text": "A passenger is pulling a suitcase across the terminal floor.",
+                "vi": "Một hành khách đang kéo một chiếc vali đi qua sàn nhà ga.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% người phụ nữ mặc áo măng tô đang kéo chiếc vali có bánh xe trên sàn nhà ga sáng bóng (pulling a suitcase across the terminal floor)."
+              },
+              {
+                "id": "C",
+                "text": "A pilot is waving from the cockpit window.",
+                "vi": "Một viên phi công đang vẫy tay từ cửa sổ buồng lái.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết không có trong tranh (Missing Detail)",
+                "explanation": "Máy bay ở xa ngoài đường băng và không có viên phi công nào đang vẫy tay."
+              },
+              {
+                "id": "D",
+                "text": "All flight information monitors have been turned off.",
+                "vi": "Tất cả các màn hình thông tin chuyến bay đều đã bị tắt.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Màn hình FIDS góc trái đang sáng rõ và hiển thị lịch trình các chuyến bay (Departures), đối lập hoàn toàn với 'turned off'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the terminal area.",
+            "correct": "A",
+            "options": [
+              {
+                "id": "A",
+                "text": "An airplane is parked outside the terminal window.",
+                "vi": "Một chiếc máy bay đang đỗ bên ngoài cửa sổ nhà ga.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Static Vehicle Position)",
+                "explanation": "Nhìn qua vách kính lớn của nhà ga, ta thấy chiếc máy bay dân dụng đang đỗ trên đường lăn bên ngoài (parked outside the terminal window)."
+              },
+              {
+                "id": "B",
+                "text": "The flight information display is completely blank.",
+                "vi": "Bảng thông tin chuyến bay hoàn toàn trống trơn.",
+                "isCorrect": false,
+                "trapType": "Bẫy trạng thái đối lập",
+                "explanation": "Bảng điện tử treo trên cao hiển thị lịch trình các chuyến bay chi tiết."
+              },
+              {
+                "id": "C",
+                "text": "Suitcases are being weighed on a conveyor belt.",
+                "vi": "Các vali đang được cân trên băng chuyền.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Hành khách đang kéo vali qua sảnh chờ lên máy bay (gate), không có quầy cân hành lý ký gửi."
+              },
+              {
+                "id": "D",
+                "text": "All waiting chairs have been turned upside down.",
+                "vi": "Tất cả các ghế chờ đã bị lật úp lại.",
+                "isCorrect": false,
+                "trapType": "Bẫy hiện trạng vô lý",
+                "explanation": "Các dãy ghế kim loại trong phòng chờ được xếp ngay ngắn."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-harbor-pier",
@@ -3758,7 +4768,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "A vessel is being towed into dry dock for maintenance.",
+                "vi": "Một con tàu đang được lai dắt vào ụ cạn để bảo dưỡng.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động sai hoàn toàn)",
+                "explanation": "Không hề có con tàu nào đang được lai dắt ('being towed') vào ụ cạn; các con thuyền đang neo đậu yên bình cạnh cầu tàu."
+              },
+              {
+                "id": "B",
+                "text": "Several boats are moored along a wooden pier.",
+                "vi": "Một số chiếc thuyền đang neo đậu dọc theo một cầu tàu bằng gỗ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% các con thuyền được buộc dây neo đậu sát mép cầu tàu gỗ (moored/docked along a wooden pier)."
+              },
+              {
+                "id": "C",
+                "text": "Fishermen are casting large nets into the ocean.",
+                "vi": "Những người đánh cá đang quăng những tấm lưới lớn xuống biển.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai (Incorrect Action)",
+                "explanation": "Trong tranh chỉ có một người đứng trên cầu tàu ngắm cảnh và một người chèo thuyền, không hề có ai quăng lưới đánh cá."
+              },
+              {
+                "id": "D",
+                "text": "All of the boats have departed from the harbor.",
+                "vi": "Tất cả các con thuyền đều đã rời khỏi bến cảng.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Có thuyền máy lớn neo cạnh cầu tàu và thuyền buồm đang di chuyển trên mặt nước, trái ngược hoàn toàn với 'have departed'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the waterfront.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The wooden pier is completely submerged under water.",
+                "vi": "Cầu tàu gỗ bị chìm hoàn toàn dưới nước.",
+                "isCorrect": false,
+                "trapType": "Bẫy trạng thái đối lập",
+                "explanation": "Cầu tàu gỗ nằm vững chãi trên mặt nước phẳng lặng."
+              },
+              {
+                "id": "B",
+                "text": "A sailboat is being lifted by a crane.",
+                "vi": "Một chiếc thuyền buồm đang được cần cẩu nhấc bổng lên.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Các thuyền buồm đang trôi nhẹ trên làn nước neo cạnh cầu cảng."
+              },
+              {
+                "id": "C",
+                "text": "Ropes secure the vessels to the wooden posts.",
+                "vi": "Những sợi dây thừng buộc chặt các con tàu vào các cọc gỗ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Mooring Detail)",
+                "explanation": "Dây thừng neo đậu (ropes/lines) được cột vòng qua các cọc gỗ trên cầu cảng để giữ cố định mạn thuyền."
+              },
+              {
+                "id": "D",
+                "text": "Tourists are swimming near the boat dock.",
+                "vi": "Khách du lịch đang bơi lội gần bến thuyền.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai",
+                "explanation": "Khu vực bến thuyền neo đậu cấm bơi lội và không có người dưới nước."
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "scene-intersection-bridge",
@@ -4022,7 +5110,85 @@ export const PART1_TOPICS = [
               "score": 95
             }
           ]
-        }
+        },
+        "drills": [
+          {
+            "question": "Listen to the four statements. Select the statement that best describes what you see in the picture.",
+            "correct": "C",
+            "options": [
+              {
+                "id": "A",
+                "text": "The bridge is being painted by maintenance workers.",
+                "vi": "Cây cầu đang được sơn bởi các công nhân bảo trì.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3' (Hành động sai hoàn toàn)",
+                "explanation": "Cây cầu vượt xa lộ trên cao đang lưu thông bình thường, không hề có giàn giáo hay công nhân nào đang sơn cầu ('being painted')."
+              },
+              {
+                "id": "B",
+                "text": "A delivery truck is backing into a warehouse loading bay.",
+                "vi": "Một chiếc xe tải giao hàng đang lùi vào cửa kho bốc hàng.",
+                "isCorrect": false,
+                "trapType": "Bẫy bối cảnh và hành động sai (Wrong Context)",
+                "explanation": "Chiếc xe tải màu trắng đỏ đang dừng chờ đèn đỏ tại ngã tư đường phố chứ không phải đang lùi vào cửa kho hàng (loading bay)."
+              },
+              {
+                "id": "C",
+                "text": "Vehicles are stopped at an urban intersection near a traffic light.",
+                "vi": "Các phương tiện giao thông đang dừng lại tại một ngã tư đô thị gần cột đèn giao thông.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Direct Action)",
+                "explanation": "Miêu tả chính xác 100% xe tải và ô tô đang dừng chờ trước vạch dừng của ngã tư dưới sự điều tiết của cột đèn giao thông (stopped at an urban intersection near a traffic light)."
+              },
+              {
+                "id": "D",
+                "text": "The roadway is completely devoid of motor vehicles.",
+                "vi": "Lòng đường hoàn toàn vắng bóng các phương tiện cơ giới.",
+                "isCorrect": false,
+                "trapType": "Bẫy chi tiết đối lập (Opposite Detail)",
+                "explanation": "Có xe tải chở hàng lớn và xe ô tô con đang dừng ngay trên lòng đường, đối lập hoàn toàn với 'completely devoid of motor vehicles'."
+              }
+            ]
+          },
+          {
+            "question": "Listen to the four statements. Select the statement that best describes the traffic scene.",
+            "correct": "B",
+            "options": [
+              {
+                "id": "A",
+                "text": "The traffic signals are lying on the street.",
+                "vi": "Các cột đèn tín hiệu giao thông đang nằm trên đường.",
+                "isCorrect": false,
+                "trapType": "Bẫy trạng thái sai",
+                "explanation": "Đèn giao thông vẫn đứng vững bên ngã tư đường phố."
+              },
+              {
+                "id": "B",
+                "text": "Vehicles have stopped in their lanes at an intersection.",
+                "vi": "Các phương tiện đã dừng lại trong làn đường của mình tại một giao lộ.",
+                "isCorrect": true,
+                "trapType": "Đáp án chuẩn xác (Traffic Flow Description)",
+                "explanation": "Xe tải, ô tô con và xe buýt đang dừng ngay ngắn theo làn đường chờ tín hiệu giao thông tại ngã tư (stopped in their lanes at an intersection)."
+              },
+              {
+                "id": "C",
+                "text": "Pedestrians are running across the suspension bridge.",
+                "vi": "Người đi bộ đang chạy qua cây cầu treo.",
+                "isCorrect": false,
+                "trapType": "Bẫy hành động sai",
+                "explanation": "Trên cầu vượt là làn đường ô tô chạy, không có người chạy bộ trên cầu."
+              },
+              {
+                "id": "D",
+                "text": "The road is being resurfaced with fresh asphalt.",
+                "vi": "Mặt đường đang được trải lại bằng nhựa đường mới.",
+                "isCorrect": false,
+                "trapType": "Bẫy 'Being + V3'",
+                "explanation": "Đường phố đang lưu thông bình thường, không có công trường thi công trải nhựa."
+              }
+            ]
+          }
+        ]
       }
     ]
   }

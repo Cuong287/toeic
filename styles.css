@@ -940,6 +940,214 @@ input, textarea, [contenteditable="true"] {
   background: var(--bad-soft);
 }
 
+/* Combo Mode: Chế độ Học liên hoàn (Flashcard -> Quiz -> Writing) */
+.combo-container {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.combo-control-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.combo-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.combo-badge-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 14.5px;
+  color: var(--accent);
+}
+.combo-stages-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--sunk);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.combo-step-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--muted);
+  transition: all 0.2s;
+  font-size: 12px;
+}
+.combo-step-indicator.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.combo-step-indicator.done {
+  color: var(--good);
+  font-weight: 700;
+}
+.combo-toggles-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.combo-toggles-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.combo-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.combo-toggle-chip:hover {
+  border-color: var(--accent);
+}
+.combo-toggle-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.combo-toggle-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid currentColor;
+  font-size: 11px;
+  line-height: 1;
+}
+.combo-toggle-chip.active .combo-toggle-check {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.combo-stage-card {
+  position: relative;
+}
+.combo-word-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.combo-stage-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+.combo-stage-banner.fc {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+.combo-stage-banner.quiz {
+  background: #FFFBEB;
+  color: #D97706;
+}
+.combo-stage-banner.write {
+  background: #ECFDF5;
+  color: #059669;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .combo-stage-banner.fc {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60A5FA;
+  }
+  :root:not([data-theme="light"]) .combo-stage-banner.quiz {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+  }
+  :root:not([data-theme="light"]) .combo-stage-banner.write {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34D399;
+  }
+}
+.combo-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.combo-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.combo-quick-btn:hover {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+@media (max-width: 600px) {
+  .combo-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .combo-stages-pill {
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+  }
+  .combo-toggle-chip {
+    padding: 5px 9px;
+    font-size: 12px;
+  }
+}
+
 :root{
   --bg:#F8FAFC; --surface:#FFFFFF; --sunk:#F1F5F9; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0;
   --accent:#2563EB; --accent-ink:#FFFFFF; --accent-soft:#EFF6FF;

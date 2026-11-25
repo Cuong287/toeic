@@ -80,7 +80,7 @@ function analyzeUserDescription(userText, targetKeywords) {
       missingKeywords: targetKeywords.map((k) => k.word),
       hasPresentContinuous: false,
       hasPreposition: false,
-      tips: ['Hãy bắt đầu gõ hoặc bấm nút Micro để nói câu miêu tả bức tranh.']
+      tips: ['Type or use the microphone to describe the photo.']
     };
   }
 
@@ -119,23 +119,23 @@ function analyzeUserDescription(userText, targetKeywords) {
 
   const tips = [];
   if (matchedKeywords.length === 0) {
-    tips.push(`💡 Hãy chèn ít nhất một từ khóa mục tiêu như: <b>${missingKeywords.slice(0, 3).join(', ')}</b>.`);
+    tips.push(`Include at least one target keyword such as: <b>${missingKeywords.slice(0, 3).join(', ')}</b>.`);
   } else if (missingKeywords.length > 0 && matchedKeywords.length < 3) {
-    tips.push(`🌟 Tốt lắm! Có thể thêm từ: <b>${missingKeywords.slice(0, 2).join(', ')}</b> để câu phong phú hơn.`);
+    tips.push(`Good start! Try adding <b>${missingKeywords.slice(0, 2).join(', ')}</b> for a richer description.`);
   }
 
   if (!hasPresentContinuous) {
-    tips.push('💡 Trong TOEIC Part 1, hãy sử dụng thì Hiện tại tiếp diễn (ví dụ: <i>is typing, is pointing, is reaching</i>) hoặc Bị động.');
+    tips.push('Use Present Continuous (e.g., <i>is typing, is pointing, is reaching</i>) or Passive voice for TOEIC Part 1.');
   }
 
   if (!hasPreposition) {
-    tips.push('💡 Hãy bổ sung cụm giới từ chỉ vị trí (ví dụ: <i>at the desk, on the screen, in the drawer</i>) để tăng điểm.');
+    tips.push('Add a prepositional phrase of location (e.g., <i>at the desk, on the screen, in the drawer</i>) to boost your score.');
   }
 
   if (score >= 90) {
-    tips.unshift('🎉 Xuất sắc! Câu miêu tả rất chuẩn phong cách đề thi ETS TOEIC Part 1!');
+    tips.unshift('Excellent! Your description matches ETS TOEIC Part 1 style.');
   } else if (score >= 70) {
-    tips.unshift('👍 Rất tốt! Câu miêu tả đã nêu bật được trọng tâm bức tranh.');
+    tips.unshift('Great job! Your description captures the key details of the photo.');
   }
 
   return {
@@ -160,17 +160,8 @@ function stopSequentialDrill() {
   } catch (e) {}
 }
 
-export function renderPart1(container) {
-  if (!container) return;
-  stopSequentialDrill();
-
-  if (curTopicIdx < 0 || curTopicIdx >= PART1_TOPICS.length) curTopicIdx = 0;
-  const topic = PART1_TOPICS[curTopicIdx] || PART1_TOPICS[0];
-  const scenes = topic.scenes || [];
-  if (curSceneIdx < 0 || curSceneIdx >= scenes.length) curSceneIdx = 0;
-  const currentScene = scenes[curSceneIdx] || scenes[0];
+function getSceneDrillContext(currentScene) {
   const allDrills = currentScene.drills || (currentScene.drill ? [currentScene.drill] : []);
-
   if (!drillState[currentScene.id]) {
     drillState[currentScene.id] = {
       subIdx: 0,
@@ -183,15 +174,28 @@ export function renderPart1(container) {
   const scDrillState = drillState[currentScene.id];
   if (scDrillState.subIdx == null) scDrillState.subIdx = 0;
   if (!scDrillState.bySub) scDrillState.bySub = {};
-  if (!scDrillState.bySub[scDrillState.subIdx]) {
-    scDrillState.bySub[scDrillState.subIdx] = {
+  const activeDrillIdx = Math.min(scDrillState.subIdx, Math.max(0, allDrills.length - 1));
+  if (!scDrillState.bySub[activeDrillIdx]) {
+    scDrillState.bySub[activeDrillIdx] = {
       selected: scDrillState.selected || null,
       isSubmitted: scDrillState.isSubmitted || false
     };
   }
-  const activeDrillIdx = Math.min(scDrillState.subIdx, Math.max(0, allDrills.length - 1));
   const activeDrill = allDrills[activeDrillIdx] || currentScene.drill;
   const curDrillState = scDrillState.bySub[activeDrillIdx];
+  return { allDrills, scDrillState, activeDrillIdx, activeDrill, curDrillState };
+}
+
+export function renderPart1(container) {
+  if (!container) return;
+  stopSequentialDrill();
+
+  if (curTopicIdx < 0 || curTopicIdx >= PART1_TOPICS.length) curTopicIdx = 0;
+  const topic = PART1_TOPICS[curTopicIdx] || PART1_TOPICS[0];
+  const scenes = topic.scenes || [];
+  if (curSceneIdx < 0 || curSceneIdx >= scenes.length) curSceneIdx = 0;
+  const currentScene = scenes[curSceneIdx] || scenes[0];
+  const { allDrills, scDrillState, activeDrillIdx, activeDrill, curDrillState } = getSceneDrillContext(currentScene);
 
   const currentDesc = userDescState[currentScene.id] || '';
   const analysis = analyzeUserDescription(currentDesc, currentScene.keywords || []);
@@ -220,9 +224,8 @@ export function renderPart1(container) {
           }).length;
           return `
             <button class="part1-topic-pill ${isActive ? 'is-active' : ''}" data-topic-idx="${tIdx}">
-              <span class="topic-pill-icon">${top.icon || '📌'}</span>
               <span class="topic-pill-title">${appEsc(top.title.split('(')[0].trim())}</span>
-              ${completedCount > 0 ? `<span class="topic-pill-done" title="${completedCount} tranh hoàn thành">✓ ${completedCount}/${top.scenes.length}</span>` : `<span class="topic-pill-badge">${top.scenes ? top.scenes.length : 0} tranh</span>`}
+              ${completedCount > 0 ? `<span class="topic-pill-done" title="${completedCount} scenes completed">✓ ${completedCount}/${top.scenes.length}</span>` : `<span class="topic-pill-badge">${top.scenes ? top.scenes.length : 0} scenes</span>`}
             </button>
           `;
         }).join('')}
@@ -257,9 +260,9 @@ export function renderPart1(container) {
                 <span class="part1-scene-sub">${appEsc(currentScene.subTitle || '')}</span>
               </div>
               <div class="part1-canvas-actions">
-                <button class="part1-btn-toggle-labels ${showLabels ? 'active' : ''}" id="btn-toggle-labels" title="Bật/Tắt nhãn từ vựng trên tranh">
+                <button class="part1-btn-toggle-labels ${showLabels ? 'active' : ''}" id="btn-toggle-labels" title="Toggle vocabulary labels on photo">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                  <span>${showLabels ? 'Ẩn nhãn từ vựng' : 'Hiện nhãn từ vựng'}</span>
+                  <span>${showLabels ? 'Hide Labels' : 'Show Labels'}</span>
                 </button>
               </div>
             </div>
@@ -293,28 +296,28 @@ export function renderPart1(container) {
               <!-- Hotspot Popover Card (When clicked) -->
               <div class="part1-hotspot-popover" id="part1-hotspot-popover" hidden>
                 <div class="popover-content" id="popover-content"></div>
-                <button class="popover-close" id="popover-close" aria-label="Đóng chi tiết">✕</button>
+                <button class="popover-close" id="popover-close" aria-label="Close details">✕</button>
               </div>
             </div>
 
             <!-- Target Keywords Bar -->
             <div class="part1-keywords-container">
               <div class="part1-kw-header">
-                <span class="kw-title">🎯 Từ vựng mục tiêu (Target Keywords):</span>
-                <span class="kw-hint">Bấm vào từ để nghe phát âm & xem chi tiết</span>
+                <span class="kw-title">Target Keywords:</span>
+                <span class="kw-hint">Click a word to hear pronunciation</span>
               </div>
               <div class="part1-kw-chips">
                 ${(currentScene.keywords || []).map((kw) => {
                   const isUsed = isKeywordUsedInText(kw.word, currentDesc);
                   return `
                     <div class="part1-kw-chip ${isUsed ? 'is-used' : ''}" data-word="${appEsc(kw.word)}" data-kw-id="${kw.id}">
-                      <button class="kw-audio-btn" data-say="${appEsc(kw.word)}" title="Nghe phát âm">
+                      <button class="kw-audio-btn" data-say="${appEsc(kw.word)}" title="Listen">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
                       </button>
                       <span class="kw-text">${appEsc(kw.word)}</span>
                       <span class="kw-pos">(${appEsc(kw.pos)})</span>
                       <span class="kw-vi">${appEsc(kw.vi)}</span>
-                      ${isUsed ? '<span class="kw-check" title="Đã sử dụng trong câu miêu tả">✓</span>' : ''}
+                      ${isUsed ? '<span class="kw-check" title="Used in your description">✓</span>' : ''}
                     </div>
                   `;
                 }).join('')}
@@ -329,11 +332,11 @@ export function renderPart1(container) {
           <div class="part1-mode-tabs">
             <button class="part1-mode-tab ${curMode === 'describe' ? 'is-active' : ''}" data-mode="describe">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              <span>Chế độ 1: Tự mô tả tranh</span>
+              <span>Mode 1: Describe Photo</span>
             </button>
             <button class="part1-mode-tab ${curMode === 'drill' ? 'is-active' : ''}" data-mode="drill">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-              <span>Chế độ 2: Luyện nghe ETS 4 phương án</span>
+              <span>Mode 2: ETS 4-Option Drill</span>
               ${curDrillState.isSubmitted ? '<span class="badge-mini-done">✓</span>' : ''}
             </button>
           </div>
@@ -343,12 +346,11 @@ export function renderPart1(container) {
             <div class="part1-card">
               <div class="part1-card-head">
                 <div class="head-title">
-                  <span class="head-icon">✍️</span>
-                  <span>Mô tả bức tranh bằng tiếng Anh</span>
+                  <span>Describe the Photo in English</span>
                 </div>
                 <div class="head-score-badge ${analysis.score >= 80 ? 'good' : (analysis.score >= 50 ? 'fair' : '')}">
                   <span class="score-num">${analysis.score}</span>
-                  <span class="score-label">/ 100 Điểm</span>
+                  <span class="score-label">/ 100 pts</span>
                 </div>
               </div>
 
@@ -358,7 +360,7 @@ export function renderPart1(container) {
 
               <!-- Target Keywords Checklist -->
               <div class="part1-desc-keywords-box">
-                <span class="desc-kw-label">Từ khóa cần có:</span>
+                <span class="desc-kw-label">Target Keywords:</span>
                 <div class="desc-kw-tags">
                   ${currentScene.describeChallenge.targetKeywords.map((target) => {
                     const isUsed = isKeywordUsedInText(target, currentDesc);
@@ -377,7 +379,7 @@ export function renderPart1(container) {
                   id="part1-desc-input"
                   class="part1-desc-input"
                   data-rec="part1-scene-${currentScene.id}"
-                  placeholder="Ví dụ: A woman is sitting at her desk and typing on a laptop..."
+                  placeholder="e.g. A woman is sitting at her desk and typing on a laptop..."
                   rows="3">${appEsc(currentDesc)}</textarea>
 
                 <div class="part1-input-actions">
@@ -386,18 +388,18 @@ export function renderPart1(container) {
                     class="rec-btn part1-voice-btn"
                     data-rec-id="part1-scene-${currentScene.id}"
                     data-rec-text=""
-                    title="Bấm để nói câu mô tả bằng tiếng Anh (Web Speech)">
+                    title="Speak your description in English">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                    <span>Nói mô tả</span>
+                    <span>Speak</span>
                   </button>
 
-                  <button class="part1-clear-btn" id="btn-clear-desc" title="Xóa nội dung nhập">
-                    Xóa
+                  <button class="part1-clear-btn" id="btn-clear-desc" title="Clear input">
+                    Clear
                   </button>
 
-                  <button class="part1-speak-input-btn" id="btn-speak-user-desc" title="Nghe đọc lại câu của bạn">
+                  <button class="part1-speak-input-btn" id="btn-speak-user-desc" title="Listen to your description">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
-                    <span>Nghe câu này</span>
+                    <span>Listen</span>
                   </button>
                 </div>
 
@@ -418,20 +420,20 @@ export function renderPart1(container) {
               <!-- Model Answers Accordion -->
               <details class="part1-model-answers-accordion">
                 <summary class="model-answers-summary">
-                  <span class="sum-title">💡 Xem câu mẫu chuẩn ETS (Band 100%)</span>
+                  <span class="sum-title">Model Answers (ETS Band 100%)</span>
                   <span class="sum-arrow">▾</span>
                 </summary>
                 <div class="model-answers-list">
                   ${(currentScene.describeChallenge.modelAnswers || []).map((ans, idx) => `
                     <div class="model-answer-item">
                       <div class="model-ans-top">
-                        <span class="model-ans-badge">Mẫu ${idx + 1} (${ans.score}%)</span>
-                        <button class="kw-audio-btn model-say-btn" data-say="${appEsc(ans.en)}" title="Nghe câu mẫu chuẩn">
+                        <span class="model-ans-badge">Sample ${idx + 1} (${ans.score}%)</span>
+                        <button class="kw-audio-btn model-say-btn" data-say="${appEsc(ans.en)}" title="Listen to sample">
                           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
-                          <span>Nghe phát âm</span>
+                          <span>Listen</span>
                         </button>
-                        <button class="model-use-btn" data-copy="${appEsc(ans.en)}" title="Sao chép vào ô làm bài">
-                          Dùng câu này
+                        <button class="model-use-btn" data-copy="${appEsc(ans.en)}" title="Copy to input">
+                          Use This
                         </button>
                       </div>
                       <div class="model-ans-en">${appEsc(ans.en)}</div>
@@ -448,8 +450,7 @@ export function renderPart1(container) {
             <div class="part1-card part1-drill-card">
               <div class="part1-card-head">
                 <div class="head-title">
-                  <span class="head-icon">🎧</span>
-                  <span>Luyện nghe ETS 4 phương án (Part 1 Simulation)</span>
+                  <span>ETS 4-Option Listening Drill</span>
                 </div>
                 <div class="head-badge-ets">ETS DRILL</div>
               </div>
@@ -461,7 +462,7 @@ export function renderPart1(container) {
                     const isSubDone = scDrillState.bySub && scDrillState.bySub[dIdx] && scDrillState.bySub[dIdx].selected === d.correct;
                     return `
                       <button class="part1-subdrill-btn ${isDActive ? 'is-active' : ''}" data-sub-drill="${dIdx}" style="border:0;background:${isDActive ? 'var(--surface)' : 'none'};color:${isDActive ? 'var(--accent)' : 'var(--muted)'};padding:6px 14px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer">
-                        Câu ${dIdx + 1}${isSubDone ? ' ✓' : ''}
+                        Q${dIdx + 1}${isSubDone ? ' ✓' : ''}
                       </button>
                     `;
                   }).join('')}
@@ -477,13 +478,13 @@ export function renderPart1(container) {
                 <button class="part1-play-all-btn ${isPlayingSequentialDrill ? 'is-playing' : ''}" id="btn-play-all-drill">
                   ${isPlayingSequentialDrill ? `
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                    <span>Đang phát lần lượt (A, B, C, D)... [Dừng]</span>
+                    <span>Playing A–D... [Stop]</span>
                   ` : `
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    <span>▶️ Nghe toàn bộ 4 câu (Mô phỏng thi ETS)</span>
+                    <span>Play All 4 Options (ETS Simulation)</span>
                   `}
                 </button>
-                <span class="audio-hint">Nghỉ 2.5 giây giữa các câu giống đề thi thật</span>
+                <span class="audio-hint">2.5s pause between options (ETS timing)</span>
               </div>
 
               <!-- 4 Options Cards -->
@@ -502,24 +503,24 @@ export function renderPart1(container) {
                   return `
                     <div class="part1-option-item ${cardClass}" data-opt-id="${opt.id}" id="part1-opt-${opt.id}">
                       <div class="opt-left">
-                        <button class="opt-choice-btn" data-select-opt="${opt.id}" title="Chọn đáp án ${opt.id}">
+                        <button class="opt-choice-btn" data-select-opt="${opt.id}" title="Select option ${opt.id}">
                           <span class="opt-letter">${opt.id}</span>
                         </button>
-                        <button class="opt-sound-btn" data-say="${appEsc(opt.text)}" title="Nghe câu (${opt.id})">
+                        <button class="opt-sound-btn" data-say="${appEsc(opt.text)}" title="Listen to option (${opt.id})">
                           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
-                          <span>Nghe (${opt.id})</span>
+                          <span>Listen (${opt.id})</span>
                         </button>
                       </div>
 
                       <div class="opt-body">
                         <div class="opt-text ${isSubmitted ? 'revealed' : 'blur-hint'}">
-                          ${isSubmitted ? appEsc(opt.text) : '<i>Phương án ' + opt.id + ' (Bấm nghe hoặc nộp bài để xem phụ đề)</i>'}
+                          ${isSubmitted ? appEsc(opt.text) : '<i>Option ' + opt.id + ' (Listen or submit to reveal transcript)</i>'}
                         </div>
 
                         ${isSubmitted ? `
                           <div class="opt-vi">${appEsc(opt.vi)}</div>
                           <div class="opt-trap-badge ${opt.isCorrect ? 'trap-correct' : 'trap-wrong'}">
-                            ${opt.isCorrect ? '✓ ' : '⚠️ '}${appEsc(opt.trapType)}
+                            ${opt.isCorrect ? '✓ ' : '✕ '}${appEsc(opt.trapType)}
                           </div>
                           <div class="opt-explanation">
                             ${appEsc(opt.explanation)}
@@ -540,20 +541,20 @@ export function renderPart1(container) {
               <div class="part1-drill-actions">
                 ${!curDrillState.isSubmitted ? `
                   <button class="part1-btn-submit-drill ${curDrillState.selected ? '' : 'is-disabled'}" id="btn-submit-drill">
-                    Kiểm tra đáp án & Xem phân tích bẫy
+                    Check Answer
                   </button>
                 ` : `
                   <div class="drill-result-banner ${curDrillState.selected === activeDrill.correct ? 'banner-correct' : 'banner-wrong'}">
                     ${curDrillState.selected === activeDrill.correct ? `
-                      <div class="res-title">🎉 Chính xác! Bạn đã chọn đáp án đúng (${activeDrill.correct})</div>
-                      <div class="res-sub">Bạn đã phát hiện chính xác hành động thật và né được toàn bộ bẫy Being V3 của ETS.</div>
+                      <div class="res-title">Correct! Answer: (${activeDrill.correct})</div>
+                      <div class="res-sub">You identified the actual action and avoided the ETS traps.</div>
                     ` : `
-                      <div class="res-title">⚠️ Chưa chính xác. Đáp án đúng là (${activeDrill.correct})</div>
-                      <div class="res-sub">Hãy đọc kỹ phần phân tích bẫy ngữ pháp ở trên để nhận diện cạm bẫy trong kỳ thi thật.</div>
+                      <div class="res-title">Incorrect. Correct answer: (${activeDrill.correct})</div>
+                      <div class="res-sub">Review the trap analysis above to recognize common ETS distractors.</div>
                     `}
                   </div>
                   <button class="part1-btn-retry-drill" id="btn-retry-drill">
-                    Làm lại bài này
+                    Retry
                   </button>
                 `}
               </div>
@@ -561,12 +562,11 @@ export function renderPart1(container) {
               <!-- ETS Strategic Tips Box -->
               <div class="part1-strategy-card">
                 <div class="strategy-head">
-                  <span class="strategy-icon">💡</span>
-                  <span class="strategy-title">Mẹo làm bài Part 1 (ETS Tactical Tip)</span>
+                  <span class="strategy-title">ETS Part 1 Strategy Tip</span>
                 </div>
                 <div class="strategy-content">
-                  <p><b>Quy tắc bẫy Being V3:</b> Nếu tranh <b>không có người tác động trực tiếp</b> hoặc hành động đang không diễn ra tại thời điểm chụp, bất kỳ phương án nào chứa <code>is/are being + V3</code> đều là <b>BẪY SAI 100%</b>.</p>
-                  <p style="margin-top:6px"><b>Quy tắc hành động vs đồ vật:</b> ETS rất hay lấy đồ vật thật trong tranh (như <i>mug, lamp, shelf</i>) nhưng ghép với động từ sai (như <i>drinking, adjusting, assembling</i>). Luôn nhìn kỹ bàn tay và ánh mắt của nhân vật!</p>
+                  <p><b>Being + V3 Trap:</b> If no person is actively performing the action in the photo, any option with <code>is/are being + V3</code> is <b>always incorrect</b>.</p>
+                  <p style="margin-top:6px"><b>Action vs. Object Trap:</b> ETS often pairs real objects in the photo (e.g., <i>mug, lamp, shelf</i>) with wrong verbs (e.g., <i>drinking, adjusting, assembling</i>). Always check the subject's hands and gaze.</p>
                 </div>
               </div>
             </div>
@@ -580,6 +580,8 @@ export function renderPart1(container) {
 }
 
 function bindPart1Events(container, currentScene) {
+  const { scDrillState, activeDrill, curDrillState } = getSceneDrillContext(currentScene);
+
   // 0. Topic Selector Tabs / Pills
   container.querySelectorAll('.part1-topic-pill').forEach((pill) => {
     pill.addEventListener('click', () => {
@@ -624,7 +626,7 @@ function bindPart1Events(container, currentScene) {
       if (layer) layer.classList.toggle('show-labels', showLabels);
       toggleBtn.classList.toggle('active', showLabels);
       const span = toggleBtn.querySelector('span');
-      if (span) span.textContent = showLabels ? 'Ẩn nhãn từ vựng' : 'Hiện nhãn từ vựng';
+      if (span) span.textContent = showLabels ? 'Hide Labels' : 'Show Labels';
     });
   }
 
@@ -660,7 +662,9 @@ function bindPart1Events(container, currentScene) {
               <span class="pop-word">${appEsc(kw.word)}</span>
               <span class="pop-pos">(${appEsc(kw.pos)})</span>
               <span class="pop-ipa">${appEsc(kw.ipa)}</span>
-              <button class="pop-audio-btn" data-say="${appEsc(kw.word)}" title="Nghe phát âm">🔊</button>
+              <button class="pop-audio-btn" data-say="${appEsc(kw.word)}" title="Listen" aria-label="Listen">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+              </button>
             </div>
             <div class="pop-vi">${appEsc(kw.vi)}</div>
             <div class="pop-example"><b>Ex:</b> "${appEsc(kw.example)}"</div>
@@ -746,7 +750,7 @@ function bindPart1Events(container, currentScene) {
     speakUserBtn.addEventListener('click', () => {
       const text = descInput ? descInput.value.trim() : '';
       if (!text) {
-        if (appShowToast) appShowToast('Vui lòng nhập hoặc nói câu mô tả trước.');
+        if (appShowToast) appShowToast('Please type or speak a description first.');
         return;
       }
       if (appSpeak) appSpeak(text);
@@ -762,7 +766,7 @@ function bindPart1Events(container, currentScene) {
         userDescState[currentScene.id] = copyText;
         updateRealtimeAnalysisUI(container, currentScene, copyText);
         descInput.focus();
-        if (appShowToast) appShowToast('Đã điền câu mẫu vào ô làm bài!');
+        if (appShowToast) appShowToast('Sample answer copied to input.');
       }
     });
   });
@@ -796,7 +800,7 @@ function bindPart1Events(container, currentScene) {
   if (submitDrillBtn) {
     submitDrillBtn.addEventListener('click', () => {
       if (!curDrillState.selected) {
-        if (appShowToast) appShowToast('Vui lòng chọn 1 phương án (A, B, C hoặc D) trước khi kiểm tra.');
+        if (appShowToast) appShowToast('Please select an option (A, B, C, or D) first.');
         return;
       }
       curDrillState.isSubmitted = true;
@@ -835,7 +839,7 @@ function bindPart1Events(container, currentScene) {
       isPlayingSequentialDrill = true;
       playAllBtn.classList.add('is-playing');
       const span = playAllBtn.querySelector('span');
-      if (span) span.textContent = 'Đang phát lần lượt (A, B, C, D)... [Dừng]';
+      if (span) span.textContent = 'Playing A–D... [Stop]';
 
       let idx = 0;
       function playNext() {
@@ -845,7 +849,7 @@ function bindPart1Events(container, currentScene) {
           if (btn) {
             btn.classList.remove('is-playing');
             const s = btn.querySelector('span');
-            if (s) s.textContent = '▶️ Nghe toàn bộ 4 câu (Mô phỏng thi ETS)';
+            if (s) s.textContent = 'Play All 4 Options (ETS Simulation)';
           }
           container.querySelectorAll('.part1-option-item').forEach((item) => item.classList.remove('is-speaking-now'));
           return;
@@ -915,7 +919,7 @@ function updateRealtimeAnalysisUI(container, currentScene, text) {
     if (isUsed && !check) {
       const c = document.createElement('span');
       c.className = 'kw-check';
-      c.title = 'Đã sử dụng trong câu miêu tả';
+      c.title = 'Used in your description';
       c.textContent = '✓';
       chip.appendChild(c);
     } else if (!isUsed && check) {

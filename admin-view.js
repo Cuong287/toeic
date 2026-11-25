@@ -5,7 +5,7 @@ import {
   saveHomeworkAssignment,
   deleteHomeworkAssignment,
   getAssignmentSubmissions
-} from './homework-service.js?v=42';
+} from './homework-service.js?v=51';
 
 let store = null;
 let esc = s => s;
@@ -30,7 +30,10 @@ let TOPICS = [];
 let GRAMMAR_TOPICS = [];
 let PRACTICE_PARAGRAPHS = [];
 let PRACTICE_UNITS = [];
+let PRACTICE_TENSES = [];
 let PRONUN_UNITS = [];
+let splitTitle = t => ({ main: (t && t.title) || '', sub: '' });
+let formatFirebaseError = err => (err && err.message) ? err.message : String(err || 'Unknown error');
 
 export function initAdminView(context) {
   if (!context) return;
@@ -57,7 +60,10 @@ export function initAdminView(context) {
   GRAMMAR_TOPICS = context.GRAMMAR_TOPICS || GRAMMAR_TOPICS;
   PRACTICE_PARAGRAPHS = context.PRACTICE_PARAGRAPHS || PRACTICE_PARAGRAPHS;
   PRACTICE_UNITS = context.PRACTICE_UNITS || PRACTICE_UNITS;
+  PRACTICE_TENSES = context.PRACTICE_TENSES || PRACTICE_TENSES;
   PRONUN_UNITS = context.PRONUN_UNITS || PRONUN_UNITS;
+  splitTitle = context.splitTitle || splitTitle;
+  formatFirebaseError = context.formatFirebaseError || formatFirebaseError;
 }
 
 export function updateAdminUserContext(ctx) {
@@ -72,7 +78,7 @@ export function updateAdminUserContext(ctx) {
   if (ctx.isTeacherUser !== undefined) isTeacherUser = ctx.isTeacherUser;
 }
 
-// ---------- NEW PAGE: TEACHER & CLASS MANAGEMENT (Quản lý lớp học cho Thầy) ----------
+// ---------- TEACHER & CLASSROOM MANAGEMENT ----------
 export function fmtRelativeTime(ms) {
   if (!ms) return 'Never';
   const diff = Date.now() - ms;
@@ -80,7 +86,7 @@ export function fmtRelativeTime(ms) {
   if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
   if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
   if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + 'd ago';
-  return new Date(ms).toLocaleDateString('vi-VN');
+  return new Date(ms).toLocaleDateString('en-US');
 }
 
 export function exportStudentsCSV(users) {
@@ -90,8 +96,8 @@ export function exportStudentsCSV(users) {
     u.displayName,
     u.email,
     u.isAdmin ? 'Admin' : (u.isTeacher ? 'Instructor' : 'Student'),
-    u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '',
-    u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('vi-VN') : '',
+    u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US') : '',
+    u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('en-US') : '',
     u.topicsAttempted || 0,
     u.completedCount || 0,
     u.totalBest || 0,
@@ -105,12 +111,12 @@ export function exportStudentsCSV(users) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `BaoCao_LopHoc_TOEIC_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `TOEIC_Classroom_Report_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('✓ Exported CSV report (Excel compatible)!');
+  showToast('Exported classroom roster CSV.');
 }
 
 let currentAdminTab = 'roster'; // 'roster' | 'homework'
@@ -127,38 +133,45 @@ export async function renderAdmin(box) {
     return;
   }
 
+  if (window._pendingAdminTab) {
+    currentAdminTab = window._pendingAdminTab;
+    window._pendingAdminTab = null;
+  }
+
   box.innerHTML = `
     <div class="thead" style="margin-bottom:14px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
-          <div class="eyebrow" style="color:#2563EB;font-weight:700">${isAdminUser ? 'Admin & Instructor Portal' : 'Instructor Portal'}</div>
+          <div class="eyebrow" style="color:var(--accent);font-weight:700">${isAdminUser ? 'Admin & Instructor Portal' : 'Instructor Portal'}</div>
           <h1 style="font-size:28px;margin:4px 0">Classroom Management & Submissions</h1>
           <div class="meta">
-            <span>Quản lý học viên, giao bài tập về nhà và theo dõi tiến độ học tập trên toàn bộ nền tảng.</span>
+            <span>Manage students, assign homework, and track progress across the platform.</span>
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="btn-admin-refresh" style="font-size:13px">Refresh</button>
-          <button class="btn" id="btn-admin-export" style="font-size:13px" ${currentAdminTab === 'roster' ? '' : 'style="display:none"'}>Export CSV</button>
+          ${currentAdminTab === 'roster' ? `<button class="btn" id="btn-admin-export" style="font-size:13px">Export CSV</button>` : ''}
           ${isAdminUser ? `<button class="btn primary" id="btn-manage-teachers" style="font-size:13px">Manage Instructors</button>` : ''}
-          ${currentAdminTab === 'homework' ? `<button class="btn primary" id="btn-admin-create-hw" style="font-size:13px">+ Giao bài tập mới</button>` : ''}
+          ${currentAdminTab === 'homework' ? `<button class="btn primary" id="btn-admin-create-hw" style="font-size:13px">+ New Assignment</button>` : ''}
         </div>
       </div>
     </div>
 
     <!-- Sub-navigation Tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;overflow-x:auto">
-      <button class="btn ${currentAdminTab === 'roster' ? 'primary' : 'ghost'}" id="admin-tab-btn-roster" style="font-size:13.5px;padding:7px 16px;display:inline-flex;align-items:center;gap:6px">
-        <span>👥 Danh sách học viên (Roster)</span>
-      </button>
-      <button class="btn ${currentAdminTab === 'homework' ? 'primary' : 'ghost'}" id="admin-tab-btn-hw" style="font-size:13.5px;padding:7px 16px;display:inline-flex;align-items:center;gap:6px">
-        <span>📝 Bài tập về nhà (Homework)</span>
-        <span class="badge" id="admin-hw-tab-badge" style="background:var(--accent-soft);color:var(--accent);font-size:11px;padding:1px 7px;border-radius:10px">...</span>
-      </button>
+    <div style="margin-bottom:16px;overflow-x:auto">
+      <div class="seg" role="tablist">
+        <button type="button" role="tab" aria-selected="${currentAdminTab === 'roster' ? 'true' : 'false'}" aria-pressed="${currentAdminTab === 'roster' ? 'true' : 'false'}" class="${currentAdminTab === 'roster' ? 'active' : ''}" id="admin-tab-btn-roster">
+          Student Roster
+        </button>
+        <button type="button" role="tab" aria-selected="${currentAdminTab === 'homework' ? 'true' : 'false'}" aria-pressed="${currentAdminTab === 'homework' ? 'true' : 'false'}" class="${currentAdminTab === 'homework' ? 'active' : ''}" id="admin-tab-btn-hw" style="display:inline-flex;align-items:center;gap:6px">
+          <span>Homework</span>
+          <span class="badge" id="admin-hw-tab-badge" style="background:var(--accent-soft);color:var(--accent);font-size:11px;padding:1px 7px;border-radius:10px">...</span>
+        </button>
+      </div>
     </div>
 
     <div id="admin-tab-main-content">
-      <div class="card" style="text-align:center;padding:32px"><div class="hint">Đang tải dữ liệu lớp học…</div></div>
+      <div class="card" style="text-align:center;padding:32px"><div class="hint">Loading classroom data…</div></div>
     </div>
   `;
 
@@ -298,7 +311,7 @@ export async function renderAdmin(box) {
           <div class="lbl">TOEIC Completed</div>
         </div>
         <div class="stat-card">
-          <div class="val" style="color:#E11D48">${sumPronunFilled}</div>
+          <div class="val" style="color:var(--bad)">${sumPronunFilled}</div>
           <div class="lbl">Pronunciation Completed</div>
         </div>
       </div>
@@ -354,7 +367,7 @@ export async function renderAdmin(box) {
         if (srt === 'recent') return (b.lastActiveAt || 0) - (a.lastActiveAt || 0);
         if (srt === 'score') return (b.totalBest || 0) - (a.totalBest || 0);
         if (srt === 'pronun') return (b.pronunExFilled || 0) - (a.pronunExFilled || 0);
-        if (srt === 'name') return (a.displayName || '').localeCompare(b.displayName || '', 'vi');
+        if (srt === 'name') return (a.displayName || '').localeCompare(b.displayName || '', 'en');
         if (srt === 'joined') return (b.createdAt || 0) - (a.createdAt || 0);
         return 0;
       });
@@ -383,22 +396,22 @@ export async function renderAdmin(box) {
                   <td style="padding-left:16px">
                     <div style="display:flex;align-items:center;gap:8px">
                       <div style="font-weight:700">${esc(u.displayName)}</div>
-                      ${u.isAdmin ? '<span style="font-size:10.5px;background:#F59E0B;color:#fff;padding:1px 6px;border-radius:10px;font-weight:700">Admin</span>' : (u.isTeacher ? '<span style="font-size:10.5px;background:#2563EB;color:#fff;padding:1px 6px;border-radius:10px;font-weight:700">Instructor</span>' : '')}
+                      ${u.isAdmin ? '<span style="font-size:10.5px;background:var(--warn-soft);color:var(--warn);padding:1px 6px;border-radius:10px;font-weight:700">Admin</span>' : (u.isTeacher ? '<span style="font-size:10.5px;background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:10px;font-weight:700">Instructor</span>' : '')}
                     </div>
                     <div style="font-size:12px;color:var(--muted)">${esc(u.email || 'No email')}</div>
                   </td>
                   <td style="font-size:12.5px;color:var(--muted)">
                     <div>${fmtRelativeTime(u.lastActiveAt)}</div>
-                    <div style="font-size:11px;opacity:.75">Tham gia: ${u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}</div>
+                    <div style="font-size:11px;opacity:.75">Joined: ${u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US') : '—'}</div>
                   </td>
                   <td style="text-align:center">
                     <div style="font-weight:700">${u.topicsAttempted || 0}/45</div>
-                    <div style="font-size:11px;color:var(--good)">✓ ${u.completedCount || 0} completed</div>
+                    <div style="font-size:11px;color:var(--good)">${u.completedCount || 0} completed</div>
                   </td>
                   <td style="text-align:right;font-weight:800;color:var(--accent)">${u.totalBest || 0}</td>
                   <td style="text-align:center">
-                    <div style="font-weight:700;color:#E11D48">${u.pronunExFilled || 0} units</div>
-                    <div style="font-size:11px;color:var(--muted)">${u.pronunUnitsDone || 0} Unit</div>
+                    <div style="font-weight:700;color:var(--bad)">${u.pronunExFilled || 0} exercises</div>
+                    <div style="font-size:11px;color:var(--muted)">${u.pronunUnitsDone || 0} units</div>
                   </td>
                   <td style="text-align:center;padding-right:16px">
                     <button class="btn primary" data-inspect="${esc(u.uid)}" data-name="${esc(u.displayName || u.email || 'Student')}" style="padding:5px 12px;font-size:12.5px">View Submissions</button>
@@ -419,7 +432,7 @@ export async function renderAdmin(box) {
     tabContainer.querySelector('#admin-sort').onchange = renderTable;
     renderTable();
   } catch (err) {
-    console.error('Lỗi tải danh sách thành viên:', err);
+    console.error('Failed to load student roster:', err);
     tabContainer.innerHTML = `<div class="card"><div class="fb no">Error loading data: ${esc(err.message)}</div></div>`;
   }
 }
@@ -430,23 +443,18 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
     <div id="admin-hw-stats" class="stat-grid" style="margin-bottom:16px"></div>
 
     <div class="card" style="margin-bottom:14px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <input type="search" id="admin-hw-search" placeholder="Tìm kiếm bài tập theo tiêu đề hoặc nội dung..." style="flex:1;min-width:220px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+      <input type="search" id="admin-hw-search" placeholder="Search assignments by title or content..." style="flex:1;min-width:220px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
       <select id="admin-hw-filter-status" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13px">
-        <option value="all">Tất cả trạng thái</option>
-        <option value="active">Đang mở (Active)</option>
-        <option value="expired">Đã hết hạn (Expired)</option>
+        <option value="all">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="expired">Expired</option>
       </select>
-      <button class="btn primary" id="btn-create-hw-in-tab" style="font-size:13px;display:inline-flex;align-items:center;gap:6px">
-        <span>+ Giao bài tập mới</span>
-      </button>
     </div>
 
     <div id="admin-hw-list">
-      <div class="card" style="text-align:center;padding:32px"><div class="hint">Đang tải danh sách bài tập…</div></div>
+      <div class="card" style="text-align:center;padding:32px"><div class="hint">Loading assignments…</div></div>
     </div>
   `;
-
-  container.querySelector('#btn-create-hw-in-tab').onclick = () => openCreateAssignmentModal(onRefresh);
 
   const hwListEl = container.querySelector('#admin-hw-list');
   const hwStatsEl = container.querySelector('#admin-hw-stats');
@@ -458,32 +466,31 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
   hwStatsEl.innerHTML = `
     <div class="stat-card">
       <div class="val">${assignments.length}</div>
-      <div class="lbl">Tổng bài tập đã tạo</div>
+      <div class="lbl">Total Assignments</div>
     </div>
     <div class="stat-card">
       <div class="val" style="color:var(--good)">${activeCount}</div>
-      <div class="lbl">Đang mở (Active)</div>
+      <div class="lbl">Active</div>
     </div>
     <div class="stat-card">
       <div class="val" style="color:var(--muted)">${expiredCount}</div>
-      <div class="lbl">Đã hết hạn (Expired)</div>
+      <div class="lbl">Expired</div>
     </div>
     <div class="stat-card">
       <div class="val" style="color:var(--accent)" id="admin-hw-total-subs-val">...</div>
-      <div class="lbl">Lượt hoàn thành từ học viên</div>
+      <div class="lbl">Student Completions</div>
     </div>
   `;
 
   if (assignments.length === 0) {
     hwListEl.innerHTML = `
       <div class="card" style="text-align:center;padding:40px 20px">
-        <div style="font-size:42px;margin-bottom:8px">📝</div>
-        <h3 style="margin:0 0 6px;font-size:18px">Chưa có bài tập nào được giao</h3>
+        <h3 style="margin:0 0 6px;font-size:18px">No Assignments Yet</h3>
         <p class="hint" style="max-width:500px;margin:0 auto 18px;line-height:1.5">
-          Giáo viên chỉ cần điền nội dung bài tập vào ô text và bấm Giao bài tập. Học viên sẽ thấy ngay trên Trang chủ để xem và bấm hoàn thành.
+          Create an assignment with instructions and an optional due date. Students will see it directly on their dashboard.
         </p>
         <button class="btn primary" id="btn-empty-create-hw" style="display:inline-flex;align-items:center;gap:6px;padding:9px 20px;font-size:14px">
-          <span>+ Giao bài tập đầu tiên</span>
+          <span>+ New Assignment</span>
         </button>
       </div>
     `;
@@ -525,7 +532,7 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
     });
 
     if (filtered.length === 0) {
-      hwListEl.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="hint">Không tìm thấy bài tập nào phù hợp với bộ lọc.</div></div>';
+      hwListEl.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="hint">No assignments matched your filter.</div></div>';
       return;
     }
 
@@ -534,10 +541,10 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
         <table class="lb-table" style="margin:0;width:100%">
           <thead>
             <tr>
-              <th style="padding-left:16px;width:50%">Bài tập & Nội dung</th>
-              <th>Hạn nộp</th>
-              <th style="text-align:center">Hoàn thành</th>
-              <th style="text-align:right;padding-right:16px">Thao tác</th>
+              <th style="padding-left:16px;width:50%">Assignment</th>
+              <th>Due Date</th>
+              <th style="text-align:center">Completion</th>
+              <th style="text-align:right;padding-right:16px">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -550,21 +557,21 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
               return `
                 <tr class="lb-row">
                   <td style="padding-left:16px">
-                    <div style="font-weight:700;font-size:15px;color:var(--ink)">${esc(hw.title || 'Bài tập về nhà')}</div>
+                    <div style="font-weight:700;font-size:15px;color:var(--ink)">${esc(hw.title || 'Assigned Homework')}</div>
                     <div class="hint" style="font-size:12.5px;margin-top:4px;white-space:pre-wrap;line-height:1.5;max-height:85px;overflow-y:auto;background:var(--sunk);padding:6px 10px;border-radius:6px">${esc(contentText)}</div>
                   </td>
                   <td style="font-size:12.5px">
                     <div>${fmtDue(hw.dueDate)}</div>
-                    <div><span class="badge ${isExpired ? 'bad' : 'ok'}" style="font-size:10.5px">${isExpired ? 'Đã hết hạn' : 'Đang mở'}</span></div>
+                    <div><span class="badge ${isExpired ? 'bad' : 'ok'}" style="font-size:10.5px">${isExpired ? 'Expired' : 'Active'}</span></div>
                   </td>
                   <td style="text-align:center">
                     <div style="font-weight:700;font-size:13.5px">${subCount} / ${users.length}</div>
-                    <div class="hint" style="font-size:11px;color:${subCount > 0 ? 'var(--good)' : 'var(--muted)'}">${pctSub}% học viên</div>
+                    <div class="hint" style="font-size:11px;color:${subCount > 0 ? 'var(--good)' : 'var(--muted)'}">${pctSub}% of students</div>
                   </td>
                   <td style="text-align:right;padding-right:16px;white-space:nowrap">
-                    <button class="btn primary btn-view-hw-subs" data-hw-id="${esc(hw.id)}" style="padding:4px 10px;font-size:12px;margin-right:6px">Xem nộp bài</button>
-                    <button class="btn ghost btn-edit-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;margin-right:6px">Sửa</button>
-                    <button class="btn ghost btn-del-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;color:var(--bad);border-color:var(--bad)">Xóa</button>
+                    <button class="btn primary btn-view-hw-subs" data-hw-id="${esc(hw.id)}" style="padding:4px 10px;font-size:12px;margin-right:6px">Submissions</button>
+                    <button class="btn ghost btn-edit-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;margin-right:6px">Edit</button>
+                    <button class="btn ghost btn-del-hw" data-hw-id="${esc(hw.id)}" style="padding:4px 8px;font-size:12px;color:var(--bad);border-color:var(--bad)">Delete</button>
                   </td>
                 </tr>
               `;
@@ -593,15 +600,15 @@ export async function renderAdminHomeworkView(container, assignments, users, onR
         const hw = assignments.find(x => x.id === btn.dataset.hwId);
         if (!hw) return;
         const ok = await confirmModal({
-          title: 'Xóa bài tập về nhà?',
-          message: `Bạn có chắc muốn xóa bài tập "${hw.title || 'Bài tập này'}"? Dữ liệu hoàn thành của học viên cho bài này cũng sẽ bị xóa.`,
-          confirmText: 'Xóa bài tập',
-          cancelText: 'Hủy',
+          title: 'Delete Assignment?',
+          message: `Are you sure you want to delete "${hw.title || 'this assignment'}"? Student completion records for this assignment will also be removed.`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
           danger: true
         });
         if (!ok) return;
         await deleteHomeworkAssignment(hw.id);
-        showToast('✓ Đã xóa bài tập về nhà.');
+        showToast('Assignment deleted.');
         if (onRefresh) onRefresh();
       };
     });
@@ -624,31 +631,31 @@ export function openCreateAssignmentModal(onDone, existingHw = null) {
     <div class="modal-backdrop">
       <div class="modal-box" style="max-width:580px;width:95%">
         <button class="modal-close" aria-label="Close">✕</button>
-        <h3 style="margin:0 0 6px;font-size:20px">${isEdit ? 'Chỉnh sửa bài tập về nhà' : 'Giao bài tập về nhà'}</h3>
+        <h3 style="margin:0 0 6px;font-size:20px">${isEdit ? 'Edit Assignment' : 'New Assignment'}</h3>
         <p class="hint" style="margin:0 0 16px;line-height:1.5">
-          Nhập nội dung bài tập giáo viên muốn giao. Học viên sẽ thấy thông báo và nội dung này trực tiếp trên Trang chủ.
+          Enter the assignment details below. Students will see it directly on their dashboard.
         </p>
 
         <form id="create-hw-form" style="display:flex;flex-direction:column;gap:14px">
           <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Tiêu đề bài tập</label>
-            <input type="text" id="new-hw-title" placeholder="vd: Bài tập tuần 3: Ôn từ vựng & Dịch câu Topic 03..." value="${esc(existingHw?.title || '')}" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px" />
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Title</label>
+            <input type="text" id="new-hw-title" placeholder="e.g. Week 3: Topic 03 Vocabulary & Translation" value="${esc(existingHw?.title || '')}" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px" />
           </div>
 
           <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Nội dung bài tập * (Vùng điền text chính)</label>
-            <textarea id="new-hw-content" rows="7" required placeholder="Nhập chi tiết bài tập cần làm, yêu cầu, dặn dò...&#10;Ví dụ:&#10;- Học kỹ 15 từ vựng của Topic 03: Recommendation&#10;- Dịch 7 câu bài tập trong tab Translation&#10;- Luyện phát âm các từ mới và chuẩn bị bài cho buổi học tới..." style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;resize:vertical">${esc(existingHw?.content || existingHw?.instructions || '')}</textarea>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Instructions *</label>
+            <textarea id="new-hw-content" rows="7" required placeholder="Enter assignment instructions, tasks, and notes...&#10;Example:&#10;- Review 15 vocabulary words from Topic 03: Recommendation&#10;- Translate the 7 practice sentences in the Translation tab&#10;- Practice pronunciation for the new vocabulary before next class" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;resize:vertical">${esc(existingHw?.content || existingHw?.instructions || '')}</textarea>
           </div>
 
           <div>
-            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Hạn nộp (tùy chọn)</label>
+            <label style="font-weight:700;font-size:13px;display:block;margin-bottom:5px">Due Date (optional)</label>
             <input type="datetime-local" id="new-hw-due-date" value="${dueDefaultStr}" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
           </div>
 
           <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
-            <button type="button" class="btn ghost" id="btn-cancel-create-hw">Hủy</button>
+            <button type="button" class="btn ghost" id="btn-cancel-create-hw">Cancel</button>
             <button type="submit" class="btn primary" id="btn-submit-create-hw" style="padding:9px 22px">
-              ${isEdit ? 'Lưu thay đổi' : 'Giao bài tập'}
+              ${isEdit ? 'Save Changes' : 'Assign Homework'}
             </button>
           </div>
         </form>
@@ -668,16 +675,16 @@ export function openCreateAssignmentModal(onDone, existingHw = null) {
     e.preventDefault();
     const content = contentEl.value.trim();
     if (!content) {
-      showToast('Vui lòng nhập nội dung bài tập');
+      showToast('Please enter assignment instructions.');
       return;
     }
-    const title = titleEl.value.trim() || 'Bài tập về nhà';
+    const title = titleEl.value.trim() || 'Assigned Homework';
     const dueDate = dueDateEl.value ? new Date(dueDateEl.value).toISOString() : null;
 
     const submitBtn = document.querySelector('#btn-submit-create-hw');
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = isEdit ? 'Đang lưu…' : 'Đang giao…';
+      submitBtn.textContent = isEdit ? 'Saving…' : 'Assigning…';
     }
 
     const hwObj = {
@@ -689,11 +696,11 @@ export function openCreateAssignmentModal(onDone, existingHw = null) {
       createdAt: existingHw ? (existingHw.createdAt || Date.now()) : Date.now(),
       updatedAt: Date.now(),
       createdBy: (currentUser && currentUser.uid) || 'teacher',
-      teacherName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Giáo viên'
+      teacherName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Instructor'
     };
 
     await saveHomeworkAssignment(hwObj);
-    showToast(`✓ Đã ${isEdit ? 'cập nhật' : 'giao'} bài tập: "${title}"`);
+    showToast(`${isEdit ? 'Updated' : 'Assigned'} homework: "${title}"`);
     closeModal();
     if (onDone) onDone();
   };
@@ -707,27 +714,27 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
         <button class="modal-close" aria-label="Close">✕</button>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
           <div>
-            <div class="eyebrow" style="color:var(--accent);font-weight:700">Chi tiết hoàn thành bài tập</div>
-            <h3 style="margin:4px 0;font-size:20px">${esc(assignment.title || 'Bài tập về nhà')}</h3>
+            <div class="eyebrow" style="color:var(--accent);font-weight:700">Assignment Submissions</div>
+            <h3 style="margin:4px 0;font-size:20px">${esc(assignment.title || 'Assigned Homework')}</h3>
             <div class="hint" style="font-size:12.5px">
-              Hạn nộp: <b>${fmtDue(assignment.dueDate)}</b> · Người giao: <b>${esc(assignment.teacherName || 'Giáo viên')}</b>
+              Due: <b>${fmtDue(assignment.dueDate)}</b> · Assigned by: <b>${esc(assignment.teacherName || 'Instructor')}</b>
             </div>
           </div>
           <div>
-            <button class="btn" id="btn-export-hw-subs" style="font-size:12.5px">Xuất CSV</button>
+            <button class="btn" id="btn-export-hw-subs" style="font-size:12.5px">Export CSV</button>
           </div>
         </div>
 
         ${contentText ? `
           <div style="white-space:pre-wrap;line-height:1.5;font-size:13px;color:var(--ink);background:var(--sunk);padding:10px 14px;border-radius:8px;margin-bottom:14px;border:1px solid var(--line)">
-            <b>Nội dung bài tập:</b><br>${esc(contentText)}
+            <b>Instructions:</b><br>${esc(contentText)}
           </div>
         ` : ''}
 
         <div id="modal-hw-stats" class="stat-grid" style="margin-bottom:14px"></div>
 
         <div style="margin-bottom:12px">
-          <input type="search" id="modal-hw-search" placeholder="Tìm kiếm học viên..." style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
+          <input type="search" id="modal-hw-search" placeholder="Search students..." style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px" />
         </div>
 
         <div id="modal-hw-table-container"></div>
@@ -756,11 +763,11 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
   statsBox.innerHTML = `
     <div class="stat-card">
       <div class="val">${submittedCount}<span style="font-size:15px;color:var(--muted);font-weight:600"> / ${totalStudents}</span></div>
-      <div class="lbl">Đã hoàn thành (${pctSubmitted}%)</div>
+      <div class="lbl">Completed (${pctSubmitted}%)</div>
     </div>
     <div class="stat-card">
       <div class="val" style="color:var(--muted)">${missingCount}</div>
-      <div class="lbl">Chưa hoàn thành</div>
+      <div class="lbl">Pending</div>
     </div>
   `;
 
@@ -773,7 +780,7 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
     });
 
     if (filteredUsers.length === 0) {
-      tableBox.innerHTML = '<div class="hint" style="text-align:center;padding:24px">Không tìm thấy học viên nào.</div>';
+      tableBox.innerHTML = '<div class="hint" style="text-align:center;padding:24px">No students found.</div>';
       return;
     }
 
@@ -782,9 +789,9 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
         <table class="lb-table" style="margin:0;width:100%">
           <thead>
             <tr>
-              <th style="padding-left:14px">Học viên</th>
-              <th>Trạng thái</th>
-              <th style="text-align:right;padding-right:14px">Thời gian hoàn thành</th>
+              <th style="padding-left:14px">Student</th>
+              <th>Status</th>
+              <th style="text-align:right;padding-right:14px">Completed At</th>
             </tr>
           </thead>
           <tbody>
@@ -792,9 +799,9 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
               const s = submissionsMap[u.uid];
               const isSubmitted = Boolean(s);
 
-              let statusBadge = '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Chưa hoàn thành</span>';
+              let statusBadge = '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Pending</span>';
               if (isSubmitted) {
-                statusBadge = '<span class="badge ok" style="font-size:11px">✓ Đã hoàn thành</span>';
+                statusBadge = '<span class="badge ok" style="font-size:11px">Completed</span>';
               }
 
               return `
@@ -824,19 +831,19 @@ export function openAssignmentSubmissionsModal(assignment, users, submissionsMap
 }
 
 export function exportHomeworkSubmissionsCSV(assignment, users, submissionsMap) {
-  const headers = ['Học viên', 'Email', 'Trạng thái', 'Thời gian hoàn thành', 'Hạn nộp'];
+  const headers = ['Student', 'Email', 'Status', 'Completed At', 'Due Date'];
   const escCsv = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const rows = users.map(u => {
     const sub = submissionsMap[u.uid];
     const isSubmitted = Boolean(sub);
-    const statusText = isSubmitted ? 'Đã hoàn thành' : 'Chưa hoàn thành';
-    const submitTime = sub && sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('vi-VN') : '';
+    const statusText = isSubmitted ? 'Completed' : 'Pending';
+    const submitTime = sub && sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('en-US') : '';
     return [
       u.displayName,
       u.email,
       statusText,
       submitTime,
-      assignment.dueDate ? new Date(assignment.dueDate).toLocaleString('vi-VN') : ''
+      assignment.dueDate ? new Date(assignment.dueDate).toLocaleString('en-US') : ''
     ].map(escCsv).join(',');
   });
 
@@ -850,7 +857,7 @@ export function exportHomeworkSubmissionsCSV(assignment, users, submissionsMap) 
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast('✓ Đã xuất file CSV kết quả nộp bài!');
+  showToast('Exported homework submissions CSV.');
 }
 
 export function openTeacherRoleModal(users, onUpdated) {
@@ -872,7 +879,7 @@ export function openTeacherRoleModal(users, onUpdated) {
           ${users.map(u => `
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
               <div style="min-width:0">
-                <div style="font-weight:700;font-size:14px">${esc(u.displayName)} ${u.isAdmin ? '<span style="color:#F59E0B;font-size:11.5px">(Admin)</span>' : (u.isTeacher ? '<span style="color:#2563EB;font-size:11.5px">(Instructor)</span>' : '')}</div>
+                <div style="font-weight:700;font-size:14px">${esc(u.displayName)} ${u.isAdmin ? '<span style="color:var(--warn);font-size:11.5px">(Admin)</span>' : (u.isTeacher ? '<span style="color:var(--accent);font-size:11.5px">(Instructor)</span>' : '')}</div>
                 <div style="font-size:12px;color:var(--muted)">${esc(u.email || u.uid)}</div>
               </div>
               <div>
@@ -901,7 +908,7 @@ export function openTeacherRoleModal(users, onUpdated) {
           grantedBy: currentUser.uid,
           grantedAt: firestoreModules.serverTimestamp()
         });
-        showToast('✓ Instructor role granted successfully!');
+        showToast('Instructor role granted.');
         closeModal();
         if (onUpdated) onUpdated();
       } catch (err) {
@@ -961,17 +968,23 @@ export async function openAdminUserInspector(targetUid, userName) {
     let teacherNote = null;
     let studentHwSubs = {};
 
-    const [progSnap, ansSnap, revDoc, noteDoc, hwDoc, allHw] = await Promise.all([
+    const [progSnap, ansSnap, revDoc, noteDoc, allHw] = await Promise.all([
       (fbDb && firestoreModules) ? firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', targetUid, 'progress')).catch(() => null) : Promise.resolve(null),
       (fbDb && firestoreModules) ? firestoreModules.getDocs(firestoreModules.collection(fbDb, 'users', targetUid, 'answers')).catch(() => null) : Promise.resolve(null),
       (fbDb && firestoreModules) ? firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'review')).catch(() => null) : Promise.resolve(null),
       (fbDb && firestoreModules) ? firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'teacher_note')).catch(() => null) : Promise.resolve(null),
-      (fbDb && firestoreModules) ? firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', targetUid, 'meta', 'submissions')).catch(() => null) : Promise.resolve(null),
       getHomeworkAssignments()
     ]);
 
-    if (hwDoc && hwDoc.exists()) studentHwSubs = hwDoc.data() || {};
     const allAssignmentsList = allHw || [];
+    await Promise.all(allAssignmentsList.map(async (hw) => {
+      try {
+        const subs = await getAssignmentSubmissions(hw.id);
+        if (subs && subs[targetUid]) {
+          studentHwSubs[hw.id] = subs[targetUid];
+        }
+      } catch (e) {}
+    }));
 
     if (progSnap) progSnap.forEach(d => { progress[Number(d.id)] = d.data(); });
     if (ansSnap) {
@@ -993,7 +1006,8 @@ export async function openAdminUserInspector(targetUid, userName) {
     if (revDoc && revDoc.exists()) review = revDoc.data();
     if (noteDoc && noteDoc.exists()) teacherNote = noteDoc.data();
 
-    const inspBody = $('#inspector-body');
+    const inspBody = document.querySelector('#inspector-body');
+    if (!inspBody) return;
     const pronunUnitIds = Object.keys(pronunAnswers).map(Number).sort((a, b) => a - b);
     const practiceExIds = Object.keys(practiceAnswers).sort();
     const grammarTopicIds = Object.keys(grammarAnswers).sort();
@@ -1009,13 +1023,15 @@ export async function openAdminUserInspector(targetUid, userName) {
       const activeReviewItems = (review && Array.isArray(review.items)) ? review.items.filter(x => !x.deleted) : [];
 
       inspBody.innerHTML = `
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
-          <button class="btn ${activeTab === 'toeic' ? 'primary' : 'ghost'}" data-itab="toeic" style="font-size:13px">TOEIC Topics (${workedTopicIds.length})</button>
-          <button class="btn ${activeTab === 'pronun' ? 'primary' : 'ghost'}" data-itab="pronun" style="font-size:13px">Pronunciation (${pronunUnitIds.length} Units)</button>
-          <button class="btn ${activeTab === 'practice' ? 'primary' : 'ghost'}" data-itab="practice" style="font-size:13px">Practice Drills (${practiceExIds.length})</button>
-          <button class="btn ${activeTab === 'grammar' ? 'primary' : 'ghost'}" data-itab="grammar" style="font-size:13px">Grammar (${grammarTopicIds.length} Topics)</button>
-          <button class="btn ${activeTab === 'homework' ? 'primary' : 'ghost'}" data-itab="homework" style="font-size:13px">Bài tập về nhà (${allAssignmentsList.length})</button>
-          <button class="btn ${activeTab === 'feedback' ? 'primary' : 'ghost'}" data-itab="feedback" style="font-size:13px">Feedback & Saved Words (${activeReviewItems.length})</button>
+        <div style="margin-bottom:14px;overflow-x:auto">
+          <div class="seg" role="tablist">
+            <button type="button" role="tab" aria-selected="${activeTab === 'toeic' ? 'true' : 'false'}" aria-pressed="${activeTab === 'toeic' ? 'true' : 'false'}" class="${activeTab === 'toeic' ? 'active' : ''}" data-itab="toeic">TOEIC Topics (${workedTopicIds.length})</button>
+            <button type="button" role="tab" aria-selected="${activeTab === 'pronun' ? 'true' : 'false'}" aria-pressed="${activeTab === 'pronun' ? 'true' : 'false'}" class="${activeTab === 'pronun' ? 'active' : ''}" data-itab="pronun">Pronunciation (${pronunUnitIds.length})</button>
+            <button type="button" role="tab" aria-selected="${activeTab === 'practice' ? 'true' : 'false'}" aria-pressed="${activeTab === 'practice' ? 'true' : 'false'}" class="${activeTab === 'practice' ? 'active' : ''}" data-itab="practice">Practice (${practiceExIds.length})</button>
+            <button type="button" role="tab" aria-selected="${activeTab === 'grammar' ? 'true' : 'false'}" aria-pressed="${activeTab === 'grammar' ? 'true' : 'false'}" class="${activeTab === 'grammar' ? 'active' : ''}" data-itab="grammar">Grammar (${grammarTopicIds.length})</button>
+            <button type="button" role="tab" aria-selected="${activeTab === 'homework' ? 'true' : 'false'}" aria-pressed="${activeTab === 'homework' ? 'true' : 'false'}" class="${activeTab === 'homework' ? 'active' : ''}" data-itab="homework">Homework (${allAssignmentsList.length})</button>
+            <button type="button" role="tab" aria-selected="${activeTab === 'feedback' ? 'true' : 'false'}" aria-pressed="${activeTab === 'feedback' ? 'true' : 'false'}" class="${activeTab === 'feedback' ? 'active' : ''}" data-itab="feedback">Feedback (${activeReviewItems.length})</button>
+          </div>
         </div>
         <div id="insp-tab-content"></div>
       `;
@@ -1116,7 +1132,7 @@ export async function openAdminUserInspector(targetUid, userName) {
               </select>
             </div>
             <div class="hint" style="font-size:12.5px">
-              Updated: ${uData.updatedAt && uData.updatedAt.toDate ? uData.updatedAt.toDate().toLocaleString('vi-VN') : '—'}
+              Updated: ${uData.updatedAt && uData.updatedAt.toDate ? uData.updatedAt.toDate().toLocaleString('en-US') : '—'}
             </div>
           </div>
 
@@ -1178,7 +1194,7 @@ export async function openAdminUserInspector(targetUid, userName) {
               </select>
             </div>
             <div class="hint" style="font-size:12.5px">
-              Updated: ${pDoc.updatedAt && pDoc.updatedAt.toDate ? pDoc.updatedAt.toDate().toLocaleString('vi-VN') : '—'}
+              Updated: ${pDoc.updatedAt && pDoc.updatedAt.toDate ? pDoc.updatedAt.toDate().toLocaleString('en-US') : '—'}
             </div>
           </div>
 
@@ -1186,7 +1202,7 @@ export async function openAdminUserInspector(targetUid, userName) {
             ${pUnit ? pUnit.items.map(it => `
               <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
                 <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">
-                  <span style="color:#059669">${it.id}.</span> ${esc(it.vi)}
+                  <span style="color:var(--good)">${it.id}.</span> ${esc(it.vi)}
                 </div>
                 <div style="font-size:14px;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">
                   ${pAnswers[it.id] ? esc(pAnswers[it.id]) : '<i style="color:var(--muted)">Not answered</i>'}
@@ -1194,7 +1210,7 @@ export async function openAdminUserInspector(targetUid, userName) {
               </div>
             `).join('') : (pPara ? pPara.segments.map(seg => `
               <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
-                <div class="hint" style="font-size:12px;margin-bottom:4px;font-weight:700;color:#059669">Section ${seg.id}:</div>
+                <div class="hint" style="font-size:12px;margin-bottom:4px;font-weight:700;color:var(--good)">Section ${seg.id}:</div>
                 <div style="font-size:13px;line-height:1.5;margin-bottom:6px">${esc(seg.vi)}</div>
                 <div style="font-size:14px;padding:8px 10px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">
                   ${pAnswers[seg.id] ? esc(pAnswers[seg.id]) : '<i style="color:var(--muted)">Not answered</i>'}
@@ -1203,7 +1219,7 @@ export async function openAdminUserInspector(targetUid, userName) {
             `).join('') : (isTenses ? PRACTICE_TENSES.map(it => `
               <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
                 <div style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:4px">
-                  <span style="color:#059669">${it.id}.</span> ${esc(it.vi)}
+                  <span style="color:var(--good)">${it.id}.</span> ${esc(it.vi)}
                 </div>
                 <div style="font-size:14px;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--ink);border:1px solid var(--line)">
                   ${pAnswers[it.id] ? esc(pAnswers[it.id]) : '<i style="color:var(--muted)">Not answered</i>'}
@@ -1234,7 +1250,7 @@ export async function openAdminUserInspector(targetUid, userName) {
               <select id="insp-grammar-sel" style="margin-left:6px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
                 ${grammarTopicIds.map(topId => {
                   const t = GRAMMAR_TOPICS.find(x => x.id === topId);
-                  return `<option value="${topId}" ${topId === selGrammarTopicId ? 'selected' : ''}>${t ? t.icon + ' ' + esc(t.title) : topId}</option>`;
+                  return `<option value="${topId}" ${topId === selGrammarTopicId ? 'selected' : ''}>${t ? esc(t.title) : esc(topId)}</option>`;
                 }).join('')}
               </select>
             </div>
@@ -1275,44 +1291,42 @@ export async function openAdminUserInspector(targetUid, userName) {
         const studentAssignments = allAssignmentsList || [];
         tabBox.innerHTML = `
           <div style="margin-bottom:12px;font-size:13.5px;color:var(--muted)">
-            Danh sách tất cả bài tập về nhà đã giao và trạng thái nộp bài của học viên <b>${esc(userName)}</b>:
+            Homework completion status for <b>${esc(userName)}</b>:
           </div>
-          ${studentAssignments.length === 0 ? '<div class="hint" style="padding:16px;background:var(--sunk);border-radius:8px">Chưa có bài tập về nhà nào trong hệ thống.</div>' : `
+          ${studentAssignments.length === 0 ? '<div class="hint" style="padding:16px;background:var(--sunk);border-radius:8px">No homework assignments have been created yet.</div>' : `
             <div class="card" style="padding:0;overflow-x:auto">
               <table class="lb-table" style="margin:0;width:100%">
                 <thead>
                   <tr>
-                    <th style="padding-left:14px">Bài tập</th>
-                    <th>Yêu cầu</th>
-                    <th>Hạn nộp</th>
-                    <th>Trạng thái</th>
-                    <th style="text-align:right;padding-right:14px">Điểm & Thời gian nộp</th>
+                    <th style="padding-left:14px">Assignment</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th style="text-align:right;padding-right:14px">Completed At</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${studentAssignments.map(hw => {
                     let sub = (studentHwSubs && studentHwSubs[hw.id]) || null;
-                    if (!sub && targetUid === currentUid) sub = store.get('hw_sub_' + hw.id, null);
+                    if (!sub && targetUid === currentUid && store) sub = store.get('hw_sub_' + hw.id, null);
                     const isSubmitted = Boolean(sub);
-                    const isPassed = sub ? sub.score >= hw.minScore : false;
+                    const contentPreview = hw.content || hw.instructions || '';
                     return `
                       <tr class="lb-row">
                         <td style="padding-left:14px">
-                          <div style="font-weight:700">${esc(hw.title)}</div>
-                          <div style="font-size:12px;color:var(--muted)">${esc(hw.targetLabel)}</div>
+                          <div style="font-weight:700">${esc(hw.title || 'Assigned Homework')}</div>
+                          ${contentPreview ? `<div style="font-size:12px;color:var(--muted);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(contentPreview)}</div>` : ''}
                         </td>
-                        <td style="font-size:12.5px">${hw.minScore > 0 ? `≥ ${hw.minScore}%` : 'Hoàn thành'}</td>
                         <td style="font-size:12px;color:var(--muted)">${fmtDue(hw.dueDate)}</td>
                         <td>
                           ${isSubmitted
-                            ? (sub.isLate ? '<span class="badge warn" style="font-size:11px">⚠ Nộp muộn</span>' : '<span class="badge ok" style="font-size:11px">✓ Đúng hạn</span>')
-                            : '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Chưa nộp</span>'}
+                            ? '<span class="badge ok" style="font-size:11px">Completed</span>'
+                            : '<span class="badge" style="background:var(--sunk);color:var(--muted);font-size:11px">Pending</span>'}
                         </td>
-                        <td style="text-align:right;padding-right:14px;font-size:12.5px">
-                          ${isSubmitted ? `
-                            <div style="font-weight:700;color:${isPassed ? 'var(--good)' : 'var(--bad)'}">${sub.score}% ${isPassed ? '(Đạt)' : '(Chưa đạt)'}</div>
-                            <div class="hint" style="font-size:11px">${sub.submittedAt ? fmtDue(sub.submittedAt) : ''}</div>
-                          ` : '<span style="color:var(--muted)">—</span>'}
+                        <td style="text-align:right;padding-right:14px;font-size:12.5px;color:var(--muted)">
+                          ${isSubmitted && sub.submittedAt ? `
+                            <div>${fmtDue(sub.submittedAt)}</div>
+                            <div style="font-size:11px;opacity:.8">${fmtRelativeTime(sub.submittedAt)}</div>
+                          ` : '—'}
                         </td>
                       </tr>
                     `;
@@ -1361,8 +1375,8 @@ export async function openAdminUserInspector(targetUid, userName) {
               updatedAt: firestoreModules.serverTimestamp()
             });
             teacherNote = { note: noteText, updatedAt: { toDate: () => new Date() } };
-            tabBox.querySelector('#note-save-status').textContent = '✓ Feedback saved successfully!';
-            showToast('✓ Feedback sent to student!');
+            tabBox.querySelector('#note-save-status').textContent = 'Feedback saved.';
+            showToast('Feedback sent to student.');
           } catch (err) {
             showToast('Unable to save feedback: ' + formatFirebaseError(err));
           } finally {
@@ -1375,7 +1389,8 @@ export async function openAdminUserInspector(targetUid, userName) {
 
     renderInspector();
   } catch (err) {
-    $('#inspector-body').innerHTML = `<div class="fb no">Error: ${esc(err.message)}</div>`;
+    const inspBody = document.querySelector('#inspector-body');
+    if (inspBody) inspBody.innerHTML = `<div class="fb no">Error: ${esc(err.message)}</div>`;
   }
 }
 

@@ -71,7 +71,7 @@ export function playCambridgeTrack(cdNum, trackName, label, btnEl, playerContain
   audio.play().then(() => {
     if (btnEl) btnEl.innerHTML = `Pause (${label || trackName})`;
   }).catch(err => {
-    console.error('Lỗi phát Cambridge audio:', err);
+    console.error('Cambridge audio error:', err);
     if (btnEl) btnEl.innerHTML = btnEl.dataset.origLabel || `Original Audio`;
     showToast(`Audio file ${audioPath} not found. Please ensure it is located in web/audio/pronun/cd${cdNum}/`);
   });
@@ -110,14 +110,16 @@ export function playCambridgeTrack(cdNum, trackName, label, btnEl, playerContain
   };
 }
 
-export function seekCambridgeTrack(percent) {
+export function seekCambridgeTrack(percent, trackKey) {
+  if (trackKey && currentCambridgeTrackKey !== trackKey) return;
   if (currentCambridgeAudio && currentCambridgeAudio.duration) {
     currentCambridgeAudio.currentTime = (Number(percent) / 100) * currentCambridgeAudio.duration;
     if (currentCambridgeAudio.ontimeupdate) currentCambridgeAudio.ontimeupdate();
   }
 }
 
-export function skipCambridgeTrack(seconds) {
+export function skipCambridgeTrack(seconds, trackKey) {
+  if (trackKey && currentCambridgeTrackKey !== trackKey) return;
   if (currentCambridgeAudio) {
     currentCambridgeAudio.currentTime = Math.max(0, Math.min(currentCambridgeAudio.duration || 999, currentCambridgeAudio.currentTime + Number(seconds)));
     if (currentCambridgeAudio.ontimeupdate) currentCambridgeAudio.ontimeupdate();
@@ -150,6 +152,7 @@ export function playCambridgeSegment(cdNum, trackName, startSec, endSec, code, b
 
   const audio = new Audio(audioPath);
   currentCambridgeAudio = audio;
+  currentCambridgeTrackKey = null;
   currentCambridgeSegmentCode = code;
 
   audio.currentTime = startSec;
@@ -212,10 +215,28 @@ let earQuizWord = null;
 let earQuizPair = null;
 
 export function renderPronunciation(box) {
+  if (!box.dataset.pronunDelegated) {
+    box.dataset.pronunDelegated = '1';
+    box.addEventListener('click', (e) => {
+      const sayBtn = e.target.closest('[data-say]');
+      if (sayBtn && box.contains(sayBtn)) {
+        const text = sayBtn.getAttribute('data-say');
+        if (text && speak) speak(text);
+        return;
+      }
+      const pairBtn = e.target.closest('[data-pair-a]');
+      if (pairBtn && box.contains(pairBtn)) {
+        const w1 = pairBtn.getAttribute('data-pair-a');
+        const w2 = pairBtn.getAttribute('data-pair-b');
+        if (w1 && w2 && window.playPairCompare) window.playPairCompare(w1, w2);
+      }
+    });
+  }
+
   box.innerHTML = `
     <div class="pronun-header">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div style="flex:1;min-width:280px">
+        <div style="flex:1;min-width:0">
           <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;background:var(--accent-soft);padding:3px 8px;border-radius:6px;margin-bottom:6px">
             <span>Cambridge English Pronunciation in Use</span>
             <span>·</span>
@@ -314,7 +335,7 @@ function renderIpaTab(container) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
             <span>Listen Sample</span>
           </button>
-          <button class="icon-btn rec-btn" data-rec-text="${esc(curIpa.sample)}" data-rec-id="ipa-main-${curIpa.id}" title="Practice sample word ${esc(curIpa.sample)}" aria-label="Record sample ${esc(curIpa.sample)}" style="width:40px;height:40px">
+          <button class="icon-btn rec-btn" data-rec-text="${esc(curIpa.sample)}" data-rec-id="ipa-main-${curIpa.id}" title="Practice sample word ${esc(curIpa.sample)}" aria-label="Record sample ${esc(curIpa.sample)}">
             ${MIC_ICON}
           </button>
         </div>
@@ -336,10 +357,10 @@ function renderIpaTab(container) {
                   <div style="font-size:12px;color:var(--muted)">${esc(curIpa.ipa)}</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
-                  <button class="icon-btn" onclick="speak('${esc(w)}')" title="Listen to pronunciation" aria-label="Play ${esc(w)}" style="width:34px;height:34px">
+                  <button class="icon-btn" data-say="${esc(w)}" title="Listen to pronunciation" aria-label="Play ${esc(w)}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                   </button>
-                  <button class="icon-btn rec-btn" data-rec-text="${esc(w)}" data-rec-id="ipa-w-${curIpa.id}-${idx}" title="Practice speaking ${esc(w)}" aria-label="Record ${esc(w)}" style="width:34px;height:34px">
+                  <button class="icon-btn rec-btn" data-rec-text="${esc(w)}" data-rec-id="ipa-w-${curIpa.id}-${idx}" title="Practice speaking ${esc(w)}" aria-label="Record ${esc(w)}">
                     ${MIC_ICON}
                   </button>
                 </div>
@@ -383,7 +404,7 @@ function renderPairsTab(container) {
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
           <label for="pair-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:4px">Select Minimal Pair:</label>
-          <select id="pair-select" style="padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:14px;font-weight:600">
+          <select id="pair-select" style="padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:14px;font-weight:600;max-width:100%">
             ${MINIMAL_PAIRS.map(p => `
               <option value="${p.id}" ${p.id === curPair.id ? 'selected' : ''}>${esc(p.pair)} — ${esc(p.desc)}</option>
             `).join('')}
@@ -394,7 +415,7 @@ function renderPairsTab(container) {
           <span>Play All Pairs</span>
         </button>
       </div>
-      <div style="margin-top:10px;font-size:13.5px;color:var(--muted)">💡 ${esc(curPair.desc)} (From Cambridge Unit ${curPair.unit} & Appendix E3)</div>
+      <div style="margin-top:10px;font-size:13.5px;color:var(--muted)"><strong>Tip:</strong> ${esc(curPair.desc)} (From Cambridge Unit ${curPair.unit} & Appendix E3)</div>
     </div>
 
     <!-- Ear Training Mini Game -->
@@ -421,10 +442,10 @@ function renderPairsTab(container) {
               <div style="font-size:12px;color:var(--muted)">${esc(it.ipa1)} · ${esc(it.vi1)}</div>
             </div>
             <div style="display:flex;gap:4px">
-              <button class="icon-btn" onclick="speak('${esc(it.w1)}')" title="Listen to ${esc(it.w1)}" aria-label="Play ${esc(it.w1)}" style="width:34px;height:34px">
+              <button class="icon-btn" data-say="${esc(it.w1)}" title="Listen to ${esc(it.w1)}" aria-label="Play ${esc(it.w1)}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               </button>
-              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w1)}" data-rec-id="pair-${curPair.id}-${idx}-1" title="Practice speaking ${esc(it.w1)}" aria-label="Record ${esc(it.w1)}" style="width:34px;height:34px">
+              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w1)}" data-rec-id="pair-${curPair.id}-${idx}-1" title="Practice speaking ${esc(it.w1)}" aria-label="Record ${esc(it.w1)}">
                 ${MIC_ICON}
               </button>
             </div>
@@ -432,22 +453,22 @@ function renderPairsTab(container) {
 
           <!-- Center VS Button -->
           <div style="text-align:center">
-            <button class="btn ghost" style="padding:4px 8px;font-size:11.5px;font-weight:700" onclick="playPairCompare('${esc(it.w1)}', '${esc(it.w2)}')" title="Listen to seamless pair comparison">
-              A ➜ B
+            <button class="btn ghost" style="padding:4px 8px;font-size:11.5px;font-weight:700" data-pair-a="${esc(it.w1)}" data-pair-b="${esc(it.w2)}" title="Listen to seamless pair comparison">
+              A → B
             </button>
           </div>
 
           <!-- Word 2 -->
           <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);padding:8px 12px;border-radius:6px;border:1px solid var(--line)">
             <div>
-              <div style="font-size:16px;font-weight:800;color:#059669">${esc(it.w2)}</div>
+              <div style="font-size:16px;font-weight:800;color:var(--good)">${esc(it.w2)}</div>
               <div style="font-size:12px;color:var(--muted)">${esc(it.ipa2)} · ${esc(it.vi2)}</div>
             </div>
             <div style="display:flex;gap:4px">
-              <button class="icon-btn" onclick="speak('${esc(it.w2)}')" title="Listen to ${esc(it.w2)}" aria-label="Play ${esc(it.w2)}" style="width:34px;height:34px">
+              <button class="icon-btn" data-say="${esc(it.w2)}" title="Listen to ${esc(it.w2)}" aria-label="Play ${esc(it.w2)}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               </button>
-              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w2)}" data-rec-id="pair-${curPair.id}-${idx}-2" title="Practice speaking ${esc(it.w2)}" aria-label="Record ${esc(it.w2)}" style="width:34px;height:34px">
+              <button class="icon-btn rec-btn" data-rec-text="${esc(it.w2)}" data-rec-id="pair-${curPair.id}-${idx}-2" title="Practice speaking ${esc(it.w2)}" aria-label="Record ${esc(it.w2)}">
                 ${MIC_ICON}
               </button>
             </div>
@@ -539,7 +560,7 @@ function renderUnitsTab(container) {
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div style="flex:1;min-width:260px">
+        <div style="flex:1;min-width:0">
           <label for="unit-select" style="font-size:12.5px;font-weight:700;display:block;margin-bottom:4px">Select Unit:</label>
           <select id="unit-select" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:14px;font-weight:700">
             ${sectionUnits.map(u => `
@@ -557,7 +578,7 @@ function renderUnitsTab(container) {
           <div class="eyebrow" style="color:var(--accent);font-weight:700">Unit ${curUnit.id} · ${esc(curUnit.sectionName)}</div>
           <h2 style="margin:4px 0 2px;font-size:22px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span>${esc(curUnit.title)}</span>
-            <span style="font-size:15px;font-weight:800;color:#E11D48;background:rgba(225,29,72,0.1);padding:4px 10px;border-radius:6px">${esc(curUnit.sound)}</span>
+            <span style="font-size:15px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:6px">${esc(curUnit.sound)}</span>
           </h2>
           <div style="font-size:13.5px;color:var(--muted)">${esc(curUnit.subtitle)}</div>
         </div>
@@ -642,7 +663,7 @@ function renderUnitSections(u, box, container) {
               </div>
               ${sec.targetSound ? `
                 <div style="display:flex;align-items:center;gap:6px">
-                  <button class="btn" onclick="speak('${esc(sec.targetWord || sec.targetSound)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12.5px" title="Listen to sample sound">
+                  <button class="btn" data-say="${esc(sec.targetWord || sec.targetSound)}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12.5px" title="Listen to sample sound">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                     <span>Listen ${esc(sec.targetSound)}</span>
                   </button>
@@ -667,10 +688,10 @@ function renderUnitSections(u, box, container) {
                     style="font-size:12.5px;padding:5px 12px;font-weight:700">
                     Original Audio (${esc(sec.audio.code)})
                   </button>
-                  <button class="btn ghost" onclick="skipCambridgeTrack(-5)" title="Rewind 5s" style="padding:5px 8px;font-size:12px">⏪ 5s</button>
-                  <button class="btn ghost" onclick="skipCambridgeTrack(5)" title="Forward 5s" style="padding:5px 8px;font-size:12px">⏩ 5s</button>
+                  <button class="btn ghost" onclick="skipCambridgeTrack(-5, 'cd${sec.audio.cd}_${esc(sec.audio.track)}')" title="Rewind 5s" style="padding:5px 8px;font-size:12px">-5s</button>
+                  <button class="btn ghost" onclick="skipCambridgeTrack(5, 'cd${sec.audio.cd}_${esc(sec.audio.track)}')" title="Forward 5s" style="padding:5px 8px;font-size:12px">+5s</button>
                   <span class="cambridge-time-text">0:00 / 0:00</span>
-                  <input type="range" class="cambridge-seek-bar" min="0" max="100" value="0" oninput="seekCambridgeTrack(this.value)" />
+                  <input type="range" class="cambridge-seek-bar" min="0" max="100" value="0" oninput="seekCambridgeTrack(this.value, 'cd${sec.audio.cd}_${esc(sec.audio.track)}')" />
                 </div>
               </div>
             ` : ''}
@@ -692,7 +713,7 @@ function renderUnitSections(u, box, container) {
                     ` : ''}
                     <span>${esc(sec.guideEn)}</span>
                   </div>
-                  <div style="background:var(--sunk);border-left:3px solid #E11D48;padding:10px 12px;border-radius:6px;font-size:13.5px;color:var(--muted)">
+                  <div style="background:var(--sunk);border-left:3px solid var(--accent);padding:10px 12px;border-radius:6px;font-size:13.5px;color:var(--muted)">
                     <strong>Articulation Guide:</strong> ${esc(sec.guideVi)}
                   </div>
                 </div>
@@ -713,7 +734,7 @@ function renderUnitSections(u, box, container) {
                   ` : ''}
                   <span>${esc(sec.guideEn)}</span>
                 </div>
-                ${sec.guideVi ? `<div style="font-size:13px;color:var(--muted)">💡 ${esc(sec.guideVi)}</div>` : ''}
+                ${sec.guideVi ? `<div style="font-size:13px;color:var(--muted)"><strong>Tip:</strong> ${esc(sec.guideVi)}</div>` : ''}
               </div>
             ` : '')}
 
@@ -735,17 +756,17 @@ function renderUnitSections(u, box, container) {
                     <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
                       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                         <span style="font-weight:800;font-size:13.5px;color:var(--ink)">Spelling: ${esc(grp.pattern)}</span>
-                        ${grp.badge ? `<span style="font-size:11px;font-weight:700;color:#E11D48;background:rgba(225,29,72,0.1);padding:2px 8px;border-radius:12px">${esc(grp.badge)}</span>` : ''}
+                        ${grp.badge ? `<span style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:12px">${esc(grp.badge)}</span>` : ''}
                       </div>
                       <div style="display:flex;flex-wrap:wrap;gap:8px">
                         ${grp.words.map((w, wIdx) => `
                           <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px">
                             <span style="font-weight:800;font-size:14px">${esc(w.w)}</span>
                             <span style="font-size:12px;color:var(--muted)">${esc(w.ipa)}</span>
-                            <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Listen to ${esc(w.w)}" aria-label="Play ${esc(w.w)}" style="width:26px;height:26px">
+                            <button class="icon-btn" data-say="${esc(w.w)}" title="Listen to ${esc(w.w)}" aria-label="Play ${esc(w.w)}">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                             </button>
-                            <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${sec.letter}-${gIdx}-${wIdx}" title="Practice speaking ${esc(w.w)}" aria-label="Record ${esc(w.w)}" style="width:26px;height:26px">
+                            <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${sec.letter}-${gIdx}-${wIdx}" title="Practice speaking ${esc(w.w)}" aria-label="Record ${esc(w.w)}">
                               ${MIC_ICON}
                             </button>
                           </div>
@@ -778,12 +799,12 @@ function renderUnitSections(u, box, container) {
                       return `
                         <div class="sentence-drill-item">
                           <div class="sentence-top-bar">
-                            <div style="flex:1;min-width:200px">
+                            <div style="flex:1;min-width:0">
                               <div style="font-size:15px;font-weight:700;color:var(--ink)">${sIdx + 1}. "${esc(enText)}"</div>
                               ${viText ? `<div style="font-size:12.5px;color:var(--muted);margin-top:2px">${esc(viText)}</div>` : ''}
                             </div>
                             <div style="display:flex;gap:6px">
-                              <button class="btn" onclick="speak('${esc(enText)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px">
+                              <button class="btn" data-say="${esc(enText)}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                                 <span>Listen</span>
                               </button>
@@ -813,7 +834,7 @@ function renderUnitSections(u, box, container) {
               <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px">
                 ${sec.notes.map(n => `
                   <div class="unit-note-box">
-                    <div style="font-weight:800;color:#d97706;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+                    <div style="font-weight:800;color:var(--warn);margin-bottom:4px;display:flex;align-items:center;gap:6px">
                       ${n.audioSegment ? `
                         <button type="button" class="cambridge-segment-btn"
                           onclick="playCambridgeSegment(${n.audioSegment.cd}, '${esc(n.audioSegment.track)}', ${n.audioSegment.start}, ${n.audioSegment.end}, '${esc(n.audioSegment.code)}', this)"
@@ -832,7 +853,7 @@ function renderUnitSections(u, box, container) {
         `).join('')}
 
         <!-- Bottom CTA to Exercises -->
-        <div style="background:linear-gradient(135deg, rgba(225,29,72,0.06), rgba(99,102,241,0.06));border:1.5px dashed var(--accent);border-radius:12px;padding:20px;text-align:center">
+        <div style="background:var(--accent-soft);border:1.5px dashed var(--accent);border-radius:12px;padding:20px;text-align:center">
           <div style="font-size:16px;font-weight:800;margin-bottom:6px">Unit ${u.id} Lessons Completed?</div>
           <div style="font-size:13.5px;color:var(--muted);margin-bottom:12px">Proceed to exercises to complete all practice tasks from the textbook!</div>
           <button class="btn primary" id="btn-jump-exercises" style="padding:10px 24px;font-size:14.5px;font-weight:700">
@@ -865,10 +886,10 @@ function renderUnitSections(u, box, container) {
                   <div style="font-size:12px;color:var(--muted)">${esc(w.ipa)} · ${esc(w.vi)}</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:4px">
-                  <button class="icon-btn" onclick="speak('${esc(w.w)}')" title="Listen to ${esc(w.w)}" aria-label="Play ${esc(w.w)}" style="width:34px;height:34px">
+                  <button class="icon-btn" data-say="${esc(w.w)}" title="Listen to ${esc(w.w)}" aria-label="Play ${esc(w.w)}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                   </button>
-                  <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${idx}" title="Practice speaking ${esc(w.w)}" aria-label="Record ${esc(w.w)}" style="width:34px;height:34px">
+                  <button class="icon-btn rec-btn" data-rec-text="${esc(w.w)}" data-rec-id="u-w-${u.id}-${idx}" title="Practice speaking ${esc(w.w)}" aria-label="Record ${esc(w.w)}">
                     ${MIC_ICON}
                   </button>
                 </div>
@@ -886,7 +907,7 @@ function renderUnitSections(u, box, container) {
               <div class="sentence-top-bar">
                 <div style="font-size:15px;font-weight:700;color:var(--ink);flex:1">${idx + 1}. "${esc(sent)}"</div>
                 <div style="display:flex;gap:6px">
-                  <button class="btn" onclick="speak('${esc(sent)}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:12.5px">
+                  <button class="btn" data-say="${esc(sent)}" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:12.5px">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                     <span>Listen</span>
                   </button>
@@ -917,12 +938,19 @@ function renderUnitExercises(u, box, container) {
         <div style="font-size:13.5px;color:var(--muted);margin:8px auto 16px;max-width:460px">
           Train ear distinction and practice speaking target vocabulary and sentence patterns from this unit.
         </div>
-        <div style="display:flex;justify-content:center;gap:10px">
-          <button class="btn primary" onclick="speak('${esc(u.words[0] ? u.words[0].w : 'hello')}')">Listen to Unit Vocabulary</button>
-          <button class="btn" onclick="curUnitViewMode='sections';renderUnitsTab(document.querySelector('#pronun-container')||document.body)">Review Lesson</button>
+        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" data-say="${esc(u.words[0] ? u.words[0].w : 'hello')}">Listen to Unit Vocabulary</button>
+          <button class="btn" id="btn-review-lesson">Review Lesson</button>
         </div>
       </div>
     `;
+    const reviewBtn = box.querySelector('#btn-review-lesson');
+    if (reviewBtn) {
+      reviewBtn.onclick = () => {
+        curUnitViewMode = 'sections';
+        renderUnitsTab(container);
+      };
+    }
     return;
   }
 
@@ -932,7 +960,7 @@ function renderUnitExercises(u, box, container) {
   box.innerHTML = `
     <!-- Exercise Progress Bar -->
     <div style="background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-      <div style="flex:1;min-width:200px">
+      <div style="flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;font-size:13px;font-weight:700;margin-bottom:6px">
           <span>Unit ${u.id} Exercises Progress:</span>
           <span style="display:inline-flex;align-items:center;gap:10px">
@@ -941,7 +969,7 @@ function renderUnitExercises(u, box, container) {
           </span>
         </div>
         <div style="height:8px;background:var(--line);border-radius:4px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg, #E11D48, #6366F1);border-radius:4px;transition:width 0.3s"></div>
+          <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px;transition:width 0.3s"></div>
         </div>
       </div>
       <div>
@@ -994,10 +1022,10 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           style="font-size:12px;padding:4px 10px;font-weight:700">
           Original Audio (${esc(ex.audio.code)})
         </button>
-        <button class="btn ghost" onclick="skipCambridgeTrack(-5)" title="Rewind 5s" style="padding:4px 6px;font-size:11.5px">⏪ 5s</button>
-        <button class="btn ghost" onclick="skipCambridgeTrack(5)" title="Forward 5s" style="padding:4px 6px;font-size:11.5px">⏩ 5s</button>
+        <button class="btn ghost" onclick="skipCambridgeTrack(-5, 'cd${ex.audio.cd}_${esc(ex.audio.track)}')" title="Rewind 5s" style="padding:4px 6px;font-size:11.5px">-5s</button>
+        <button class="btn ghost" onclick="skipCambridgeTrack(5, 'cd${ex.audio.cd}_${esc(ex.audio.track)}')" title="Forward 5s" style="padding:4px 6px;font-size:11.5px">+5s</button>
         <span class="cambridge-time-text">0:00 / 0:00</span>
-        <input type="range" class="cambridge-seek-bar" min="0" max="100" value="0" oninput="seekCambridgeTrack(this.value)" />
+        <input type="range" class="cambridge-seek-bar" min="0" max="100" value="0" oninput="seekCambridgeTrack(this.value, 'cd${ex.audio.cd}_${esc(ex.audio.track)}')" />
       </div>
     </div>
   ` : '';
@@ -1010,7 +1038,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
             <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
           </div>
-          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Completed</span>` : ''}
+          ${st.checked ? `<span class="badge" style="background:var(--good);color:#fff;padding:4px 10px;font-weight:700">Completed</span>` : ''}
         </div>
 
         ${exAudioBar}
@@ -1053,8 +1081,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
                           placeholder="..."
                           autocomplete="off"
                           autocapitalize="none"
-                          style="width:${Math.max(90, p.blank.length * 12)}px" />
-                        ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(p.blank)})</span>` : ''}
+                          style="width:${Math.max(90, p.blank.length * 12)}px;max-width:100%" />
+                        ${isWrong ? `<span style="font-size:12px;font-weight:700;color:var(--bad)">(${esc(p.blank)})</span>` : ''}
                       `;
                     }).join('')}
                   </div>
@@ -1075,14 +1103,14 @@ function renderSingleExercise(u, ex, exIdx, uState) {
           <button class="btn primary btn-check-ex" data-ex-id="${ex.id}" style="padding:8px 18px;font-weight:700">
             ${st.checked ? 'Re-check' : 'Check Answers'}
           </button>
-          <div style="display:flex;gap:6px">
-            <button class="btn ghost" onclick="speak('What shall we do this evening? Let\\'s stay at home and watch TV.')" style="font-size:12.5px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn ghost" data-say="${esc("What shall we do this evening? Let's stay at home and watch TV.")}" style="font-size:12.5px">
               Listen Dialogue 1
             </button>
-            <button class="btn ghost" onclick="speak('Let me read that email! No, it is a secret!')" style="font-size:12.5px">
+            <button class="btn ghost" data-say="${esc("Let me read that email! No, it is a secret!")}" style="font-size:12.5px">
               Listen Dialogue 2
             </button>
-            <button class="btn ghost" onclick="speak('You know my friend Steve? Yes. Well, he has got a new job. He has joined the police!')" style="font-size:12.5px">
+            <button class="btn ghost" data-say="${esc("You know my friend Steve? Yes. Well, he has got a new job. He has joined the police!")}" style="font-size:12.5px">
               Listen Dialogue 3
             </button>
           </div>
@@ -1099,7 +1127,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
             <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
           </div>
-          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Checked</span>` : ''}
+          ${st.checked ? `<span class="badge" style="background:var(--good);color:#fff;padding:4px 10px;font-weight:700">Checked</span>` : ''}
         </div>
 
         ${exAudioBar}
@@ -1113,26 +1141,26 @@ function renderSingleExercise(u, ex, exIdx, uState) {
               const isWrong = st.checked && !isRight;
               return `
                 <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-                  <div style="flex:1;min-width:260px;font-size:14.5px">
+                  <div style="flex:1;min-width:0;font-size:14.5px">
                     <span style="font-weight:800;color:var(--accent)">${it.id}.</span> ${esc(it.clue)}
                     <div id="hint-box-${ex.id}-${it.id}" style="font-size:12px;color:var(--muted);margin-top:2px;display:none">
                       Hint: <strong>${esc(it.hint)}</strong>
                     </div>
                   </div>
-                  <div style="display:flex;align-items:center;gap:6px">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <button type="button" class="btn ghost btn-show-hint" data-hint-id="hint-box-${ex.id}-${it.id}" style="padding:4px 8px;font-size:12px" title="View hint">
-                      💡
+                      Hint
                     </button>
                     <input type="text" class="unit-blank-input ${isRight ? 'correct' : (isWrong ? 'wrong' : '')}"
                       data-clue-id="${it.id}"
                       data-expected="${esc(it.answer)}"
                       value="${esc(val)}"
                       placeholder="Type word..."
-                      style="width:110px" />
-                    <button class="icon-btn" onclick="speak('${esc(it.answer)}')" title="Listen to word" style="width:30px;height:30px">
+                      style="width:110px;max-width:100%" />
+                    <button class="icon-btn" data-say="${esc(it.answer)}" title="Listen to word" aria-label="Listen to ${esc(it.answer)}">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                     </button>
-                    ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">(${esc(it.answer)})</span>` : ''}
+                    ${isWrong ? `<span style="font-size:12px;font-weight:700;color:var(--bad)">(${esc(it.answer)})</span>` : ''}
                   </div>
                 </div>
               `;
@@ -1164,7 +1192,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
             <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
           </div>
-          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Checked</span>` : ''}
+          ${st.checked ? `<span class="badge" style="background:var(--good);color:#fff;padding:4px 10px;font-weight:700">Checked</span>` : ''}
         </div>
 
         ${exAudioBar}
@@ -1182,12 +1210,12 @@ function renderSingleExercise(u, ex, exIdx, uState) {
               }
             }
             return `
-              <div style="background:var(--sunk);border:1px solid ${statusClass === 'correct' ? '#10b981' : (statusClass === 'wrong' ? '#ef4444' : 'var(--line)')};border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
-                <div>
+              <div style="background:var(--sunk);border:1px solid ${statusClass === 'correct' ? 'var(--good)' : (statusClass === 'wrong' ? 'var(--bad)' : 'var(--line)')};border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:6px">
+                <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
                   <span style="font-weight:800;font-size:14px">${esc(w.w)}</span>
-                  <span style="font-size:11.5px;color:var(--muted);margin-left:4px">${esc(w.ipa)}</span>
-                  <button class="icon-btn" onclick="speak('${esc(w.w)}')" style="width:22px;height:22px;display:inline-flex;vertical-align:middle;margin-left:2px" title="Nghe">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <span style="font-size:11.5px;color:var(--muted)">${esc(w.ipa)}</span>
+                  <button class="icon-btn" data-say="${esc(w.w)}" title="Listen" aria-label="Listen to ${esc(w.w)}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                   </button>
                 </div>
                 <div style="display:flex;gap:4px">
@@ -1232,7 +1260,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
             <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
           </div>
-          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Checked</span>` : ''}
+          ${st.checked ? `<span class="badge" style="background:var(--good);color:#fff;padding:4px 10px;font-weight:700">Checked</span>` : ''}
         </div>
 
         ${exAudioBar}
@@ -1243,26 +1271,26 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             const isRight = st.checked && (userChoice === p.end);
             const isWrong = st.checked && !isRight;
             return `
-              <div style="background:var(--sunk);border:1px solid ${isRight ? '#10b981' : (isWrong ? '#ef4444' : 'var(--line)')};border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-                <div style="font-size:14.5px;font-weight:700;color:var(--ink);flex:1;min-width:200px">
+              <div style="background:var(--sunk);border:1px solid ${isRight ? 'var(--good)' : (isWrong ? 'var(--bad)' : 'var(--line)')};border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div style="font-size:14.5px;font-weight:700;color:var(--ink);flex:1;min-width:0">
                   ${idx + 1}. ${esc(p.start)} ...
                 </div>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <select class="match-select" data-pair-id="${p.id}" style="padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;font-weight:600">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <select class="match-select" data-pair-id="${p.id}" style="padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:13.5px;font-weight:600;max-width:100%">
                     <option value="">-- Select ending --</option>
                     ${pairs.map(opt => `
                       <option value="${esc(opt.end)}" ${userChoice === opt.end ? 'selected' : ''}>${esc(opt.end)}</option>
                     `).join('')}
                   </select>
                   ${isRight ? `
-                    <button class="btn" onclick="speak('${esc(p.full)}')" style="display:inline-flex;align-items:center;gap:4px;padding:5px 8px;font-size:12px" title="Listen to complete sentence">
+                    <button class="btn" data-say="${esc(p.full)}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 8px;font-size:12px" title="Listen to complete sentence">
                       Listen
                     </button>
                     <button class="btn rec-btn" data-rec-text="${esc(p.full)}" data-rec-id="match-${p.id}" style="padding:5px 8px;font-size:12px" title="Practice speaking this sentence">
                       ${MIC_ICON}
                     </button>
                   ` : ''}
-                  ${isWrong ? `<span style="font-size:12px;font-weight:700;color:#dc2626">Correct: "${esc(p.end)}"</span>` : ''}
+                  ${isWrong ? `<span style="font-size:12px;font-weight:700;color:var(--bad)">Correct: "${esc(p.end)}"</span>` : ''}
                 </div>
                 ${isRight ? `<div id="slot-match-${p.id}" class="rec-slot" style="width:100%"></div>` : ''}
               </div>
@@ -1288,7 +1316,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             <div style="font-size:17px;font-weight:800;color:var(--ink)">${esc(ex.title)}</div>
             <div style="font-size:13.5px;color:var(--muted);margin-top:2px">${esc(ex.instruction)}</div>
           </div>
-          ${st.checked ? `<span class="badge" style="background:#10b981;color:#fff;padding:4px 10px;font-weight:700">Completed</span>` : ''}
+          ${st.checked ? `<span class="badge" style="background:var(--good);color:#fff;padding:4px 10px;font-weight:700">Completed</span>` : ''}
         </div>
 
         ${exAudioBar}
@@ -1300,8 +1328,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
             const isRight = st.checked && (userChoice === playedWord);
             const isWrong = st.checked && !isRight;
             return `
-              <div style="background:var(--sunk);border:1px solid ${isRight ? '#10b981' : (isWrong ? '#ef4444' : 'var(--line)')};border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-                <div style="display:flex;align-items:center;gap:10px">
+              <div style="background:var(--sunk);border:1px solid ${isRight ? 'var(--good)' : (isWrong ? 'var(--bad)' : 'var(--line)')};border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                   <span style="font-weight:800;font-size:14px;color:var(--accent)">Sentence ${idx + 1}:</span>
                   <button type="button" class="btn primary btn-play-pair"
                     data-drill-key="${u.id}_${ex.id}_${drill.id}"
@@ -1312,7 +1340,7 @@ function renderSingleExercise(u, ex, exIdx, uState) {
                   </button>
                   <span style="font-size:12px;color:var(--muted)">(${esc(drill.pairName)})</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                   ${drill.pair.map(word => `
                     <button type="button" class="btn ${userChoice === word ? 'primary' : 'ghost'} btn-choose-pair-word"
                       data-drill-id="${drill.id}"
@@ -1321,8 +1349,8 @@ function renderSingleExercise(u, ex, exIdx, uState) {
                       ${esc(word)}
                     </button>
                   `).join('')}
-                  ${isRight ? `<span style="color:#059669;font-weight:800;font-size:13px">✓ Correct</span>` : ''}
-                  ${isWrong ? `<span style="color:#dc2626;font-weight:700;font-size:12.5px">✗ Audio said: "${esc(playedWord)}"</span>` : ''}
+                  ${isRight ? `<span style="color:var(--good);font-weight:800;font-size:13px">✓ Correct</span>` : ''}
+                  ${isWrong ? `<span style="color:var(--bad);font-weight:700;font-size:12.5px">✗ Audio said: "${esc(playedWord)}"</span>` : ''}
                 </div>
               </div>
             `;
@@ -1406,7 +1434,6 @@ function bindAllExerciseEvents(u, box, container) {
         // Chỉ phát âm từ nếu người dùng chủ động tích chọn checkbox VÀ không có audio hội thoại nào đang phát.
         const chk = exCard ? exCard.querySelector('.chk-speak-on-fill') : null;
         const isAudioBusy = (currentCambridgeAudio && !currentCambridgeAudio.paused) ||
-                            (ttsAudioPlayer && !ttsAudioPlayer.paused) ||
                             (window.speechSynthesis && window.speechSynthesis.speaking);
         if (chk && chk.checked && !isAudioBusy) {
           speak(w);
@@ -1470,7 +1497,6 @@ function bindAllExerciseEvents(u, box, container) {
       uState[exId].answers[word] = choice;
       saveUnitExState(u.id, exId);
       const isAudioBusy = (currentCambridgeAudio && !currentCambridgeAudio.paused) ||
-                          (ttsAudioPlayer && !ttsAudioPlayer.paused) ||
                           (window.speechSynthesis && window.speechSynthesis.speaking);
       if (!isAudioBusy) {
         speak(word);
@@ -1575,12 +1601,12 @@ function renderUnitAiSpeaking(u, box) {
         return `
           <div class="sentence-drill-item" style="padding:14px 16px">
             <div class="sentence-top-bar">
-              <div style="flex:1;min-width:220px">
+              <div style="flex:1;min-width:0">
                 <div style="font-size:16px;font-weight:800;color:var(--ink)">${idx + 1}. "${esc(en)}"</div>
                 ${vi ? `<div style="font-size:13px;color:var(--muted);margin-top:2px">${esc(vi)}</div>` : ''}
               </div>
               <div style="display:flex;gap:6px">
-                <button class="btn" onclick="speak('${esc(en)}')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:13px">
+                <button class="btn" data-say="${esc(en)}" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;font-size:13px">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                   <span>Native Audio</span>
                 </button>
@@ -1600,33 +1626,33 @@ function renderUnitAiSpeaking(u, box) {
 
 function renderRulesTab(container) {
   const sWords = [
-    { w: "boxes", ipa: "/ˈbɒksɪz/", group: "iz", note: "sau x (/ks/) -> /ɪz/" },
-    { w: "watches", ipa: "/ˈwɒtʃɪz/", group: "iz", note: "sau ch (/tʃ/) -> /ɪz/" },
-    { w: "finishes", ipa: "/ˈfɪnɪʃɪz/", group: "iz", note: "sau sh (/ʃ/) -> /ɪz/" },
-    { w: "buses", ipa: "/ˈbʌsɪz/", group: "iz", note: "sau s (/s/) -> /ɪz/" },
-    { w: "stops", ipa: "/stɒps/", group: "s", note: "after voiceless /p/ -> /s/" },
-    { w: "cats", ipa: "/kæts/", group: "s", note: "after voiceless /t/ -> /s/" },
-    { w: "books", ipa: "/bʊks/", group: "s", note: "after voiceless /k/ -> /s/" },
-    { w: "laughs", ipa: "/lɑːfs/", group: "s", note: "sau gh (/f/) -> /s/" },
-    { w: "days", ipa: "/deɪz/", group: "z", note: "after vowel -> /z/" },
-    { w: "dogs", ipa: "/dɒɡz/", group: "z", note: "after voiced /g/ -> /z/" },
-    { w: "friends", ipa: "/frendz/", group: "z", note: "after voiced /d/ -> /z/" },
-    { w: "calls", ipa: "/kɔːlz/", group: "z", note: "after voiced /l/ -> /z/" }
+    { w: "boxes", ipa: "/ˈbɒksɪz/", group: "iz", note: "after x (/ks/) → /ɪz/" },
+    { w: "watches", ipa: "/ˈwɒtʃɪz/", group: "iz", note: "after ch (/tʃ/) → /ɪz/" },
+    { w: "finishes", ipa: "/ˈfɪnɪʃɪz/", group: "iz", note: "after sh (/ʃ/) → /ɪz/" },
+    { w: "buses", ipa: "/ˈbʌsɪz/", group: "iz", note: "after s (/s/) → /ɪz/" },
+    { w: "stops", ipa: "/stɒps/", group: "s", note: "after voiceless /p/ → /s/" },
+    { w: "cats", ipa: "/kæts/", group: "s", note: "after voiceless /t/ → /s/" },
+    { w: "books", ipa: "/bʊks/", group: "s", note: "after voiceless /k/ → /s/" },
+    { w: "laughs", ipa: "/lɑːfs/", group: "s", note: "after gh (/f/) → /s/" },
+    { w: "days", ipa: "/deɪz/", group: "z", note: "after vowel → /z/" },
+    { w: "dogs", ipa: "/dɒɡz/", group: "z", note: "after voiced /g/ → /z/" },
+    { w: "friends", ipa: "/frendz/", group: "z", note: "after voiced /d/ → /z/" },
+    { w: "calls", ipa: "/kɔːlz/", group: "z", note: "after voiced /l/ → /z/" }
   ];
 
   const edWords = [
-    { w: "waited", ipa: "/ˈweɪtɪd/", group: "id", note: "after /t/ -> /ɪd/ (adds 1 syllable)" },
-    { w: "needed", ipa: "/ˈniːdɪd/", group: "id", note: "after /d/ -> /ɪd/ (adds 1 syllable)" },
-    { w: "decided", ipa: "/dɪˈsaɪdɪd/", group: "id", note: "after /d/ -> /ɪd/ (adds 1 syllable)" },
-    { w: "invited", ipa: "/ɪnˈvaɪtɪd/", group: "id", note: "after /t/ -> /ɪd/ (adds 1 syllable)" },
-    { w: "looked", ipa: "/lʊkt/", group: "t", note: "after voiceless /k/ -> /t/" },
-    { w: "watched", ipa: "/wɒtʃt/", group: "t", note: "after voiceless /tʃ/ -> /t/" },
-    { w: "stopped", ipa: "/stɒpt/", group: "t", note: "after voiceless /p/ -> /t/" },
-    { w: "washed", ipa: "/wɒʃt/", group: "t", note: "after voiceless /ʃ/ -> /t/" },
-    { w: "lived", ipa: "/lɪvd/", group: "d", note: "after voiced /v/ -> /d/" },
-    { w: "played", ipa: "/pleɪd/", group: "d", note: "sau nguyên âm -> /d/" },
-    { w: "explained", ipa: "/ɪkˈspleɪnd/", group: "d", note: "after voiced /n/ -> /d/" },
-    { w: "called", ipa: "/kɔːld/", group: "d", note: "sau l (hữu thanh) -> /d/" }
+    { w: "waited", ipa: "/ˈweɪtɪd/", group: "id", note: "after /t/ → /ɪd/ (adds 1 syllable)" },
+    { w: "needed", ipa: "/ˈniːdɪd/", group: "id", note: "after /d/ → /ɪd/ (adds 1 syllable)" },
+    { w: "decided", ipa: "/dɪˈsaɪdɪd/", group: "id", note: "after /d/ → /ɪd/ (adds 1 syllable)" },
+    { w: "invited", ipa: "/ɪnˈvaɪtɪd/", group: "id", note: "after /t/ → /ɪd/ (adds 1 syllable)" },
+    { w: "looked", ipa: "/lʊkt/", group: "t", note: "after voiceless /k/ → /t/" },
+    { w: "watched", ipa: "/wɒtʃt/", group: "t", note: "after voiceless /tʃ/ → /t/" },
+    { w: "stopped", ipa: "/stɒpt/", group: "t", note: "after voiceless /p/ → /t/" },
+    { w: "washed", ipa: "/wɒʃt/", group: "t", note: "after voiceless /ʃ/ → /t/" },
+    { w: "lived", ipa: "/lɪvd/", group: "d", note: "after voiced /v/ → /d/" },
+    { w: "played", ipa: "/pleɪd/", group: "d", note: "after vowel → /d/" },
+    { w: "explained", ipa: "/ɪkˈspleɪnd/", group: "d", note: "after voiced /n/ → /d/" },
+    { w: "called", ipa: "/kɔːld/", group: "d", note: "after voiced /l/ → /d/" }
   ];
 
   container.innerHTML = `
@@ -1645,12 +1671,12 @@ function renderRulesTab(container) {
           <div style="font-size:12px;color:var(--ink)">Examples: <i>boxes, watches, finishes, roses</i></div>
         </div>
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px">
-          <div style="font-weight:800;color:#DC2626;font-size:16px">2. Pronounced as /s/</div>
+          <div style="font-weight:800;color:var(--bad);font-size:16px">2. Pronounced as /s/</div>
           <div style="font-size:12.5px;margin:4px 0;color:var(--muted)">When ending with voiceless consonant sounds: <b>/p, t, k, f, θ/</b>.</div>
           <div style="font-size:12px;color:var(--ink)">Examples: <i>stops, cats, books, laughs, months</i></div>
         </div>
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px">
-          <div style="font-weight:800;color:#059669;font-size:16px">3. Pronounced as /z/</div>
+          <div style="font-weight:800;color:var(--good);font-size:16px">3. Pronounced as /z/</div>
           <div style="font-size:12.5px;margin:4px 0;color:var(--muted)">When ending with remaining voiced consonant sounds and vowels: <b>/b, d, g, v, ð, m, n, ŋ, l, r/</b>.</div>
           <div style="font-size:12px;color:var(--ink)">Examples: <i>days, dogs, friends, rooms, plays</i></div>
         </div>
@@ -1666,10 +1692,10 @@ function renderRulesTab(container) {
                 <div style="font-size:12px;color:var(--muted)">${esc(item.ipa)} · ${esc(item.note)}</div>
               </div>
               <div style="display:flex;gap:4px">
-                <button class="icon-btn" onclick="speak('${esc(item.w)}')" title="Listen to ${esc(item.w)}" aria-label="Play ${esc(item.w)}" style="width:34px;height:34px">
+                <button class="icon-btn" data-say="${esc(item.w)}" title="Listen to ${esc(item.w)}" aria-label="Play ${esc(item.w)}">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 </button>
-                <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-s-${idx}" title="Practice speaking ${esc(item.w)}" aria-label="Record ${esc(item.w)}" style="width:34px;height:34px">
+                <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-s-${idx}" title="Practice speaking ${esc(item.w)}" aria-label="Record ${esc(item.w)}">
                   ${MIC_ICON}
                 </button>
               </div>
@@ -1681,8 +1707,8 @@ function renderRulesTab(container) {
     </div>
 
     <!-- Section ED Ending -->
-    <div class="card" style="border-top:4px solid #059669">
-      <div class="eyebrow" style="color:#059669;font-weight:700">Unit 43 · Cambridge</div>
+    <div class="card" style="border-top:4px solid var(--good)">
+      <div class="eyebrow" style="color:var(--good);font-weight:700">Unit 43 · Cambridge</div>
       <h2 style="margin:4px 0 8px;font-size:20px">Rule 2: Pronouncing Past Tense -ed Endings</h2>
       <p class="hint" style="margin:0 0 14px;line-height:1.5">
         Applies to regular verbs in past simple and past participle.
@@ -1695,12 +1721,12 @@ function renderRulesTab(container) {
           <div style="font-size:12px;color:var(--ink)">Examples: <i>waited, needed, decided, invited</i></div>
         </div>
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px">
-          <div style="font-weight:800;color:#DC2626;font-size:16px">2. Pronounced as /t/</div>
+          <div style="font-weight:800;color:var(--bad);font-size:16px">2. Pronounced as /t/</div>
           <div style="font-size:12.5px;margin:4px 0;color:var(--muted)">When ending with voiceless sounds: <b>/p, k, f, s, ʃ, tʃ/</b>.</div>
           <div style="font-size:12px;color:var(--ink)">Examples: <i>looked, watched, stopped, washed, laughed</i></div>
         </div>
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px">
-          <div style="font-weight:800;color:#059669;font-size:16px">3. Pronounced as /d/</div>
+          <div style="font-weight:800;color:var(--good);font-size:16px">3. Pronounced as /d/</div>
           <div style="font-size:12.5px;margin:4px 0;color:var(--muted)">When ending with other voiced sounds and vowels: <b>/b, g, v, z, m, n, l, r.../</b>.</div>
           <div style="font-size:12px;color:var(--ink)">Examples: <i>lived, played, opened, explained, called</i></div>
         </div>
@@ -1716,10 +1742,10 @@ function renderRulesTab(container) {
                 <div style="font-size:12px;color:var(--muted)">${esc(item.ipa)} · ${esc(item.note)}</div>
               </div>
               <div style="display:flex;gap:4px">
-                <button class="icon-btn" onclick="speak('${esc(item.w)}')" title="Listen to ${esc(item.w)}" aria-label="Play ${esc(item.w)}" style="width:34px;height:34px">
+                <button class="icon-btn" data-say="${esc(item.w)}" title="Listen to ${esc(item.w)}" aria-label="Play ${esc(item.w)}">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
                 </button>
-                <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-ed-${idx}" title="Practice speaking ${esc(item.w)}" aria-label="Record ${esc(item.w)}" style="width:34px;height:34px">
+                <button class="icon-btn rec-btn" data-rec-text="${esc(item.w)}" data-rec-id="rule-ed-${idx}" title="Practice speaking ${esc(item.w)}" aria-label="Record ${esc(item.w)}">
                   ${MIC_ICON}
                 </button>
               </div>
@@ -1731,365 +1757,5 @@ function renderRulesTab(container) {
     </div>
   `;
 }
-
-// ---------- NEW PAGE: LEADERBOARD ----------
-async function renderLeaderboard(box) {
-  box.innerHTML = `
-    <div class="thead" style="margin-bottom:18px">
-      <div class="eyebrow">ACADEMIC RANKINGS</div>
-      <h1 style="font-size:26px;font-weight:800">Learner Leaderboard</h1>
-      <div class="meta">
-        <span>Top 50 learners with verified assessment scores</span>
-        <span class="hint">Assessment scores verified through online active-recall testing</span>
-      </div>
-    </div>
-    <div id="lb-content">
-      <div class="card" style="text-align:center;padding:32px">
-        <div class="hint">Loading leaderboard...</div>
-      </div>
-    </div>`;
-
-  const cBox = box.querySelector('#lb-content');
-  if (!isConfigured || !fbDb || !firestoreModules) {
-    cBox.innerHTML = `
-      <div class="card" style="text-align:center;padding:32px">
-        <div style="font-weight:600;margin-bottom:6px">Leaderboard Not Configured</div>
-        <p class="hint">Leaderboard requires Firebase cloud configuration. See FIREBASE_SETUP.md for details.</p>
-      </div>`;
-    return;
-  }
-
-  try {
-    const lbRef = firestoreModules.collection(fbDb, 'leaderboard');
-    // Truy vấn trực tiếp leaderboard, không cần Firestore Index
-    const snap = await firestoreModules.getDocs(lbRef);
-
-    if (snap.empty) {
-      cBox.innerHTML = `
-        <div class="card" style="text-align:center;padding:32px">
-          
-          <div style="font-weight:600;margin-bottom:6px">No learners on the leaderboard yet</div>
-          <p class="hint">Sign in and complete quizzes to be the first learner on the board!</p>
-        </div>`;
-      return;
-    }
-
-    const items = snap.docs.map(doc => doc.data());
-    items.sort((a, b) => (b.totalBest - a.totalBest) || ((b.completedCount || 0) - (a.completedCount || 0)));
-
-    const rows = [];
-    let rank = 1;
-    items.forEach(d => {
-      const isMe = currentUser && currentUser.uid === d.uid;
-      let rankHtml = String(rank);
-      if (rank === 1) rankHtml = '<span class="lb-rank lb-gold">1</span>';
-      else if (rank === 2) rankHtml = '<span class="lb-rank lb-silver">2</span>';
-      else if (rank === 3) rankHtml = '<span class="lb-rank lb-bronze">3</span>';
-      else rankHtml = `<span class="lb-rank">${rank}</span>`;
-
-      const avatar = d.photoURL
-        ? `<img class="lb-avatar" src="${esc(d.photoURL)}" alt="Avatar">`
-        : `<div class="lb-avatar">${esc((d.displayName || 'U')[0].toUpperCase())}</div>`;
-
-      rows.push(`
-        <tr class="lb-row ${isMe ? 'me' : ''}">
-          <td style="width:48px;text-align:center">${rankHtml}</td>
-          <td>
-            <div class="lb-user-cell">
-              ${avatar}
-              <div>
-                <div style="font-weight:700">${esc(d.displayName || 'Learner')}${isMe ? ' <span style="font-size:11px;background:var(--accent);color:var(--accent-ink);padding:2px 6px;border-radius:4px">You</span>' : ''}</div>
-                <div style="font-size:12px;color:var(--muted)">Completed ${d.completedCount || 0}/45 topics</div>
-              </div>
-            </div>
-          </td>
-          <td style="text-align:right">
-            <div class="lb-score">${d.totalBest || 0}</div>
-            <div style="font-size:11px;color:var(--muted)">points</div>
-          </td>
-        </tr>
-      `);
-      rank++;
-    });
-
-    cBox.innerHTML = `
-      <table class="lb-table">
-        <thead>
-          <tr>
-            <th style="text-align:center;width:48px">Rank</th>
-            <th>Learner</th>
-            <th style="text-align:right">Verified Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.join('')}
-        </tbody>
-      </table>`;
-  } catch (err) {
-    console.error('Lỗi tải leaderboard:', err);
-    cBox.innerHTML = `<div class="card"><div class="fb no">Unable to load leaderboard: ${esc(err.message)}</div></div>`;
-  }
-}
-
-// ---------- NEW PAGE: PROFILE ----------
-async function renderProfile(box) {
-  if (!currentUser) {
-    box.innerHTML = `
-      <div class="card" style="text-align:center;padding:40px">
-        <h2 style="margin:0 0 10px">Learner Profile</h2>
-        <p class="hint" style="margin-bottom:16px">You are not signed in. Sign in to sync your progress across devices and participate in the leaderboard.</p>
-        <button class="btn primary" id="btn-login-profile">Sign In</button>
-      </div>`;
-    box.querySelector('#btn-login-profile').onclick = () => openAuthModal('login');
-    return;
-  }
-
-  let profileData = {};
-  let teacherNoteData = null;
-  try {
-    const [userDoc, noteDoc] = await Promise.all([
-      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', currentUser.uid)).catch(() => null),
-      firestoreModules.getDoc(firestoreModules.doc(fbDb, 'users', currentUser.uid, 'meta', 'teacher_note')).catch(() => null)
-    ]);
-    if (userDoc && userDoc.exists()) profileData = userDoc.data();
-    if (noteDoc && noteDoc.exists()) teacherNoteData = noteDoc.data();
-  } catch (e) {}
-
-  let completedCount = 0;
-  let attemptedCount = 0;
-  let totalScore = 0;
-  let scoreCount = 0;
-
-  TOPICS.forEach(t => {
-    const best = store.get('best:' + t.id, null);
-    const completedManual = store.get('completedManual:' + t.id, false);
-    const isCompleted = completedManual || (best != null && best >= 80);
-    if (isCompleted) completedCount++;
-    if (best != null) {
-      attemptedCount++;
-      totalScore += best;
-      scoreCount++;
-    } else {
-      let hasAns = false;
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith(`toeic45:${currentUser.uid}:tr:${t.id}:`) || k.startsWith(`toeic45:${currentUser.uid}:g-${t.id}-`))) {
-          hasAns = true;
-          break;
-        }
-      }
-      if (hasAns) attemptedCount++;
-    }
-  });
-
-  const avgScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
-  const isHidden = Boolean(profileData.hidden);
-
-  const avatar = currentUser.photoURL
-    ? `<img style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)" src="${esc(currentUser.photoURL)}" alt="Avatar">`
-    : `<div style="width:68px;height:68px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;border:2px solid var(--line)">${esc((currentUser.displayName || currentUser.email || 'U')[0].toUpperCase())}</div>`;
-
-  box.innerHTML = `
-    <div class="thead" style="margin-bottom:18px">
-      <div class="eyebrow">Account</div>
-      <h1 style="font-size:26px;font-weight:800">Learner Profile</h1>
-    </div>
-
-    
-    <!-- Thẻ trạng thái đồng bộ đa thiết bị -->
-    <div class="card" style="margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--sunk);border:1.5px solid var(--line)">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:40px;height:40px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;color:var(--accent)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></div>
-        <div>
-          <div style="font-weight:700;font-size:15px">Multi-Device Cloud Sync</div>
-          <div style="font-size:13px;color:var(--muted)">Your learning progress and quiz scores sync in real-time via cloud backup.</div>
-        </div>
-      </div>
-      <button class="btn primary" id="btn-profile-sync" style="display:inline-flex;align-items:center;gap:8px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        <span>Sync with Cloud Now</span>
-      </button>
-    </div>
-
-    <div class="card" style="display:flex;gap:18px;align-items:center;margin-bottom:18px">
-      ${avatar}
-      <div style="flex:1;min-width:0">
-        <h2 style="margin:0 0 4px;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(currentUser.displayName || 'Learner')}</h2>
-        <div style="color:var(--muted);font-size:13.5px;margin-bottom:6px">${esc(currentUser.email || '')}</div>
-        <div>
-          ${currentUser.emailVerified
-            ? '<span style="font-size:12px;color:var(--good);background:var(--good-soft);padding:3px 8px;border-radius:6px;font-weight:600">✓ Email verified</span>'
-            : '<span style="font-size:12px;color:var(--warn);background:var(--warn-soft);padding:3px 8px;border-radius:6px;font-weight:600">Unverified email</span> <button class="btn ghost" id="btn-resend-verify" style="font-size:12px;padding:2px 6px">Resend</button>'}
-          ${isTeacherUser ? `<span style="margin-left:6px;font-size:12px;color:#fff;background:#2563EB;padding:3px 8px;border-radius:6px;font-weight:700">${isAdminUser ? 'Admin' : 'Instructor'}</span>` : ''}
-        </div>
-        <div style="font-size:11.5px;color:var(--muted);margin-top:6px">
-          UID: <code style="user-select:all;background:var(--sunk);padding:2px 6px;border-radius:4px">${esc(currentUser.uid)}</code>
-        </div>
-      </div>
-    </div>
-
-    ${teacherNoteData && teacherNoteData.note ? `
-      <div class="card" style="margin-bottom:18px;background:rgba(37,99,235,0.06);border:1.5px solid rgba(37,99,235,0.3)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <div style="font-weight:800;font-size:14.5px;color:#2563EB">Instructor Feedback</div>
-          <div style="font-size:12px;color:var(--muted)">${teacherNoteData.authorName ? esc(teacherNoteData.authorName) + ' · ' : ''}${teacherNoteData.updatedAt && teacherNoteData.updatedAt.toDate ? teacherNoteData.updatedAt.toDate().toLocaleDateString('vi-VN') : ''}</div>
-        </div>
-        <div style="font-size:14px;line-height:1.6;white-space:pre-wrap">${esc(teacherNoteData.note)}</div>
-      </div>
-    ` : ''}
-
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="val">${completedCount} <span style="font-size:16px;font-weight:500;color:var(--muted)">/ ${TOPICS.length}</span></div>
-        <div class="lbl">Topics Completed</div>
-      </div>
-      <div class="stat-card">
-        <div class="val">${attemptedCount} <span style="font-size:16px;font-weight:500;color:var(--muted)">/ ${TOPICS.length}</span></div>
-        <div class="lbl">Topics Studied</div>
-      </div>
-      <div class="stat-card">
-        <div class="val">${avgScore}%</div>
-        <div class="lbl">Avg Quiz Score</div>
-      </div>
-      <div class="stat-card">
-        <div class="val">${totalScore}</div>
-        <div class="lbl">Total Quiz Points</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:18px">
-      <h3 style="margin:0 0 10px;font-size:17px">Privacy & Leaderboard Visibility</h3>
-      <div class="row between">
-        <div>
-          <div style="font-weight:600">Show on Public Leaderboard</div>
-          <div class="hint">Display your name and test scores on the public leaderboard.</div>
-        </div>
-        <label style="position:relative;display:inline-block;width:48px;height:26px">
-          <input type="checkbox" id="toggle-lb-vis" ${!isHidden ? 'checked' : ''} style="opacity:0;width:0;height:0">
-          <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${!isHidden?'var(--good)':'var(--muted)'};border-radius:34px;transition:.2s">
-            <span style="position:absolute;content:'';height:20px;width:20px;left:${!isHidden?'24px':'4px'};bottom:3px;background:white;border-radius:50%;transition:.2s"></span>
-          </span>
-        </label>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px;font-size:17px">Session Management</h3>
-      <div class="row between">
-        <div class="hint">Sign out of your session on this device.</div>
-        <button class="btn" id="btn-logout" style="color:var(--bad);border-color:var(--bad)">Sign Out</button>
-      </div>
-    </div>`;
-
-  const resendBtn = box.querySelector('#btn-resend-verify');
-  if (resendBtn) {
-    resendBtn.onclick = async () => {
-      try {
-        await authModules.sendEmailVerification(currentUser);
-        showToast('✓ Verification email sent. Please check your inbox!');
-      } catch (err) {
-        showToast('Error sending email: ' + formatFirebaseError(err));
-      }
-    };
-  }
-
-  const toggleVis = box.querySelector('#toggle-lb-vis');
-  if (toggleVis) {
-    toggleVis.onchange = async () => {
-      const show = toggleVis.checked;
-      toggleVis.disabled = true;
-      try {
-        await firestoreModules.setDoc(firestoreModules.doc(fbDb, 'users', currentUser.uid), {
-          hidden: !show,
-          updatedAt: firestoreModules.serverTimestamp()
-        }, { merge: true });
-        if (!show) {
-          await firestoreModules.deleteDoc(firestoreModules.doc(fbDb, 'leaderboard', currentUser.uid));
-        } else {
-          await syncLeaderboardFromClient(currentUser.uid);
-        }
-        showToast(show ? '✓ Leaderboard visibility enabled.' : 'Account hidden from leaderboard.');
-      } catch (err) {
-        showToast('Error updating profile: ' + formatFirebaseError(err));
-        toggleVis.checked = !show;
-      } finally {
-        toggleVis.disabled = false;
-        renderProfile(box);
-      }
-    };
-  }
-
-  // Render danh sách file ghi âm
-  const recHistBox = box.querySelector('#rec-history-list');
-  const btnDownloadAll = box.querySelector('#btn-download-all-rec');
-  if (recHistBox) {
-    RecorderManager.getAllRecordings().then(list => {
-      if (!list.length) {
-        recHistBox.innerHTML = '<div class="hint" style="text-align:center;padding:12px">No voice recordings yet. Click the microphone icon in any lesson to practice speaking!</div>';
-        if (btnDownloadAll) btnDownloadAll.style.display = 'none';
-        return;
-      }
-      recHistBox.innerHTML = list.map(item => {
-        const dateStr = new Date(item.createdAt).toLocaleDateString('vi-VN') + ' ' + new Date(item.createdAt).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
-        const url = URL.createObjectURL(item.blob);
-        return `
-          <div class="rec-history-item">
-            <div class="rec-info">
-              <b>${esc(item.targetText || 'Audio Recording')}</b>
-              <span class="hint" style="font-size:12px">${dateStr} · ${item.duration}s ${item.assessment && item.assessment.score ? `· Score: ${item.assessment.score}%` : ''}</span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <audio src="${url}" controls style="height:32px;max-width:180px"></audio>
-              <a class="rec-download-btn" href="${url}" download="${item.fileName || 'TOEIC_VoiceRecord.webm'}" title="Download recording">Download</a>
-            </div>
-          </div>
-        `;
-      }).join('');
-      if (btnDownloadAll) {
-        btnDownloadAll.onclick = () => RecorderManager.downloadAllRecordings();
-      }
-    });
-  }
-
-  box.querySelector('#btn-profile-sync').onclick = manualSyncCloud;
-    box.querySelector('#btn-logout').onclick = () => {
-    openModal(`
-      <div class="modal-backdrop">
-        <div class="modal-box">
-          <h3 style="margin:0 0 10px;font-size:18px">Confirm Sign Out</h3>
-          <p class="hint" style="margin:0 0 16px">Are you sure you want to sign out of <b>${esc(currentUser.displayName || currentUser.email)}</b>?</p>
-          <div style="margin-bottom:18px">
-            <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer">
-              <input type="checkbox" id="chk-clear-local">
-              Clear local cached data for this account on this device
-            </label>
-          </div>
-          <div class="row between">
-            <button class="btn ghost" id="btn-cancel-logout">Cancel</button>
-            <button class="btn primary" id="btn-confirm-logout" style="background:var(--bad);border-color:var(--bad)">Sign Out</button>
-          </div>
-        </div>
-      </div>
-    `);
-
-    $('#btn-cancel-logout').onclick = closeModal;
-    $('#btn-confirm-logout').onclick = async () => {
-      const clearLocal = $('#chk-clear-local').checked;
-      if (clearLocal) {
-        const prefix = `toeic45:${currentUser.uid}:`;
-        const toDel = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith(prefix)) toDel.push(k);
-        }
-        toDel.forEach(k => localStorage.removeItem(k));
-      }
-      await authModules.signOut(fbAuth);
-      closeModal();
-      location.hash = '#t1-p1';
-    };
-  };
-}
-
 
 export { IPA_DATA, MINIMAL_PAIRS, PRONUN_UNITS };

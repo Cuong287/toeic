@@ -36,13 +36,13 @@ export function fmtDue(val) {
   if (!val) return '—';
   const d = new Date(val);
   if (isNaN(d.getTime())) return String(val);
-  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  return `${time} ${date}`;
+  const date = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return `${date} · ${time}`;
 }
 
 export function getTypeTagLabel(type) {
-  return 'Bài tập về nhà';
+  return 'Homework';
 }
 
 export function getHomeworkTargetLabel(type, targetId) {
@@ -62,7 +62,7 @@ export async function getHomeworkAssignments() {
       }
     }
   } catch (e) {
-    console.warn('Lỗi đọc assignments từ Firestore:', e);
+    console.warn('Failed to load assignments from Firestore:', e);
   }
 
   const localList = store ? store.get('assignments_cache', []) : [];
@@ -101,7 +101,7 @@ export async function saveHomeworkAssignment(hwData) {
         { merge: true }
       );
     } catch (e) {
-      console.warn('Lỗi ghi assignment lên Firestore:', e);
+      console.warn('Failed to save assignment to Firestore:', e);
     }
   }
   updateHomeworkBadges();
@@ -118,7 +118,7 @@ export async function deleteHomeworkAssignment(hwId) {
     try {
       await firestoreModules.deleteDoc(firestoreModules.doc(fbDb, 'assignments', hwId));
     } catch (e) {
-      console.warn('Lỗi xóa assignment trên Firestore:', e);
+      console.warn('Failed to delete assignment from Firestore:', e);
     }
   }
   updateHomeworkBadges();
@@ -147,7 +147,7 @@ export async function getAssignmentSubmissions(hwId) {
     if (!subMap[currentUid]) {
       subMap[currentUid] = {
         uid: currentUid,
-        displayName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Học viên',
+        displayName: (currentUser && (currentUser.displayName || currentUser.email)) || 'Student',
         email: (currentUser && currentUser.email) || '',
         submittedAt: localSub.submittedAt,
         status: 'completed'
@@ -161,7 +161,7 @@ export async function getAssignmentSubmissions(hwId) {
 export async function toggleHomeworkCompletion(hwId, isCompleted = true) {
   const assignments = await getHomeworkAssignments();
   const hw = assignments.find(x => x.id === hwId);
-  const title = hw ? (hw.title || 'Bài tập') : 'Bài tập';
+  const title = hw ? (hw.title || 'Assignment') : 'Assignment';
 
   if (isCompleted) {
     const subRecord = {
@@ -172,7 +172,7 @@ export async function toggleHomeworkCompletion(hwId, isCompleted = true) {
 
     if (currentUser && currentUid !== 'guest' && fbDb && firestoreModules) {
       try {
-        const studentName = currentUser.displayName || currentUser.email || 'Học viên';
+        const studentName = currentUser.displayName || currentUser.email || 'Student';
         const studentEmail = currentUser.email || '';
         await firestoreModules.setDoc(
           firestoreModules.doc(fbDb, 'assignments', hwId, 'submissions', currentUid),
@@ -186,10 +186,10 @@ export async function toggleHomeworkCompletion(hwId, isCompleted = true) {
           { merge: true }
         );
       } catch (err) {
-        console.warn('Lỗi lưu submission lên Firestore:', err);
+        console.warn('Failed to save submission to Firestore:', err);
       }
     }
-    showToast(`✓ Đã đánh dấu hoàn thành: "${title}"`);
+    showToast(`Marked as completed: "${title}"`);
   } else {
     if (store) store.remove('hw_sub_' + hwId);
 
@@ -199,10 +199,10 @@ export async function toggleHomeworkCompletion(hwId, isCompleted = true) {
           firestoreModules.doc(fbDb, 'assignments', hwId, 'submissions', currentUid)
         );
       } catch (err) {
-        console.warn('Lỗi xóa submission trên Firestore:', err);
+        console.warn('Failed to delete submission from Firestore:', err);
       }
     }
-    showToast(`Đã bỏ đánh dấu hoàn thành: "${title}"`);
+    showToast(`Marked as pending: "${title}"`);
   }
   updateHomeworkBadges();
 }
@@ -250,14 +250,14 @@ export async function renderDashboardHomework(container) {
         container.innerHTML = `
           <div class="card" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:var(--surface);border-left:4px solid var(--accent)">
             <div>
-              <div style="font-weight:700;font-size:14.5px">👨‍🏫 Bảng tin Giáo viên: Quản lý bài tập về nhà</div>
-              <div class="hint" style="font-size:12.5px">Bạn chưa giao bài tập nào. Bấm nút bên cạnh để điền nội dung giao bài tập cho học viên.</div>
+              <div style="font-weight:700;font-size:14.5px">Instructor Notice: Homework Management</div>
+              <div class="hint" style="font-size:12.5px">No assignments posted yet. Create an assignment for students to see on their dashboard.</div>
             </div>
-            <button class="btn primary" id="dash-btn-teacher-hw" style="font-size:12.5px;padding:6px 14px">Giao bài tập mới →</button>
+            <button class="btn primary" id="dash-btn-teacher-hw" style="font-size:12.5px;padding:6px 14px">Assign Homework</button>
           </div>
         `;
         const tBtn = container.querySelector('#dash-btn-teacher-hw');
-        if (tBtn) tBtn.onclick = () => { window.currentAdminTab = 'homework'; goTo('admin'); };
+        if (tBtn) tBtn.onclick = () => { window._pendingAdminTab = 'homework'; goTo('admin'); };
       } else {
         container.innerHTML = '';
       }
@@ -270,21 +270,18 @@ export async function renderDashboardHomework(container) {
     container.innerHTML = `
       <div class="card" style="padding:18px 20px;border-left:4px solid ${pendingCount > 0 ? 'var(--warn)' : 'var(--good)'}">
         <div class="row between" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:22px">📝</span>
-            <div>
-              <h2 class="sec" style="margin:0;font-size:18px;line-height:1.2">Bài tập về nhà (Assigned Homework)</h2>
-              <div class="hint" style="font-size:12.5px">Xem nội dung bài tập giáo viên giao và bấm đánh dấu sau khi đã hoàn thành.</div>
-            </div>
+          <div>
+            <h2 class="sec" style="margin:0;font-size:18px;line-height:1.2">Assigned Homework</h2>
+            <div class="hint" style="font-size:12.5px">Review assigned tasks and mark them as completed when finished.</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${pendingCount > 0 ? `
-              <span class="hw-badge hw-badge-warn">⏰ Có ${pendingCount} bài cần làm</span>
+              <span class="hw-badge hw-badge-warn">${pendingCount} Pending</span>
             ` : `
-              <span class="hw-badge hw-badge-ok">✓ Đã hoàn thành tất cả</span>
+              <span class="hw-badge hw-badge-ok">All Completed</span>
             `}
             ${isTeacherUser ? `
-              <button class="btn ghost" id="dash-btn-manage-hw" style="font-size:12px;padding:4px 10px">Quản lý bài tập →</button>
+              <button class="btn ghost" id="dash-btn-manage-hw" style="font-size:12px;padding:4px 10px">Manage Homework</button>
             ` : ''}
           </div>
         </div>
@@ -299,13 +296,13 @@ export async function renderDashboardHomework(container) {
 
             let badgeHtml = '';
             if (isDone) {
-              badgeHtml = `<span class="hw-badge hw-badge-ok">✓ Đã hoàn thành</span>`;
+              badgeHtml = `<span class="hw-badge hw-badge-ok">Completed</span>`;
             } else if (isExpired) {
-              badgeHtml = `<span class="hw-badge hw-badge-bad">⚠ Đã quá hạn</span>`;
+              badgeHtml = `<span class="hw-badge hw-badge-bad">Overdue</span>`;
             } else if (isDueToday) {
-              badgeHtml = `<span class="hw-badge hw-badge-warn">⏰ Hôm nay hết hạn</span>`;
+              badgeHtml = `<span class="hw-badge hw-badge-warn">Due Today</span>`;
             } else if (hw.dueDate) {
-              badgeHtml = `<span class="hw-badge hw-badge-info">📅 Hạn: ${fmtDue(hw.dueDate)}</span>`;
+              badgeHtml = `<span class="hw-badge hw-badge-info">Due: ${fmtDue(hw.dueDate)}</span>`;
             }
 
             const contentText = hw.content || hw.instructions || '';
@@ -313,12 +310,12 @@ export async function renderDashboardHomework(container) {
             return `
               <div class="hw-card" style="display:flex;flex-direction:column">
                 <div class="row between" style="gap:6px">
-                  <div style="font-weight:700;font-size:15px;color:var(--ink);line-height:1.35">${esc(hw.title || 'Bài tập về nhà')}</div>
+                  <div style="font-weight:700;font-size:15px;color:var(--ink);line-height:1.35">${esc(hw.title || 'Assigned Homework')}</div>
                   ${badgeHtml}
                 </div>
 
                 ${hw.dueDate ? `
-                  <div style="font-size:12px;color:var(--muted)">Hạn nộp: <b>${fmtDue(hw.dueDate)}</b></div>
+                  <div style="font-size:12px;color:var(--muted)">Due: <b>${fmtDue(hw.dueDate)}</b></div>
                 ` : ''}
 
                 <div class="hw-text-content" style="margin:8px 0;flex:1">
@@ -327,13 +324,13 @@ export async function renderDashboardHomework(container) {
 
                 <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px">
                   ${isDone ? `
-                    <span style="font-size:12.5px;color:var(--good);font-weight:600">✓ Đã xong</span>
+                    <span style="font-size:12.5px;color:var(--good);font-weight:600">Completed</span>
                     <button class="btn ghost btn-toggle-hw" data-hw-id="${esc(hw.id)}" data-action="uncomplete" style="font-size:12px;padding:4px 10px">
-                      Bỏ đánh dấu
+                      Mark Pending
                     </button>
                   ` : `
                     <button class="btn primary btn-toggle-hw" data-hw-id="${esc(hw.id)}" data-action="complete" style="width:100%;justify-content:center;font-size:13px;padding:8px 12px;display:inline-flex;align-items:center;gap:6px">
-                      <span>✓ Đánh dấu đã hoàn thành</span>
+                      <span>Mark as Completed</span>
                     </button>
                   `}
                 </div>
@@ -347,7 +344,7 @@ export async function renderDashboardHomework(container) {
     const manageBtn = container.querySelector('#dash-btn-manage-hw');
     if (manageBtn) {
       manageBtn.onclick = () => {
-        window.currentAdminTab = 'homework';
+        window._pendingAdminTab = 'homework';
         goTo('admin');
       };
     }

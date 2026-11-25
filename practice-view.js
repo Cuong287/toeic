@@ -247,28 +247,29 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
   const esc = appEsc || (s => String(s ?? ''));
   if (!userVal) {
     return `
-      <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+      <div style="background:var(--warn-soft);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--warn);font-weight:600">
         Please enter your translation first
       </div>
     `;
   }
 
   const { score, verdict, verdictText, feedback, userMeaning, synonymsFound } = evalResult;
+  const resolvedRef = refText || evalResult.ref || '';
 
-  let bannerBg = 'rgba(5,150,105,0.08)';
-  let bannerBorder = 'rgba(5,150,105,0.3)';
-  let bannerColor = '#059669';
+  let bannerBg = 'var(--good-soft)';
+  let bannerBorder = 'var(--good)';
+  let bannerColor = 'var(--good)';
   let bannerIcon = '✓';
 
   if (verdict === 'partial') {
-    bannerBg = 'rgba(245,158,11,0.08)';
-    bannerBorder = 'rgba(245,158,11,0.3)';
-    bannerColor = '#D97706';
+    bannerBg = 'var(--warn-soft)';
+    bannerBorder = 'var(--warn)';
+    bannerColor = 'var(--warn)';
     bannerIcon = '~';
   } else if (verdict === 'wrong') {
-    bannerBg = 'rgba(239,68,68,0.08)';
-    bannerBorder = 'rgba(239,68,68,0.3)';
-    bannerColor = '#DC2626';
+    bannerBg = 'var(--bad-soft)';
+    bannerBorder = 'var(--bad)';
+    bannerColor = 'var(--bad)';
     bannerIcon = '✕';
   }
 
@@ -291,8 +292,8 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
 
       <!-- 2. Matched Synonyms -->
       ${synonymsFound && synonymsFound.length ? `
-        <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.2);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-size:12px">
-          <b style="color:#2563EB">Matched Synonyms:</b>
+        <div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-size:12px">
+          <b style="color:var(--accent)">Matched Synonyms:</b>
           ${synonymsFound.map(p => `<span style="display:inline-block;margin-left:6px;padding:1px 6px;background:var(--bg);border-radius:4px;border:1px solid var(--line);font-weight:600;color:var(--ink)">${esc(p.user)} ⇄ ${esc(p.ref)}</span>`).join('')}
         </div>
       ` : ''}
@@ -301,11 +302,11 @@ function buildCheckAnswerHtml(evalResult, refText, userVal) {
       <div style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
         <div style="margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-            <span style="font-size:12px;font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-            ${refText ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(refText)}" title="Listen to reference" style="height:24px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+            <span style="font-size:12px;font-weight:700;color:var(--good)">REFERENCE ANSWER:</span>
+            ${resolvedRef ? `<button class="btn ghost btn-speak-ref" data-say="${esc(resolvedRef)}" title="Listen to reference" style="padding:2px 8px;font-size:11.5px">Listen</button>` : ''}
           </div>
           <div style="font-size:15px;font-weight:700;color:var(--ink);line-height:1.4">
-            ${esc(refText || 'Reference answer being updated')}
+            ${esc(resolvedRef || 'Reference answer being updated')}
           </div>
         </div>
 
@@ -345,7 +346,7 @@ export function renderPractice(box) {
     <div class="card" style="margin-bottom:16px;padding:18px 20px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
-          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(5,150,105,0.12);color:#059669;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:var(--good-soft);color:var(--good);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:6px">
             <span>PRACTICE WORKBOOK</span>
           </div>
           <h1 style="font-size:24px;margin:2px 0 6px">Reflex Translation & Drills</h1>
@@ -431,7 +432,7 @@ function renderUnitsSection(container) {
         <div style="display:flex;align-items:center;gap:12px">
           <span id="unit-answered-count" style="font-size:13px;font-weight:600">${correctCount} / ${currentUnit.items.length} questions</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
-            <div id="unit-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
+            <div id="unit-progress-bar" style="width:${progressPct}%;height:100%;background:var(--good);transition:width 0.2s"></div>
           </div>
           <button class="btn ghost btn-clear-unit" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Unit</button>
         </div>
@@ -450,14 +451,14 @@ function renderUnitsSection(container) {
           let bgStyle = 'var(--bg)';
           if (prevEval && val) {
             if (prevEval.verdict === 'correct') {
-              borderStyle = '1.5px solid #059669';
-              bgStyle = 'rgba(5,150,105,0.03)';
+              borderStyle = '1.5px solid var(--good)';
+              bgStyle = 'var(--good-soft)';
             } else if (prevEval.verdict === 'partial') {
-              borderStyle = '1.5px solid #D97706';
-              bgStyle = 'rgba(245,158,11,0.03)';
+              borderStyle = '1.5px solid var(--warn)';
+              bgStyle = 'var(--warn-soft)';
             } else if (prevEval.verdict === 'wrong') {
-              borderStyle = '1.5px solid #DC2626';
-              bgStyle = 'rgba(239,68,68,0.03)';
+              borderStyle = '1.5px solid var(--bad)';
+              bgStyle = 'var(--bad-soft)';
             }
           }
 
@@ -466,16 +467,18 @@ function renderUnitsSection(container) {
               <!-- Question Header -->
               <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
                 <div style="font-weight:700;font-size:14.5px;color:var(--ink);display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  <span style="color:#059669">${it.id}.</span>
+                  <span style="color:var(--good)">${it.id}.</span>
                   <span>${esc(it.vi)}</span>
                   <span id="badge-item-${it.id}" class="item-status-badge">
-                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
+                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:var(--good-soft);color:var(--good);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:var(--bad-soft);color:var(--bad);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
                   </span>
                 </div>
 
                 <!-- Action Controls -->
                 <div class="practice-actions-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  ${val ? `<button class="btn practice-speak-btn btn-speak-item" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>` : ''}
+                  <span id="speak-wrap-item-${it.id}" style="display:${val.trim() ? 'inline-flex' : 'none'}">
+                    <button class="btn practice-speak-btn btn-speak-item" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>
+                  </span>
                   
                   <!-- Voice Recording Button -->
                   <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-u-${currentUnit.id}-${it.id}" title="Record your speech in English">
@@ -505,7 +508,7 @@ function renderUnitsSection(container) {
 
               <!-- Answer Check Box -->
               <div id="check-box-${it.id}" class="practice-check-box" style="margin-top:10px;display:${isChecked ? 'block' : 'none'}">
-                ${isChecked && prevEval ? buildCheckAnswerHtml(prevEval, refText, val) : ''}
+                ${isChecked && prevEval ? buildCheckAnswerHtml(prevEval, refText || prevEval.ref || '', val) : ''}
               </div>
             </div>
           `;
@@ -552,6 +555,8 @@ function updateUnitStatsUI(container, currentUnit) {
     input.oninput = () => {
       const itemId = Number(input.dataset.item);
       uState.answers[itemId] = input.value;
+      const speakWrap = container.querySelector(`#speak-wrap-item-${itemId}`);
+      if (speakWrap) speakWrap.style.display = input.value.trim() ? 'inline-flex' : 'none';
       input.style.borderColor = 'var(--line)';
       input.style.background = 'var(--bg)';
       const b = container.querySelector(`#badge-item-${itemId}`);
@@ -610,8 +615,8 @@ function updateUnitStatsUI(container, currentUnit) {
       chkBox.innerHTML = `
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+            <span style="font-weight:700;color:var(--good)">REFERENCE ANSWER:</span>
+            ${ref ? `<button class="btn ghost btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="padding:2px 8px;font-size:11.5px">Listen</button>` : ''}
           </div>
           <div style="font-size:15px;font-weight:700;color:var(--ink)">
             ${esc(ref || 'Reference answer being updated')}
@@ -641,7 +646,7 @@ function updateUnitStatsUI(container, currentUnit) {
         chkBox.style.display = 'block';
         chkBox.dataset.revealed = 'false';
         chkBox.innerHTML = `
-          <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+          <div style="background:var(--warn-soft);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--warn);font-weight:600">
             Please enter your translation first
           </div>
         `;
@@ -668,37 +673,38 @@ function updateUnitStatsUI(container, currentUnit) {
       }
 
       const evalRes = await evaluateTranslation(userVal, ref, viText);
+      evalRes.ref = ref;
       uState.eval = uState.eval || {};
       uState.eval[itemId] = evalRes;
       savePracticeExState(currentUnit.id);
 
-      // Cập nhật viền input
+      // Update input border
       const inputEl = container.querySelector(`.practice-input[data-item="${itemId}"]`);
       if (inputEl) {
         if (evalRes.verdict === 'correct') {
-          inputEl.style.borderColor = '#059669';
-          inputEl.style.background = 'rgba(5,150,105,0.03)';
+          inputEl.style.borderColor = 'var(--good)';
+          inputEl.style.background = 'var(--good-soft)';
         } else if (evalRes.verdict === 'partial') {
-          inputEl.style.borderColor = '#D97706';
-          inputEl.style.background = 'rgba(245,158,11,0.03)';
+          inputEl.style.borderColor = 'var(--warn)';
+          inputEl.style.background = 'var(--warn-soft)';
         } else if (evalRes.verdict === 'wrong') {
-          inputEl.style.borderColor = '#DC2626';
-          inputEl.style.background = 'rgba(239,68,68,0.03)';
+          inputEl.style.borderColor = 'var(--bad)';
+          inputEl.style.background = 'var(--bad-soft)';
         } else {
           inputEl.style.borderColor = 'var(--line)';
           inputEl.style.background = 'var(--bg)';
         }
       }
 
-      // Cập nhật thẻ trạng thái
+      // Update status badge
       const badgeEl = container.querySelector(`#badge-item-${itemId}`);
       if (badgeEl) {
         if (evalRes.verdict === 'correct') {
-          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--good-soft);color:var(--good);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
         } else if (evalRes.verdict === 'partial') {
-          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
         } else if (evalRes.verdict === 'wrong') {
-          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--bad-soft);color:var(--bad);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
         } else {
           badgeEl.innerHTML = '';
         }
@@ -807,28 +813,30 @@ function renderParasSection(container) {
           let bgStyle = 'var(--bg)';
           if (prevEval && val) {
             if (prevEval.verdict === 'correct') {
-              borderStyle = '1.5px solid #059669';
-              bgStyle = 'rgba(5,150,105,0.03)';
+              borderStyle = '1.5px solid var(--good)';
+              bgStyle = 'var(--good-soft)';
             } else if (prevEval.verdict === 'partial') {
-              borderStyle = '1.5px solid #D97706';
-              bgStyle = 'rgba(245,158,11,0.03)';
+              borderStyle = '1.5px solid var(--warn)';
+              bgStyle = 'var(--warn-soft)';
             } else if (prevEval.verdict === 'wrong') {
-              borderStyle = '1.5px solid #DC2626';
-              bgStyle = 'rgba(239,68,68,0.03)';
+              borderStyle = '1.5px solid var(--bad)';
+              bgStyle = 'var(--bad-soft)';
             }
           }
 
           return `
             <div style="padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
-                <div style="font-weight:700;font-size:13.5px;color:#059669;display:inline-flex;align-items:center;gap:6px">
+                <div style="font-weight:700;font-size:13.5px;color:var(--good);display:inline-flex;align-items:center;gap:6px">
                   <span>Sentence ${seg.id}</span>
                   <span id="badge-para-${seg.id}" class="item-status-badge">
-                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
+                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:var(--good-soft);color:var(--good);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:var(--bad-soft);color:var(--bad);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
                   </span>
                 </div>
                 <div class="practice-actions-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  ${val ? `<button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Listen to your translation">Listen</button>` : ''}
+                  <span id="speak-wrap-seg-${seg.id}" style="display:${val.trim() ? 'inline-flex' : 'none'}">
+                    <button class="btn practice-speak-btn btn-speak-seg" data-id="${seg.id}" title="Listen to your translation">Listen</button>
+                  </span>
                   
                   <!-- Voice Recording -->
                   <button class="btn rec-btn practice-rec-btn" data-rec-text="${esc(seg.en || '')}" data-rec-id="prac-p-${currentPara.id}-${seg.id}" title="Record your speech in English">
@@ -853,7 +861,7 @@ function renderParasSection(container) {
 
               <div id="${recSlotId}" class="rec-slot" style="margin-top:8px"></div>
               <div id="check-para-box-${seg.id}" class="practice-check-box" style="margin-top:8px;display:${isChecked ? 'block' : 'none'}">
-                ${isChecked && prevEval ? buildCheckAnswerHtml(prevEval, '', val) : ''}
+                ${isChecked && prevEval ? buildCheckAnswerHtml(prevEval, seg.en || prevEval.ref || '', val) : ''}
               </div>
             </div>
           `;
@@ -881,6 +889,8 @@ function renderParasSection(container) {
     txt.oninput = () => {
       const segId = Number(txt.dataset.seg);
       pState.answers[segId] = txt.value;
+      const speakWrap = container.querySelector(`#speak-wrap-seg-${segId}`);
+      if (speakWrap) speakWrap.style.display = txt.value.trim() ? 'inline-flex' : 'none';
       txt.style.borderColor = 'var(--line)';
       txt.style.background = 'var(--bg)';
       const b = container.querySelector(`#badge-para-${segId}`);
@@ -929,8 +939,8 @@ function renderParasSection(container) {
       chkBox.innerHTML = `
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+            <span style="font-weight:700;color:var(--good)">REFERENCE ANSWER:</span>
+            ${ref ? `<button class="btn ghost btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="padding:2px 8px;font-size:11.5px">Listen</button>` : ''}
           </div>
           <div style="font-size:15px;font-weight:700;color:var(--ink)">
             ${esc(ref || 'Reference answer being updated')}
@@ -959,7 +969,7 @@ function renderParasSection(container) {
         chkBox.style.display = 'block';
         chkBox.dataset.revealed = 'false';
         chkBox.innerHTML = `
-          <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+          <div style="background:var(--warn-soft);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--warn);font-weight:600">
             Please enter your translation first
           </div>
         `;
@@ -981,8 +991,9 @@ function renderParasSection(container) {
       btn.textContent = 'Hide Answer';
       pState.checked[segId] = true;
 
-      const ref = await fetchSuggestedTranslation(viText);
+      const ref = btn.dataset.en || await fetchSuggestedTranslation(viText);
       const evalRes = await evaluateTranslation(userVal, ref, viText);
+      evalRes.ref = ref;
       pState.eval = pState.eval || {};
       pState.eval[segId] = evalRes;
       savePracticeExState(currentPara.id);
@@ -990,14 +1001,14 @@ function renderParasSection(container) {
       const txtEl = container.querySelector(`.para-input[data-seg="${segId}"]`);
       if (txtEl) {
         if (evalRes.verdict === 'correct') {
-          txtEl.style.borderColor = '#059669';
-          txtEl.style.background = 'rgba(5,150,105,0.03)';
+          txtEl.style.borderColor = 'var(--good)';
+          txtEl.style.background = 'var(--good-soft)';
         } else if (evalRes.verdict === 'partial') {
-          txtEl.style.borderColor = '#D97706';
-          txtEl.style.background = 'rgba(245,158,11,0.03)';
+          txtEl.style.borderColor = 'var(--warn)';
+          txtEl.style.background = 'var(--warn-soft)';
         } else if (evalRes.verdict === 'wrong') {
-          txtEl.style.borderColor = '#DC2626';
-          txtEl.style.background = 'rgba(239,68,68,0.03)';
+          txtEl.style.borderColor = 'var(--bad)';
+          txtEl.style.background = 'var(--bad-soft)';
         } else {
           txtEl.style.borderColor = 'var(--line)';
           txtEl.style.background = 'var(--bg)';
@@ -1007,11 +1018,11 @@ function renderParasSection(container) {
       const badgeEl = container.querySelector(`#badge-para-${segId}`);
       if (badgeEl) {
         if (evalRes.verdict === 'correct') {
-          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--good-soft);color:var(--good);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
         } else if (evalRes.verdict === 'partial') {
-          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
         } else if (evalRes.verdict === 'wrong') {
-          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--bad-soft);color:var(--bad);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
         } else {
           badgeEl.innerHTML = '';
         }
@@ -1071,9 +1082,9 @@ function renderTensesSection(container) {
         <div style="display:flex;align-items:center;gap:12px">
           <span id="tenses-answered-count" style="font-size:13px;font-weight:600">${correctCount} / ${PRACTICE_TENSES.length} questions</span>
           <div style="width:100px;height:7px;background:var(--sunk);border-radius:4px;overflow:hidden">
-            <div id="tenses-progress-bar" style="width:${progressPct}%;height:100%;background:#059669;transition:width 0.2s"></div>
+            <div id="tenses-progress-bar" style="width:${progressPct}%;height:100%;background:var(--good);transition:width 0.2s"></div>
           </div>
-          <button class="btn ghost btn-clear-tenses" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Unit</button>
+          <button class="btn ghost btn-clear-tenses" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Drills</button>
         </div>
       </div>
 
@@ -1089,14 +1100,14 @@ function renderTensesSection(container) {
           let bgStyle = 'var(--bg)';
           if (prevEval && val) {
             if (prevEval.verdict === 'correct') {
-              borderStyle = '1.5px solid #059669';
-              bgStyle = 'rgba(5,150,105,0.03)';
+              borderStyle = '1.5px solid var(--good)';
+              bgStyle = 'var(--good-soft)';
             } else if (prevEval.verdict === 'partial') {
-              borderStyle = '1.5px solid #D97706';
-              bgStyle = 'rgba(245,158,11,0.03)';
+              borderStyle = '1.5px solid var(--warn)';
+              bgStyle = 'var(--warn-soft)';
             } else if (prevEval.verdict === 'wrong') {
-              borderStyle = '1.5px solid #DC2626';
-              bgStyle = 'rgba(239,68,68,0.03)';
+              borderStyle = '1.5px solid var(--bad)';
+              bgStyle = 'var(--bad-soft)';
             }
           }
 
@@ -1104,25 +1115,27 @@ function renderTensesSection(container) {
             <div style="padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
               <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">
                 <div style="font-weight:700;font-size:14px;color:var(--ink);display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  <span style="color:#059669">${it.id}.</span>
+                  <span style="color:var(--good)">${it.id}.</span>
                   <span>${esc(viClean)}</span>
                   <span id="badge-tense-${it.id}" class="item-status-badge">
-                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
+                    ${prevEval && val ? (prevEval.verdict === 'correct' ? `<span style="background:var(--good-soft);color:var(--good);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>` : (prevEval.verdict === 'partial' ? `<span style="background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>` : `<span style="background:var(--bad-soft);color:var(--bad);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`)) : ''}
                   </span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                  ${val ? `<button class="btn practice-speak-btn btn-speak-tense" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>` : ''}
+                  <span id="speak-wrap-tense-${it.id}" style="display:${val.trim() ? 'inline-flex' : 'none'}">
+                    <button class="btn practice-speak-btn btn-speak-tense" data-id="${it.id}" title="Listen to your translation" aria-label="Listen">Listen</button>
+                  </span>
                   
                   <button class="btn rec-btn practice-rec-btn" data-rec-text="" data-rec-id="prac-t-${it.id}" title="Record your speech in English">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
                     <span>Record</span>
                   </button>
 
-                  <button class="btn ghost practice-reveal-btn btn-reveal-tense" data-id="${it.id}" data-vi="${esc(viClean)}" title="Reveal reference answer">
+                  <button class="btn ghost practice-reveal-btn btn-reveal-tense" data-id="${it.id}" data-vi="${esc(viClean)}" data-en="${esc(it.en || it.ref || '')}" title="Reveal reference answer">
                     Reveal
                   </button>
 
-                  <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(viClean)}">
+                  <button class="btn practice-check-btn btn-check-tense" data-id="${it.id}" data-vi="${esc(viClean)}" data-en="${esc(it.en || it.ref || '')}">
                     ${isChecked ? 'Hide Answer' : 'Check Answer'}
                   </button>
                 </div>
@@ -1131,7 +1144,7 @@ function renderTensesSection(container) {
 
               <div id="${recSlotId}" class="rec-slot" style="margin-top:8px"></div>
               <div id="check-tense-box-${it.id}" class="practice-check-box" style="margin-top:8px;display:${isChecked ? 'block' : 'none'}">
-                ${isChecked && prevEval ? buildCheckAnswerHtml(prevEval, '', val) : ''}
+                ${isChecked && prevEval ? buildCheckAnswerHtml(prevEval, it.en || it.ref || prevEval.ref || '', val) : ''}
               </div>
             </div>
           `;
@@ -1158,6 +1171,8 @@ function renderTensesSection(container) {
     input.oninput = () => {
       const itemId = Number(input.dataset.item);
       tState.answers[itemId] = input.value;
+      const speakWrap = container.querySelector(`#speak-wrap-tense-${itemId}`);
+      if (speakWrap) speakWrap.style.display = input.value.trim() ? 'inline-flex' : 'none';
       input.style.borderColor = 'var(--line)';
       input.style.background = 'var(--bg)';
       const b = container.querySelector(`#badge-tense-${itemId}`);
@@ -1213,8 +1228,8 @@ function renderTensesSection(container) {
       chkBox.innerHTML = `
         <div style="background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-weight:700;color:#059669">REFERENCE ANSWER:</span>
-            ${ref ? `<button class="btn practice-speak-btn btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="height:26px !important;padding:2px 8px !important;font-size:11.5px !important">Listen</button>` : ''}
+            <span style="font-weight:700;color:var(--good)">REFERENCE ANSWER:</span>
+            ${ref ? `<button class="btn ghost btn-speak-ref" data-say="${esc(ref)}" title="Listen to reference" style="padding:2px 8px;font-size:11.5px">Listen</button>` : ''}
           </div>
           <div style="font-size:15px;font-weight:700;color:var(--ink)">
             ${esc(ref || 'Reference answer being updated')}
@@ -1243,7 +1258,7 @@ function renderTensesSection(container) {
         chkBox.style.display = 'block';
         chkBox.dataset.revealed = 'false';
         chkBox.innerHTML = `
-          <div style="background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);border-radius:8px;padding:10px 14px;font-size:13.5px;color:#D97706;font-weight:600">
+          <div style="background:var(--warn-soft);border:1px solid var(--warn);border-radius:8px;padding:10px 14px;font-size:13.5px;color:var(--warn);font-weight:600">
             Please enter your translation first
           </div>
         `;
@@ -1265,8 +1280,9 @@ function renderTensesSection(container) {
       btn.textContent = 'Hide Answer';
       tState.checked[itemId] = true;
 
-      const ref = await fetchSuggestedTranslation(viText);
+      const ref = btn.dataset.en || await fetchSuggestedTranslation(viText);
       const evalRes = await evaluateTranslation(userVal, ref, viText);
+      evalRes.ref = ref;
       tState.eval = tState.eval || {};
       tState.eval[itemId] = evalRes;
       savePracticeExState('practice_tenses_30');
@@ -1274,14 +1290,14 @@ function renderTensesSection(container) {
       const inputEl = container.querySelector(`.tense-input[data-item="${itemId}"]`);
       if (inputEl) {
         if (evalRes.verdict === 'correct') {
-          inputEl.style.borderColor = '#059669';
-          inputEl.style.background = 'rgba(5,150,105,0.03)';
+          inputEl.style.borderColor = 'var(--good)';
+          inputEl.style.background = 'var(--good-soft)';
         } else if (evalRes.verdict === 'partial') {
-          inputEl.style.borderColor = '#D97706';
-          inputEl.style.background = 'rgba(245,158,11,0.03)';
+          inputEl.style.borderColor = 'var(--warn)';
+          inputEl.style.background = 'var(--warn-soft)';
         } else if (evalRes.verdict === 'wrong') {
-          inputEl.style.borderColor = '#DC2626';
-          inputEl.style.background = 'rgba(239,68,68,0.03)';
+          inputEl.style.borderColor = 'var(--bad)';
+          inputEl.style.background = 'var(--bad-soft)';
         } else {
           inputEl.style.borderColor = 'var(--line)';
           inputEl.style.background = 'var(--bg)';
@@ -1291,11 +1307,11 @@ function renderTensesSection(container) {
       const badgeEl = container.querySelector(`#badge-tense-${itemId}`);
       if (badgeEl) {
         if (evalRes.verdict === 'correct') {
-          badgeEl.innerHTML = `<span style="background:rgba(5,150,105,0.15);color:#059669;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--good-soft);color:var(--good);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✓ Correct</span>`;
         } else if (evalRes.verdict === 'partial') {
-          badgeEl.innerHTML = `<span style="background:rgba(245,158,11,0.15);color:#D97706;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">~ Close</span>`;
         } else if (evalRes.verdict === 'wrong') {
-          badgeEl.innerHTML = `<span style="background:rgba(239,68,68,0.15);color:#DC2626;padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
+          badgeEl.innerHTML = `<span style="background:var(--bad-soft);color:var(--bad);padding:2px 8px;border-radius:12px;font-size:11.5px;font-weight:700">✕ Needs Revision</span>`;
         } else {
           badgeEl.innerHTML = '';
         }

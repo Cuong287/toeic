@@ -120,32 +120,32 @@ export function renderGrammar(box) {
     </div>
 
     <!-- Active Topic Action Bar -->
-    <div class="card" style="margin-bottom:16px;padding:14px 18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-        <div>
+    <div class="card" style="margin-bottom:16px;padding:16px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <div style="min-width:0;flex:1">
           <h2 style="margin:0 0 4px;font-size:17px;font-weight:700;color:var(--ink)">${esc(currentTopic.title)}</h2>
           <div class="hint" style="font-size:13px;color:var(--muted)">${esc(currentTopic.desc)}</div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <!-- Filter buttons -->
-          <div style="display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden">
-            <button class="btn ${curFilter === 'all' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-all" data-f="all" style="font-size:12px;padding:4px 10px;border-radius:0">All (${totalQuestions})</button>
-            <button class="btn ${curFilter === 'unanswered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-unanswered" data-f="unanswered" style="font-size:12px;padding:4px 10px;border-radius:0">Unanswered (${totalQuestions - answeredCount})</button>
-            <button class="btn ${curFilter === 'answered' ? 'primary' : 'ghost'} btn-filter" id="grammar-filter-answered" data-f="answered" style="font-size:12px;padding:4px 10px;border-radius:0">Answered (${answeredCount})</button>
+        <!-- Progress summary -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span id="grammar-answered-count" style="font-size:13px;font-weight:700;color:var(--ink)">${answeredCount}/${totalQuestions} completed</span>
+          <div style="width:96px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden">
+            <div id="grammar-progress-bar" style="width:${progressPct}%;height:100%;background:var(--accent);transition:width 0.2s"></div>
           </div>
-
-          <!-- Progress stats -->
-          <div style="display:flex;align-items:center;gap:8px">
-            <span id="grammar-answered-count" style="font-size:13px;font-weight:700;color:var(--ink)">${answeredCount}/${totalQuestions} completed</span>
-            <div style="width:80px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden">
-              <div id="grammar-progress-bar" style="width:${progressPct}%;height:100%;background:var(--accent);transition:width 0.2s"></div>
-            </div>
-            ${gradedCount > 0 ? `<span style="font-size:12px;color:var(--good);font-weight:700">✓ ${correctCount}/${gradedCount} correct</span>` : ''}
-          </div>
-
-          <button class="btn ghost btn-reset-topic" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Topic</button>
+          <span id="grammar-correct-badge" style="font-size:12px;color:var(--good);font-weight:700;display:${gradedCount > 0 ? 'inline' : 'none'}">✓ ${correctCount}/${gradedCount} correct</span>
         </div>
+      </div>
+
+      <!-- Filter & Reset Controls -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <div class="seg" role="tablist" aria-label="Filter questions">
+          <button class="btn-filter ${curFilter === 'all' ? 'active' : ''}" id="grammar-filter-all" data-f="all">All (${totalQuestions})</button>
+          <button class="btn-filter ${curFilter === 'unanswered' ? 'active' : ''}" id="grammar-filter-unanswered" data-f="unanswered">Unanswered (${totalQuestions - answeredCount})</button>
+          <button class="btn-filter ${curFilter === 'answered' ? 'active' : ''}" id="grammar-filter-answered" data-f="answered">Answered (${answeredCount})</button>
+        </div>
+
+        <button class="btn ghost btn-reset-topic" style="font-size:12px;color:var(--bad);border-color:var(--bad)">Reset Topic</button>
       </div>
     </div>
 

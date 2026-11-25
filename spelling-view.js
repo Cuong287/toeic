@@ -9,6 +9,7 @@ let norm = null;
 let shuffle = null;
 let enr = null;
 let recordHomeworkCompletion = null;
+let formatVi = (vi) => vi || '';
 let SPEAK = '';
 
 export function initSpellingView(context) {
@@ -23,6 +24,7 @@ export function initSpellingView(context) {
   shuffle = context.shuffle || shuffle;
   enr = context.enr || enr;
   recordHomeworkCompletion = context.recordHomeworkCompletion || recordHomeworkCompletion;
+  formatVi = context.formatVi || formatVi;
   SPEAK = context.SPEAK || SPEAK;
 }
 
@@ -461,9 +463,10 @@ export function spellLab(t, box) {
         <button class="btn ghost sl-btn-audio" id="sl-btn-speak-word" type="button" aria-label="Listen to whole word">${SPEAK} <span>Word</span></button>
         ${hasTTS ? `
           <button class="btn ghost sl-btn-audio" id="sl-btn-speak-slow" type="button" aria-label="Listen slowly at 0.6x speed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sl-icon" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <span>Slow</span></button>
-          <button class="btn ghost sl-btn-audio" id="sl-btn-speak-spell" type="button" aria-label="Listen to word spelled letter by letter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sl-icon" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg> <span>Spell it</span></button>
+          <button class="btn ghost sl-btn-audio" id="sl-btn-speak-spell" type="button" aria-label="Listen to word spelled letter by letter (counts as hint)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sl-icon" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg> <span>Spell (Hint)</span></button>
         ` : ''}
       </div>
+      <div class="sl-hint-status" id="sl-hint-status" aria-live="polite" style="min-height:22px;text-align:center;margin:2px 0 4px"></div>
 
       <div id="sl-boxes-mount"></div>
 
@@ -495,12 +498,9 @@ export function spellLab(t, box) {
       box.querySelector('#sl-btn-speak-spell').onclick = () => {
         if (curSpellCancel) curSpellCancel();
         usedSpellHint = true;
-        let hintBadge = box.querySelector('#sl-hint-used-badge');
-        if (!hintBadge) {
-          const spellBtn = box.querySelector('#sl-btn-speak-spell');
-          if (spellBtn) {
-            spellBtn.insertAdjacentHTML('afterend', ' <span class="sl-hint-used-badge" id="sl-hint-used-badge">Hint used</span>');
-          }
+        const hintStatus = box.querySelector('#sl-hint-status');
+        if (hintStatus && !hintStatus.querySelector('#sl-hint-used-badge')) {
+          hintStatus.innerHTML = '<span class="sl-hint-used-badge" id="sl-hint-used-badge">Hint used</span>';
         }
         spellLetters(target, (activeIdx) => {
           if (boxes && boxes.highlightBox) boxes.highlightBox(activeIdx);
@@ -561,14 +561,14 @@ export function spellLab(t, box) {
           <div class="fb" style="font-size:1.25rem;font-weight:600;color:var(--muted)">Correct — with hint</div>
           <h2 class="sl-target" style="font-size:2rem;color:var(--ink);margin:10px 0">${esc(target)}</h2>
         ` : `
-          <div class="fb ok" style="font-size:1.35rem;font-weight:700">✓ Correct</div>
-          <h2 class="sl-target" style="font-size:2rem;color:var(--ok,#10b981);margin:10px 0">${esc(target)}</h2>
+          <div class="fb ok" style="font-size:1.35rem;font-weight:700">Correct</div>
+          <h2 class="sl-target" style="font-size:2rem;color:var(--good);margin:10px 0">${esc(target)}</h2>
         `}
         <div class="vi">${esc(formatVi(v.vi, v.pos))}</div>
       </div>
 
       <div class="row" style="justify-content:center;margin-top:16px">
-        <button class="btn primary" id="sl-btn-next-word" type="button">Next Word →</button>
+        <button class="btn primary" id="sl-btn-next-word" type="button">${curWordIdx + 1 < sessionWords.length ? 'Next →' : 'View Results →'}</button>
       </div>
     </div>`;
 
@@ -657,9 +657,9 @@ export function spellLab(t, box) {
             speak(target);
             const rBox = box.querySelector('.sl-retype-box');
             rBox.innerHTML = `
-              <div class="fb ok" style="font-size:1.15rem;font-weight:700">✓ Retype 3/3 completed! Well done.</div>
+              <div class="fb ok" style="font-size:1.15rem;font-weight:700">Retype 3/3 completed.</div>
               <div class="row" style="margin-top:8px">
-                <button class="btn primary" id="sl-btn-next-word" type="button">Next Word →</button>
+                <button class="btn primary" id="sl-btn-next-word" type="button">${curWordIdx + 1 < sessionWords.length ? 'Next →' : 'View Results →'}</button>
               </div>
             `;
             const nBtn = box.querySelector('#sl-btn-next-word');
@@ -732,7 +732,7 @@ export function spellLab(t, box) {
       ` : ''}
 
       <div class="row" style="margin-top:18px;gap:12px;justify-content:center">
-        <button class="btn primary" id="sl-btn-next-batch" type="button">Next batch</button>
+        <button class="btn primary" id="sl-btn-next-batch" type="button">Practice Again</button>
         <button class="btn ghost" id="sl-btn-back-start" type="button">Back to start</button>
       </div>
     </div>`;
@@ -854,7 +854,4 @@ export function spellLab(t, box) {
   }
 
   renderStart();
-}
-
-// ---------- PART 2 ----------
-const OPS = { '=':['eq','='], '->':['to','→'], '→':['to','→'], '~':['sim','≈'], '><':['vs','≠'] };
+}

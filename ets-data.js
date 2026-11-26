@@ -118,106 +118,136 @@ function buildPart5Pages(imgDir, ranges) {
   return pages;
 }
 
-const T01_AUDIO = 'audio/ets2026/t01/E26-T01';
-const T01_IMG = 'img/ets2026/t01';
+const TEST_ANSWER_STRINGS = {
+  1: {
+    lc: 'BDCAA CBCBA BBCCA BBABC ACAAA BBACC CBDBC ADADA CDBCC AADCC BACAB BACAC BCCDD ACBAC BCABD ABDAD ABDAD ABCDB CBADA CDDCA',
+    rc: 'BAABB CCDAA CCACC DADCB DCBCA ADDDB DCABD CBAAC BDCCB ACDBC DCBCD CBDBC CDBBB ABBBB ADABC ADCDC DDACB BABAD DBBAA BADCA',
+  },
+  2: {
+    lc: 'BDBACAABCACCAABCABCCBCAABBBABCCDDABBDCDBACAADABDCCBBCACDCDADCBCAABADADBDCADBCCDACCBDAADBBCABDDABCCAD',
+    rc: 'CADBADDCAACDCDBCACDCABACBDDCBADBADAADDBCDABDBBDCBCABCCABBCBBDBDDBABCBDBCACBACADBDBCDACCADDACDCBBACCD',
+  },
+  3: {
+    lc: 'DADBCAABBBAACCCBCBCCCBCABBAACCCBCBCADBDCBBDCADDBBCDCBCDDACBCDACDCACAACBCDACBCDABDABDDBABBCACCACBCABC',
+    rc: 'BABCDBABACBCBBDADDAABCDABACCCAADABBBACBDCABCDCDCBDCDACADCCDABDBACCACDCDADBDCBADBBCBADABCDCBDABBABCDD',
+  },
+  4: {
+    lc: 'CDABABCCCBCAABCAABACBABCBAAABCBCACDCABDACACBAABCABDCDCACDDBDCBABCBDCABBDAADBDABCCBDAACBBDCCACDDADCBD',
+    rc: 'DBBCBABABCBABACDAABACDDACDCCADCDDACADBACDBBACDADBDADBDBBCBDCABCCDCBABBDABDACDDCABADCBBABCBCBBADADCBA',
+  },
+  5: {
+    lc: 'CBADBBBBBCBCCBBCCABBCCCCBBACCBADBBBACCADBDCCABDCBDACCDBDCCABCBADADBBADABADABADBABACABDCCCDADCAACBDAA',
+    rc: 'CABBDACAACBCCBBDCCCACDCDBBBBCDAACCDCBCCAADACABCCADBDDACDDCABCDBDDBDACDBDACBCBCDBACDBCADCABADCCDBBDDC',
+  },
+  6: {
+    lc: 'CADBDCAACCBCBBABACCCBACCBBACCBBCDCABCDABCBBBACBACADCABBCBCADCBDBACDDCABBCAACDABBACCDBCACBDCBABBDBACB',
+    rc: 'CABBDADABDCACDADBCBDBBAADDBCCDCADBDACAACBAACBABDBDABDDAACABBCDDCBDADCCBBCDDBACDADDCBCBCACBBDACBBDCAC',
+  },
+  7: {
+    lc: 'BAACADBBABCBBCABABCBCCBBBCBCBABBAABCDAACABDCCDCBADBCCDBCDBACDABDADBABCBCABADCDDABACBAAACBDACBDDBBABC',
+    rc: 'ABBADDABABADCDBACDCCDBAABCDDABCADBBACBDBBCBDACABABBABACDBBCACCBBDCBCCCDABDDBDCCACDCBABCCDDCABDBADCAD',
+  },
+  8: {
+    lc: 'DBADCACBCACBCAABAACBAAACBABBCCCABAADABDACABBDCBADDBAAACADCACDBBCDCDBDCDBCDABBBDBBDADDCABBACABCDCACCA',
+    rc: 'BABACBBCDACBDBDBACCDADCACCDABBBADACBDADBCBBADACBADCBBCCACCABABDDBCACDADAADCDBACABACCDDBCCBABCBDDABCD',
+  },
+  9: {
+    lc: 'DACBCCCABBBCABBAABCACCBBCBBACAACABDCBADACCBACDBACCBDCBCDCAABBADCCADBBDDBAACBCABBCDBADCDBABCCCBDCBBAD',
+    rc: 'ABBCAACABDCACBDACBDDDBCCABBBDABDACDBABCDADDCAADADBCDBDABBDCBACDCBCDCABCABCDDDABCCADCBBACDBCDCABACACB',
+  },
+  10: {
+    lc: 'DCCDBBAABBBBBCACBAAABCCCBABAACCACBCBBBDCDBACABDCDACDCBDADDACBBAADCBACBCBACADBCABDCADBDABADBABCDBAABB',
+    rc: 'ADBADBABDBBABDCBCABACDBDAADDCBDCBADBCBCABDCDBDDBBDADBCACDCBDBDACDABADBCCBACBABCCBACDCACDDBBBCDABABCB',
+  },
+};
 
-const T01_ANSWERS = buildAnswers(
-  'BDCAA CBCBA BBCCA BBABC ACAAA BBACC CBDBC ADADA CDBCC AADCC BACAB BACAC BCCDD ACBAC BCABD ABDAD ABDAD ABCDB CBADA CDDCA',
-  'BAABB CCDAA CCACC DADCB DCBCA ADDDB DCABD CBAAC BDCCB ACDBC DCBCD CBDBC CDBBB ABBBB ADABC ADCDC DDACB BABAD DBBAA BADCA'
-);
+function buildTestPages(num) {
+  const code = pad2(num);
+  const audioPrefix = `audio/ets2026/t${code}/E26-T${code}`;
+  const imgDir = `img/ets2026/t${code}`;
+  return [
+    // Part 1 (6 tabs, 1 question & 1 cropped photo per tab)
+    ...buildPart1Pages(audioPrefix, imgDir),
 
-const T01_PAGES = [
-  // Part 1 (6 tabs, 1 question & 1 cropped photo per tab)
-  ...buildPart1Pages(T01_AUDIO, T01_IMG),
+    // Part 2 (25 tabs, 1 question per tab)
+    ...buildPart2Pages(audioPrefix),
 
-  // Part 2 (25 tabs, 1 question per tab)
-  ...buildPart2Pages(T01_AUDIO),
+    // Part 3 (13 tabs, 1 conversation / 3 questions per tab)
+    ...buildGroupedAudioPages(3, 'p3-g', audioPrefix, imgDir, [
+      [32, 34, 'l_p07.webp'],
+      [35, 37, 'l_p07.webp'],
+      [38, 40, 'l_p07.webp'],
+      [41, 43, 'l_p07.webp'],
+      [44, 46, 'l_p08.webp'],
+      [47, 49, 'l_p08.webp'],
+      [50, 52, 'l_p08.webp'],
+      [53, 55, 'l_p08.webp'],
+      [56, 58, 'l_p09.webp'],
+      [59, 61, 'l_p09.webp'],
+      [62, 64, 'l_p09.webp'],
+      [65, 67, 'l_p10.webp'],
+      [68, 70, 'l_p10.webp'],
+    ]),
 
-  // Part 3 (13 tabs, 1 conversation / 3 questions per tab)
-  ...buildGroupedAudioPages(3, 'p3-g', T01_AUDIO, T01_IMG, [
-    [32, 34, 'l_p07.webp'],
-    [35, 37, 'l_p07.webp'],
-    [38, 40, 'l_p07.webp'],
-    [41, 43, 'l_p07.webp'],
-    [44, 46, 'l_p08.webp'],
-    [47, 49, 'l_p08.webp'],
-    [50, 52, 'l_p08.webp'],
-    [53, 55, 'l_p08.webp'],
-    [56, 58, 'l_p09.webp'],
-    [59, 61, 'l_p09.webp'],
-    [62, 64, 'l_p09.webp'],
-    [65, 67, 'l_p10.webp'],
-    [68, 70, 'l_p10.webp'],
-  ]),
+    // Part 4 (10 tabs, 1 short talk / 3 questions per tab)
+    ...buildGroupedAudioPages(4, 'p4-g', audioPrefix, imgDir, [
+      [71, 73, 'l_p11.webp'],
+      [74, 76, 'l_p11.webp'],
+      [77, 79, 'l_p11.webp'],
+      [80, 82, 'l_p11.webp'],
+      [83, 85, 'l_p12.webp'],
+      [86, 88, 'l_p12.webp'],
+      [89, 91, 'l_p12.webp'],
+      [92, 94, 'l_p12.webp'],
+      [95, 97, 'l_p13.webp'],
+      [98, 100, 'l_p13.webp'],
+    ]),
 
-  // Part 4 (10 tabs, 1 short talk / 3 questions per tab)
-  ...buildGroupedAudioPages(4, 'p4-g', T01_AUDIO, T01_IMG, [
-    [71, 73, 'l_p11.webp'],
-    [74, 76, 'l_p11.webp'],
-    [77, 79, 'l_p11.webp'],
-    [80, 82, 'l_p11.webp'],
-    [83, 85, 'l_p12.webp'],
-    [86, 88, 'l_p12.webp'],
-    [89, 91, 'l_p12.webp'],
-    [92, 94, 'l_p12.webp'],
-    [95, 97, 'l_p13.webp'],
-    [98, 100, 'l_p13.webp'],
-  ]),
+    // Part 5 (30 tabs, 1 question per tab)
+    ...buildPart5Pages(imgDir, [
+      [101, 108, 'r_p02.webp'],
+      [109, 120, 'r_p03.webp'],
+      [121, 130, 'r_p04.webp'],
+    ]),
 
-  // Part 5 (30 tabs, 1 question per tab)
-  ...buildPart5Pages(T01_IMG, [
-    [101, 108, 'r_p02.webp'],
-    [109, 120, 'r_p03.webp'],
-    [121, 130, 'r_p04.webp'],
-  ]),
+    // Part 6 (4 tabs, 1 passage / 4 questions per tab)
+    { id: 'p6-1', part: 6, label: 'Part 6 · Q131–134', images: [`${imgDir}/r_p05.webp`], groups: [{ qFrom: 131, qTo: 134, audio: null }] },
+    { id: 'p6-2', part: 6, label: 'Part 6 · Q135–138', images: [`${imgDir}/r_p06.webp`], groups: [{ qFrom: 135, qTo: 138, audio: null }] },
+    { id: 'p6-3', part: 6, label: 'Part 6 · Q139–142', images: [`${imgDir}/r_p07.webp`], groups: [{ qFrom: 139, qTo: 142, audio: null }] },
+    { id: 'p6-4', part: 6, label: 'Part 6 · Q143–146', images: [`${imgDir}/r_p08.webp`], groups: [{ qFrom: 143, qTo: 146, audio: null }] },
 
-  // Part 6 (4 tabs, 1 passage / 4 questions per tab)
-  { id: 'p6-1', part: 6, label: 'Part 6 · Q131–134', images: [`${T01_IMG}/r_p05.webp`], groups: [{ qFrom: 131, qTo: 134, audio: null }] },
-  { id: 'p6-2', part: 6, label: 'Part 6 · Q135–138', images: [`${T01_IMG}/r_p06.webp`], groups: [{ qFrom: 135, qTo: 138, audio: null }] },
-  { id: 'p6-3', part: 6, label: 'Part 6 · Q139–142', images: [`${T01_IMG}/r_p07.webp`], groups: [{ qFrom: 139, qTo: 142, audio: null }] },
-  { id: 'p6-4', part: 6, label: 'Part 6 · Q143–146', images: [`${T01_IMG}/r_p08.webp`], groups: [{ qFrom: 143, qTo: 146, audio: null }] },
+    // Part 7 (15 tabs, 1 passage set per tab)
+    { id: 'p7-1', part: 7, label: 'Part 7 · Q147–148', images: [`${imgDir}/r_p09.webp`], groups: [{ qFrom: 147, qTo: 148, audio: null }] },
+    { id: 'p7-2', part: 7, label: 'Part 7 · Q149–150', images: [`${imgDir}/r_p10.webp`], groups: [{ qFrom: 149, qTo: 150, audio: null }] },
+    { id: 'p7-3', part: 7, label: 'Part 7 · Q151–152', images: [`${imgDir}/r_p11.webp`], groups: [{ qFrom: 151, qTo: 152, audio: null }] },
+    { id: 'p7-4', part: 7, label: 'Part 7 · Q153–154', images: [`${imgDir}/r_p12.webp`], groups: [{ qFrom: 153, qTo: 154, audio: null }] },
+    { id: 'p7-5', part: 7, label: 'Part 7 · Q155–157', images: [`${imgDir}/r_p13.webp`], groups: [{ qFrom: 155, qTo: 157, audio: null }] },
+    { id: 'p7-6', part: 7, label: 'Part 7 · Q158–160', images: [`${imgDir}/r_p14.webp`], groups: [{ qFrom: 158, qTo: 160, audio: null }] },
+    { id: 'p7-7', part: 7, label: 'Part 7 · Q161–163', images: [`${imgDir}/r_p15.webp`], groups: [{ qFrom: 161, qTo: 163, audio: null }] },
+    { id: 'p7-8', part: 7, label: 'Part 7 · Q164–167', images: [`${imgDir}/r_p16.webp`], groups: [{ qFrom: 164, qTo: 167, audio: null }] },
+    { id: 'p7-9', part: 7, label: 'Part 7 · Q168–171', images: [`${imgDir}/r_p17.webp`], groups: [{ qFrom: 168, qTo: 171, audio: null }] },
+    { id: 'p7-10', part: 7, label: 'Part 7 · Q172–175', images: [`${imgDir}/r_p18.webp`, `${imgDir}/r_p19.webp`], groups: [{ qFrom: 172, qTo: 175, audio: null }] },
+    { id: 'p7-11', part: 7, label: 'Part 7 · Q176–180 (Double Passage)', images: [`${imgDir}/r_p20.webp`, `${imgDir}/r_p21.webp`], groups: [{ qFrom: 176, qTo: 180, audio: null }] },
+    { id: 'p7-12', part: 7, label: 'Part 7 · Q181–185 (Double Passage)', images: [`${imgDir}/r_p22.webp`, `${imgDir}/r_p23.webp`], groups: [{ qFrom: 181, qTo: 185, audio: null }] },
+    { id: 'p7-13', part: 7, label: 'Part 7 · Q186–190 (Triple Passage)', images: [`${imgDir}/r_p24.webp`, `${imgDir}/r_p25.webp`], groups: [{ qFrom: 186, qTo: 190, audio: null }] },
+    { id: 'p7-14', part: 7, label: 'Part 7 · Q191–195 (Triple Passage)', images: [`${imgDir}/r_p26.webp`, `${imgDir}/r_p27.webp`], groups: [{ qFrom: 191, qTo: 195, audio: null }] },
+    { id: 'p7-15', part: 7, label: 'Part 7 · Q196–200 (Triple Passage)', images: [`${imgDir}/r_p28.webp`, `${imgDir}/r_p29.webp`], groups: [{ qFrom: 196, qTo: 200, audio: null }] },
+  ];
+}
 
-  // Part 7 (15 tabs, 1 passage set per tab)
-  { id: 'p7-1', part: 7, label: 'Part 7 · Q147–148', images: [`${T01_IMG}/r_p09.webp`], groups: [{ qFrom: 147, qTo: 148, audio: null }] },
-  { id: 'p7-2', part: 7, label: 'Part 7 · Q149–150', images: [`${T01_IMG}/r_p10.webp`], groups: [{ qFrom: 149, qTo: 150, audio: null }] },
-  { id: 'p7-3', part: 7, label: 'Part 7 · Q151–152', images: [`${T01_IMG}/r_p11.webp`], groups: [{ qFrom: 151, qTo: 152, audio: null }] },
-  { id: 'p7-4', part: 7, label: 'Part 7 · Q153–154', images: [`${T01_IMG}/r_p12.webp`], groups: [{ qFrom: 153, qTo: 154, audio: null }] },
-  { id: 'p7-5', part: 7, label: 'Part 7 · Q155–157', images: [`${T01_IMG}/r_p13.webp`], groups: [{ qFrom: 155, qTo: 157, audio: null }] },
-  { id: 'p7-6', part: 7, label: 'Part 7 · Q158–160', images: [`${T01_IMG}/r_p14.webp`], groups: [{ qFrom: 158, qTo: 160, audio: null }] },
-  { id: 'p7-7', part: 7, label: 'Part 7 · Q161–163', images: [`${T01_IMG}/r_p15.webp`], groups: [{ qFrom: 161, qTo: 163, audio: null }] },
-  { id: 'p7-8', part: 7, label: 'Part 7 · Q164–167', images: [`${T01_IMG}/r_p16.webp`], groups: [{ qFrom: 164, qTo: 167, audio: null }] },
-  { id: 'p7-9', part: 7, label: 'Part 7 · Q168–171', images: [`${T01_IMG}/r_p17.webp`], groups: [{ qFrom: 168, qTo: 171, audio: null }] },
-  { id: 'p7-10', part: 7, label: 'Part 7 · Q172–175', images: [`${T01_IMG}/r_p18.webp`, `${T01_IMG}/r_p19.webp`], groups: [{ qFrom: 172, qTo: 175, audio: null }] },
-  { id: 'p7-11', part: 7, label: 'Part 7 · Q176–180 (Double Passage)', images: [`${T01_IMG}/r_p20.webp`, `${T01_IMG}/r_p21.webp`], groups: [{ qFrom: 176, qTo: 180, audio: null }] },
-  { id: 'p7-12', part: 7, label: 'Part 7 · Q181–185 (Double Passage)', images: [`${T01_IMG}/r_p22.webp`, `${T01_IMG}/r_p23.webp`], groups: [{ qFrom: 181, qTo: 185, audio: null }] },
-  { id: 'p7-13', part: 7, label: 'Part 7 · Q186–190 (Triple Passage)', images: [`${T01_IMG}/r_p24.webp`, `${T01_IMG}/r_p25.webp`], groups: [{ qFrom: 186, qTo: 190, audio: null }] },
-  { id: 'p7-14', part: 7, label: 'Part 7 · Q191–195 (Triple Passage)', images: [`${T01_IMG}/r_p26.webp`, `${T01_IMG}/r_p27.webp`], groups: [{ qFrom: 191, qTo: 195, audio: null }] },
-  { id: 'p7-15', part: 7, label: 'Part 7 · Q196–200 (Triple Passage)', images: [`${T01_IMG}/r_p28.webp`, `${T01_IMG}/r_p29.webp`], groups: [{ qFrom: 196, qTo: 200, audio: null }] },
-];
-
-export const ETS_TESTS = [
-  {
-    id: 'ets2026-t01',
-    num: 1,
-    title: 'ETS 2026 — Test 01',
+export const ETS_TESTS = Array.from({ length: 10 }, (_, i) => {
+  const num = i + 1;
+  const code = pad2(num);
+  const ans = TEST_ANSWER_STRINGS[num];
+  return {
+    id: `ets2026-t${code}`,
+    num,
+    title: `ETS 2026 — Test ${code}`,
     year: 2026,
     status: 'ready',
     questionsCount: 200,
     durationMin: 120,
-    answers: T01_ANSWERS,
-    pages: T01_PAGES,
-  },
-  ...Array.from({ length: 9 }, (_, i) => {
-    const num = i + 2;
-    const code = pad2(num);
-    return {
-      id: `ets2026-t${code}`,
-      num,
-      title: `ETS 2026 — Test ${code}`,
-      year: 2026,
-      status: 'coming_soon',
-      questionsCount: 200,
-      durationMin: 120,
-    };
-  }),
-];
+    answers: buildAnswers(ans.lc, ans.rc),
+    pages: buildTestPages(num),
+  };
+});

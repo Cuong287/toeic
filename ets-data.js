@@ -60,20 +60,62 @@ function buildAnswers(lcStr, rcStr) {
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
-function singleAudioGroups(prefix, from, to) {
-  const groups = [];
-  for (let q = from; q <= to; q++) {
-    groups.push({ qFrom: q, qTo: q, audio: `${prefix}-${pad2(q)}.mp3` });
+function buildPart1Pages(audioPrefix, imgDir) {
+  const pages = [];
+  for (let q = 1; q <= 6; q++) {
+    const code = pad2(q);
+    pages.push({
+      id: `p1-q${code}`,
+      part: 1,
+      layout: 'photo',
+      label: `Part 1 · Q${q}`,
+      images: [`${imgDir}/p1_q${code}.webp`],
+      groups: [{ qFrom: q, qTo: q, audio: `${audioPrefix}-${code}.mp3` }],
+    });
   }
-  return groups;
+  return pages;
 }
 
-function rangeAudioGroups(prefix, ranges) {
-  return ranges.map(([qFrom, qTo]) => ({
-    qFrom,
-    qTo,
-    audio: `${prefix}-${pad2(qFrom)}-${pad2(qTo)}.mp3`,
+function buildPart2Pages(audioPrefix) {
+  const pages = [];
+  for (let q = 7; q <= 31; q++) {
+    const code = pad2(q);
+    pages.push({
+      id: `p2-q${code}`,
+      part: 2,
+      layout: 'audio-only',
+      label: `Part 2 · Q${q}`,
+      images: [],
+      groups: [{ qFrom: q, qTo: q, audio: `${audioPrefix}-${code}.mp3` }],
+    });
+  }
+  return pages;
+}
+
+function buildGroupedAudioPages(part, idPrefix, audioPrefix, imgDir, items) {
+  return items.map(([qFrom, qTo, imgFile], idx) => ({
+    id: `${idPrefix}${pad2(idx + 1)}`,
+    part,
+    label: `Part ${part} · Q${qFrom}–${qTo}`,
+    images: [`${imgDir}/${imgFile}`],
+    groups: [{ qFrom, qTo, audio: `${audioPrefix}-${pad2(qFrom)}-${pad2(qTo)}.mp3` }],
   }));
+}
+
+function buildPart5Pages(imgDir, ranges) {
+  const pages = [];
+  for (const [from, to, imgFile] of ranges) {
+    for (let q = from; q <= to; q++) {
+      pages.push({
+        id: `p5-q${q}`,
+        part: 5,
+        label: `Part 5 · Q${q}`,
+        images: [`${imgDir}/${imgFile}`],
+        groups: [{ qFrom: q, qTo: q, audio: null }],
+      });
+    }
+  }
+  return pages;
 }
 
 const T01_AUDIO = 'audio/ets2026/t01/E26-T01';
@@ -85,37 +127,57 @@ const T01_ANSWERS = buildAnswers(
 );
 
 const T01_PAGES = [
-  // Part 1
-  { id: 'p1-1', part: 1, label: 'Part 1 · Q1–2', images: [`${T01_IMG}/l_p03.webp`], groups: singleAudioGroups(T01_AUDIO, 1, 2) },
-  { id: 'p1-2', part: 1, label: 'Part 1 · Q3–4', images: [`${T01_IMG}/l_p04.webp`], groups: singleAudioGroups(T01_AUDIO, 3, 4) },
-  { id: 'p1-3', part: 1, label: 'Part 1 · Q5–6', images: [`${T01_IMG}/l_p05.webp`], groups: singleAudioGroups(T01_AUDIO, 5, 6) },
+  // Part 1 (6 tabs, 1 question & 1 cropped photo per tab)
+  ...buildPart1Pages(T01_AUDIO, T01_IMG),
 
-  // Part 2
-  { id: 'p2-1', part: 2, label: 'Part 2 · Q7–31', images: [], groups: singleAudioGroups(T01_AUDIO, 7, 31) },
+  // Part 2 (25 tabs, 1 question per tab)
+  ...buildPart2Pages(T01_AUDIO),
 
-  // Part 3
-  { id: 'p3-1', part: 3, label: 'Part 3 · Q32–43', images: [`${T01_IMG}/l_p07.webp`], groups: rangeAudioGroups(T01_AUDIO, [[32, 34], [35, 37], [38, 40], [41, 43]]) },
-  { id: 'p3-2', part: 3, label: 'Part 3 · Q44–55', images: [`${T01_IMG}/l_p08.webp`], groups: rangeAudioGroups(T01_AUDIO, [[44, 46], [47, 49], [50, 52], [53, 55]]) },
-  { id: 'p3-3', part: 3, label: 'Part 3 · Q56–64', images: [`${T01_IMG}/l_p09.webp`], groups: rangeAudioGroups(T01_AUDIO, [[56, 58], [59, 61], [62, 64]]) },
-  { id: 'p3-4', part: 3, label: 'Part 3 · Q65–70', images: [`${T01_IMG}/l_p10.webp`], groups: rangeAudioGroups(T01_AUDIO, [[65, 67], [68, 70]]) },
+  // Part 3 (13 tabs, 1 conversation / 3 questions per tab)
+  ...buildGroupedAudioPages(3, 'p3-g', T01_AUDIO, T01_IMG, [
+    [32, 34, 'l_p07.webp'],
+    [35, 37, 'l_p07.webp'],
+    [38, 40, 'l_p07.webp'],
+    [41, 43, 'l_p07.webp'],
+    [44, 46, 'l_p08.webp'],
+    [47, 49, 'l_p08.webp'],
+    [50, 52, 'l_p08.webp'],
+    [53, 55, 'l_p08.webp'],
+    [56, 58, 'l_p09.webp'],
+    [59, 61, 'l_p09.webp'],
+    [62, 64, 'l_p09.webp'],
+    [65, 67, 'l_p10.webp'],
+    [68, 70, 'l_p10.webp'],
+  ]),
 
-  // Part 4
-  { id: 'p4-1', part: 4, label: 'Part 4 · Q71–82', images: [`${T01_IMG}/l_p11.webp`], groups: rangeAudioGroups(T01_AUDIO, [[71, 73], [74, 76], [77, 79], [80, 82]]) },
-  { id: 'p4-2', part: 4, label: 'Part 4 · Q83–94', images: [`${T01_IMG}/l_p12.webp`], groups: rangeAudioGroups(T01_AUDIO, [[83, 85], [86, 88], [89, 91], [92, 94]]) },
-  { id: 'p4-3', part: 4, label: 'Part 4 · Q95–100', images: [`${T01_IMG}/l_p13.webp`], groups: rangeAudioGroups(T01_AUDIO, [[95, 97], [98, 100]]) },
+  // Part 4 (10 tabs, 1 short talk / 3 questions per tab)
+  ...buildGroupedAudioPages(4, 'p4-g', T01_AUDIO, T01_IMG, [
+    [71, 73, 'l_p11.webp'],
+    [74, 76, 'l_p11.webp'],
+    [77, 79, 'l_p11.webp'],
+    [80, 82, 'l_p11.webp'],
+    [83, 85, 'l_p12.webp'],
+    [86, 88, 'l_p12.webp'],
+    [89, 91, 'l_p12.webp'],
+    [92, 94, 'l_p12.webp'],
+    [95, 97, 'l_p13.webp'],
+    [98, 100, 'l_p13.webp'],
+  ]),
 
-  // Part 5
-  { id: 'p5-1', part: 5, label: 'Part 5 · Q101–108', images: [`${T01_IMG}/r_p02.webp`], groups: [{ qFrom: 101, qTo: 108, audio: null }] },
-  { id: 'p5-2', part: 5, label: 'Part 5 · Q109–120', images: [`${T01_IMG}/r_p03.webp`], groups: [{ qFrom: 109, qTo: 120, audio: null }] },
-  { id: 'p5-3', part: 5, label: 'Part 5 · Q121–130', images: [`${T01_IMG}/r_p04.webp`], groups: [{ qFrom: 121, qTo: 130, audio: null }] },
+  // Part 5 (30 tabs, 1 question per tab)
+  ...buildPart5Pages(T01_IMG, [
+    [101, 108, 'r_p02.webp'],
+    [109, 120, 'r_p03.webp'],
+    [121, 130, 'r_p04.webp'],
+  ]),
 
-  // Part 6
+  // Part 6 (4 tabs, 1 passage / 4 questions per tab)
   { id: 'p6-1', part: 6, label: 'Part 6 · Q131–134', images: [`${T01_IMG}/r_p05.webp`], groups: [{ qFrom: 131, qTo: 134, audio: null }] },
   { id: 'p6-2', part: 6, label: 'Part 6 · Q135–138', images: [`${T01_IMG}/r_p06.webp`], groups: [{ qFrom: 135, qTo: 138, audio: null }] },
   { id: 'p6-3', part: 6, label: 'Part 6 · Q139–142', images: [`${T01_IMG}/r_p07.webp`], groups: [{ qFrom: 139, qTo: 142, audio: null }] },
   { id: 'p6-4', part: 6, label: 'Part 6 · Q143–146', images: [`${T01_IMG}/r_p08.webp`], groups: [{ qFrom: 143, qTo: 146, audio: null }] },
 
-  // Part 7
+  // Part 7 (15 tabs, 1 passage set per tab)
   { id: 'p7-1', part: 7, label: 'Part 7 · Q147–148', images: [`${T01_IMG}/r_p09.webp`], groups: [{ qFrom: 147, qTo: 148, audio: null }] },
   { id: 'p7-2', part: 7, label: 'Part 7 · Q149–150', images: [`${T01_IMG}/r_p10.webp`], groups: [{ qFrom: 149, qTo: 150, audio: null }] },
   { id: 'p7-3', part: 7, label: 'Part 7 · Q151–152', images: [`${T01_IMG}/r_p11.webp`], groups: [{ qFrom: 151, qTo: 152, audio: null }] },

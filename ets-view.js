@@ -60,6 +60,8 @@ let activeAudio = null;
 let activeAudioBarEl = null;
 let lightboxEl = null;
 let lightboxKeyHandler = null;
+let examKeyHandler = null;
+let pendingAutoPlay = false;
 let detachObserver = null;
 
 // Inline SVG icons (zero decorative emojis)
@@ -260,8 +262,8 @@ function getTestStatsFromHistory(testId, history) {
 }
 
 function getZoomImgStyle(zoom) {
-  if (zoom === '100') return 'width:auto;max-width:none;';
-  if (zoom === '130') return 'width:130%;max-width:none;';
+  if (zoom === '125') return 'width:125%;max-width:none;';
+  if (zoom === '150') return 'width:150%;max-width:none;';
   return 'width:100%;max-width:100%;';
 }
 
@@ -304,10 +306,19 @@ function closeLightbox() {
   lightboxEl = null;
 }
 
+function unbindExamKeyboard() {
+  if (examKeyHandler) {
+    document.removeEventListener('keydown', examKeyHandler);
+    examKeyHandler = null;
+  }
+}
+
 function cleanupAll() {
   stopTimer();
   stopAllAudio();
   closeLightbox();
+  unbindExamKeyboard();
+  pendingAutoPlay = false;
 }
 
 function ensureDetachWatcher(box) {
@@ -606,6 +617,7 @@ function renderCurrent() {
 
   stopAllAudio();
   closeLightbox();
+  unbindExamKeyboard();
 
   if (curView === 'setup') {
     const test = getTestById(selectedTestId);
@@ -1007,6 +1019,9 @@ function renderExamRoom(box) {
   const isReview = curView === 'review';
   const page = session.pages[session.pageIdx] || session.pages[0];
   const hasImages = Array.isArray(page.images) && page.images.length > 0;
+  const layout = page.layout || (hasImages ? 'split' : 'audio-only');
+  const isPhotoLayout = layout === 'photo' && hasImages;
+  const isAudioOnlyLayout = layout === 'audio-only' || !hasImages;
   const pageQuestions = getPageQuestions(page, session.questionSet);
   const pageQSet = new Set(pageQuestions);
 
@@ -1036,38 +1051,29 @@ function renderExamRoom(box) {
         : ''
       : '';
 
-  // Part nav pills
+  // Compact Part nav pills
   const partPillsHtml = activePartIds
     .map((pid) => {
       const on = page.part === pid;
-      return `<button type="button" class="${on ? 'active' : ''}" aria-pressed="${on}" data-jump-part="${pid}">Part ${pid}</button>`;
+      return `<button type="button" class="${on ? 'active' : ''}" aria-pressed="${on}" aria-label="Part ${pid}" title="Part ${pid}" data-jump-part="${pid}">P${pid}</button>`;
     })
     .join('');
 
-  // Images viewer
-  const imgStyle = getZoomImgStyle(session.zoom);
-  const imagesHtml = hasImages
-    ? `
-      <div class="ets-page-viewer" id="ets-page-viewer" style="overflow-x:${session.zoom === 'fit' ? 'visible' : 'auto'}">
-        ${page.images
-          .map(
-            (src, idx) => `
-          <img
-            class="ets-page-img"
-            src="${esc(src)}"
-            alt="${esc(page.label || `Page ${session.pageIdx + 1}`)} (${idx + 1})"
-            loading="eager"
-            style="${imgStyle}"
-            data-lightbox-idx="${idx}"
-          />
-        `
-          )
-          .join('')}
-      </div>
-    `
-    : '';
+  // Helper to render audio bar markup
+  const renderAudioBar = (audioSrc, gIdx) => `
+    <div class="ets-audio-bar" data-audio-src="${esc(audioSrc)}" data-audio-idx="${gIdx}">
+      <button type="button" class="ets-audio-play" data-audio-toggle aria-label="Play audio">
+        ${SVG.play}
+      </button>
+      <button type="button" data-audio-seek="-5" title="Back 5 seconds">-5s</button>
+      <button type="button" data-audio-seek="5" title="Forward 5 seconds">+5s</button>
+      <input type="range" data-audio-range min="0" max="1000" value="0" aria-label="Audio progress" />
+      <span class="ets-audio-time" data-audio-time>0:00 / 0:00</span>
+      <button type="button" data-audio-speed title="Playback speed">${session.audioSpeed.toFixed(1)}x</button>
+    </div>
+  `;
 
-  // Answer pane groups
+  // Answer pane groups (for photo & split layouts)
   const groupsHtml = (page.groups || [])
     .map((group, gIdx) => {
       const qs = [];
@@ -1079,21 +1085,7 @@ function renderExamRoom(box) {
       const groupLabel =
         qs.length > 1 ? `Questions ${qs[0]}–${qs[qs.length - 1]}` : `Question ${qs[0]}`;
 
-      const audioHtml = group.audio
-        ? `
-        <div class="ets-audio-bar" data-audio-src="${esc(group.audio)}" data-audio-idx="${gIdx}">
-          <button type="button" class="ets-audio-play" data-audio-toggle aria-label="Play audio">
-            ${SVG.play}
-          </button>
-          <button type="button" data-audio-seek="-5" title="Back 5 seconds">-5s</button>
-          <button type="button" data-audio-seek="5" title="Forward 5 seconds">+5s</button>
-          <input type="range" data-audio-range min="0" max="1000" value="0" aria-label="Audio progress" />
-          <span class="ets-audio-time" data-audio-time>0:00 / 0:00</span>
-          <button type="button" data-audio-speed title="Playback speed">${session.audioSpeed.toFixed(1)}x</button>
-        </div>
-      `
-        : '';
-
+      const audioHtml = group.audio ? renderAudioBar(group.audio, gIdx) : '';
       const rowsHtml = qs
         .map((q) => renderQuestionRow(q, page.part, test, isReview))
         .join('');
@@ -1108,9 +1100,97 @@ function renderExamRoom(box) {
     })
     .join('');
 
+  // Main stage by layout
+  let stageHtml = '';
+  if (isPhotoLayout) {
+    // Part 1: large cropped photo + clean compact control card
+    stageHtml = `
+      <div class="ets-photo-stage">
+        <div class="ets-photo-frame">
+          <img
+            class="ets-page-img ets-photo-img"
+            src="${esc(page.images[0])}"
+            alt="${esc(page.label || `Part 1 Question`)}"
+            loading="eager"
+            data-lightbox-idx="0"
+            title="Click to enlarge"
+          />
+        </div>
+        <div class="ets-photo-controls">
+          ${groupsHtml}
+        </div>
+      </div>
+    `;
+  } else if (isAudioOnlyLayout) {
+    // Part 2: clean centered focused single-question card
+    const firstGroup = (page.groups || [])[0] || {};
+    const singleQ = pageQuestions.length === 1 ? pageQuestions[0] : null;
+    if (singleQ !== null && page.part === 2) {
+      const audioHtml = firstGroup.audio ? renderAudioBar(firstGroup.audio, 0) : '';
+      const rowHtml = renderQuestionRow(singleQ, page.part, test, isReview);
+      stageHtml = `
+        <div class="ets-audio-only-stage">
+          <div class="ets-questions-card ets-audio-focus-card">
+            <div class="row between" style="padding-bottom:8px;border-bottom:1px solid var(--line)">
+              <div class="row" style="gap:8px">
+                <strong style="font-size:16px">Question ${singleQ} of 31</strong>
+                <span class="hint">Part 2 · Question-Response</span>
+              </div>
+              <label class="row" style="gap:6px;font-size:12.5px;font-weight:600;cursor:pointer">
+                <input type="checkbox" id="ets-autonext-chk" ${session.autoNextAudio ? 'checked' : ''} style="accent-color:var(--accent)" />
+                <span>Auto-Next</span>
+              </label>
+            </div>
+            ${audioHtml}
+            ${rowHtml}
+          </div>
+        </div>
+      `;
+    } else {
+      stageHtml = `
+        <div class="ets-audio-only-stage">
+          <div class="ets-answer-pane" style="display:flex;flex-direction:column;gap:12px">
+            ${groupsHtml}
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    // Parts 3–7: split view with big exam page on left & only current tab's 1–5 questions on right
+    const imgStyle = getZoomImgStyle(session.zoom);
+    const imagesHtml = `
+      <div class="ets-page-viewer" id="ets-page-viewer" style="overflow-x:${session.zoom === 'fit' ? 'visible' : 'auto'}">
+        ${page.images
+          .map(
+            (src, idx) => `
+          <img
+            class="ets-page-img"
+            src="${esc(src)}"
+            alt="${esc(page.label || `Tab ${session.pageIdx + 1}`)} (${idx + 1})"
+            loading="eager"
+            style="${imgStyle}"
+            data-lightbox-idx="${idx}"
+            title="Click to enlarge"
+          />
+        `
+          )
+          .join('')}
+      </div>
+    `;
+    stageHtml = `
+      <div class="ets-split">
+        ${imagesHtml}
+        <div class="ets-answer-pane" style="display:flex;flex-direction:column;gap:12px">
+          ${groupsHtml}
+        </div>
+      </div>
+    `;
+  }
+
   const paletteHtml = renderPaletteContent(test, isReview, pageQSet);
   const isFirstPage = session.pageIdx <= 0;
   const isLastPage = session.pageIdx >= session.pages.length - 1;
+  const tabPositionLabel = `${page.label || `Part ${page.part}`} · Tab ${session.pageIdx + 1} / ${session.pages.length}`;
 
   const pauseBannerHtml =
     !isReview && session.paused
@@ -1123,133 +1203,120 @@ function renderExamRoom(box) {
       : '';
 
   box.innerHTML = `
-    <div class="ets-wrap">
-      <div class="ets-exam-bar">
-        <div class="ets-exam-bar-left">
-          <span class="ets-exam-title">${esc(test.title)}</span>
-          <span class="ets-test-badge">${isReview ? 'Review Mode' : esc(session.modeLabel)}</span>
-          <div class="seg seg-sm" role="navigation" aria-label="Jump to part">
-            ${partPillsHtml}
-          </div>
-        </div>
-
-        <div class="ets-exam-bar-right">
-          <div class="ets-timer ${timerClass}" aria-label="Exam timer">
-            ${SVG.clock}
-            <span data-timer-val>${esc(timerText)}</span>
-          </div>
-          ${
-            allowPause
-              ? `<button type="button" class="btn ghost" id="ets-pause-toggle">${session.paused ? 'Resume' : 'Pause'}</button>`
-              : ''
-          }
-          <span class="hint" id="ets-progress-text" style="font-weight:700;font-variant-numeric:tabular-nums">${answeredCount} / ${totalCount}</span>
-          <button type="button" class="btn ghost" id="ets-palette-toggle" aria-label="Toggle Question Navigator">
-            ${SVG.grid}
-            <span>Palette</span>
-          </button>
-          ${
-            isReview
-              ? `<button type="button" class="btn primary" id="ets-back-results">Results</button>`
-              : `<button type="button" class="btn primary" id="ets-submit-btn">Submit</button>`
-          }
-          <button type="button" class="btn ghost" id="ets-exit-btn">Exit</button>
-        </div>
-      </div>
-
-      ${pauseBannerHtml}
-
-      <div class="ets-workspace">
-        <main class="ets-main-pane">
-          <div class="row between">
-            <div class="row" style="gap:10px">
-              <strong style="font-size:16px">${esc(page.label || `Part ${page.part}`)}</strong>
-              <span class="hint">Page ${session.pageIdx + 1} of ${session.pages.length}</span>
-            </div>
-            <div class="row" style="gap:10px">
-              ${
-                page.part === 2
-                  ? `
-                <label class="row" style="gap:6px;font-size:13px;font-weight:600;cursor:pointer">
-                  <input type="checkbox" id="ets-autonext-chk" ${session.autoNextAudio ? 'checked' : ''} style="accent-color:var(--accent)" />
-                  <span>Auto-Next Audio</span>
-                </label>
-              `
-                  : ''
-              }
-              ${
-                hasImages
-                  ? `
-                <div class="seg seg-sm" id="ets-zoom-seg" role="group" aria-label="Image zoom">
-                  ${[
-                    { id: 'fit', label: 'Fit' },
-                    { id: '100', label: '100%' },
-                    { id: '130', label: '130%' },
-                  ]
-                    .map((z) => {
-                      const on = session.zoom === z.id;
-                      return `<button type="button" class="${on ? 'active' : ''}" aria-pressed="${on}" data-zoom="${z.id}">${z.label}</button>`;
-                    })
-                    .join('')}
-                </div>
-              `
-                  : ''
-              }
+    <div class="ets-exam-shell">
+      <div class="ets-wrap">
+        <div class="ets-exam-bar">
+          <div class="ets-exam-bar-left">
+            <span class="ets-exam-title">${esc(test.title)}</span>
+            <span class="ets-test-badge">${isReview ? 'Review' : esc(session.modeLabel)}</span>
+            <div class="seg seg-sm" role="navigation" aria-label="Jump to part">
+              ${partPillsHtml}
             </div>
           </div>
 
-          <div class="ets-split" ${hasImages ? '' : 'style="grid-template-columns:1fr"'}>
-            ${imagesHtml}
-            <div class="ets-answer-pane" style="display:flex;flex-direction:column;gap:12px">
-              ${groupsHtml}
+          <div class="ets-exam-bar-right">
+            <div class="ets-timer ${timerClass}" aria-label="Exam timer">
+              ${SVG.clock}
+              <span data-timer-val>${esc(timerText)}</span>
             </div>
-          </div>
-
-          <div class="row between" style="padding-top:4px">
-            <button type="button" class="btn ghost" id="ets-prev-page" ${isFirstPage ? 'disabled' : ''}>
-              &larr; Previous Page
-            </button>
-            <span class="hint">Page ${session.pageIdx + 1} / ${session.pages.length}</span>
             ${
-              isLastPage
-                ? isReview
-                  ? `<button type="button" class="btn primary" id="ets-last-results">Back to Results</button>`
-                  : `<button type="button" class="btn primary" id="ets-last-submit">Submit Exam</button>`
-                : `<button type="button" class="btn primary" id="ets-next-page">Next Page &rarr;</button>`
+              allowPause
+                ? `<button type="button" class="btn ghost" id="ets-pause-toggle">${session.paused ? 'Resume' : 'Pause'}</button>`
+                : ''
             }
-          </div>
-        </main>
-
-        <aside class="ets-palette-pane ${session.paletteOpen ? 'is-open' : ''}" id="ets-palette-pane" aria-label="Question Navigator">
-          <div class="ets-palette-head">
-            <strong style="font-size:14px">Question Navigator</strong>
-            <button type="button" class="btn ghost" id="ets-palette-close" aria-label="Close navigator" style="padding:4px 8px;min-height:auto">
-              ${SVG.close}
+            <span class="hint" id="ets-progress-text" style="font-weight:700;font-variant-numeric:tabular-nums">${answeredCount} / ${totalCount}</span>
+            <button type="button" class="btn ghost" id="ets-palette-toggle" aria-label="Toggle Questions">
+              ${SVG.grid}
+              <span>Questions</span>
             </button>
+            ${
+              isReview
+                ? `<button type="button" class="btn primary" id="ets-back-results">Results</button>`
+                : `<button type="button" class="btn primary" id="ets-submit-btn">Submit</button>`
+            }
+            <button type="button" class="btn ghost" id="ets-exit-btn">Exit</button>
           </div>
-          ${
-            isReview
-              ? `
-            <div class="seg seg-sm" id="ets-review-filter">
-              ${[
-                { id: 'all', label: 'All' },
-                { id: 'incorrect', label: 'Incorrect' },
-                { id: 'flagged', label: 'Flagged' },
-                { id: 'skipped', label: 'Skipped' },
-              ]
-                .map((f) => {
-                  const on = session.reviewFilter === f.id;
-                  return `<button type="button" class="${on ? 'active' : ''}" aria-pressed="${on}" data-rfilter="${f.id}">${f.label}</button>`;
-                })
-                .join('')}
+        </div>
+
+        ${pauseBannerHtml}
+
+        <div class="ets-workspace">
+          <main class="ets-main-pane">
+            <div class="row between">
+              <div class="row" style="gap:10px">
+                <strong style="font-size:15.5px">${esc(page.label || `Part ${page.part}`)}</strong>
+                <span class="hint">Tab ${session.pageIdx + 1} / ${session.pages.length}</span>
+              </div>
+              <div class="row" style="gap:10px">
+                ${
+                  hasImages && !isPhotoLayout
+                    ? `
+                  <div class="seg seg-sm" id="ets-zoom-seg" role="group" aria-label="Image zoom">
+                    ${[
+                      { id: 'fit', label: 'Fit' },
+                      { id: '125', label: '125%' },
+                      { id: '150', label: '150%' },
+                    ]
+                      .map((z) => {
+                        const on = session.zoom === z.id;
+                        return `<button type="button" class="${on ? 'active' : ''}" aria-pressed="${on}" data-zoom="${z.id}">${z.label}</button>`;
+                      })
+                      .join('')}
+                  </div>
+                `
+                    : ''
+                }
+              </div>
             </div>
-          `
-              : ''
-          }
-          <div id="ets-palette-body" style="display:flex;flex-direction:column;gap:12px">
-            ${paletteHtml}
-          </div>
-        </aside>
+
+            ${stageHtml}
+
+            <div class="ets-tab-footer row between" style="padding-top:6px">
+              <button type="button" class="btn ghost" id="ets-prev-page" ${isFirstPage ? 'disabled' : ''}>
+                &larr; Previous
+              </button>
+              <span class="hint">${esc(tabPositionLabel)}</span>
+              ${
+                isLastPage
+                  ? isReview
+                    ? `<button type="button" class="btn primary" id="ets-last-results">Back to Results</button>`
+                    : `<button type="button" class="btn primary" id="ets-last-submit">Submit Exam</button>`
+                  : `<button type="button" class="btn primary" id="ets-next-page">Next &rarr;</button>`
+              }
+            </div>
+          </main>
+
+          <aside class="ets-palette-pane ${session.paletteOpen ? 'is-open' : ''}" id="ets-palette-pane" aria-label="Questions">
+            <div class="ets-palette-head">
+              <strong style="font-size:13px">Questions</strong>
+              <button type="button" class="btn ghost" id="ets-palette-close" aria-label="Close navigator" style="padding:4px 6px;min-height:auto">
+                ${SVG.close}
+              </button>
+            </div>
+            ${
+              isReview
+                ? `
+              <div class="seg" id="ets-review-filter">
+                ${[
+                  { id: 'all', label: 'All' },
+                  { id: 'incorrect', label: 'Wrong' },
+                  { id: 'flagged', label: 'Flag' },
+                  { id: 'skipped', label: 'Skip' },
+                ]
+                  .map((f) => {
+                    const on = session.reviewFilter === f.id;
+                    return `<button type="button" class="${on ? 'active' : ''}" aria-pressed="${on}" data-rfilter="${f.id}">${f.label}</button>`;
+                  })
+                  .join('')}
+              </div>
+            `
+                : ''
+            }
+            <div id="ets-palette-body" style="display:flex;flex-direction:column;gap:8px">
+              ${paletteHtml}
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   `;
@@ -1361,8 +1428,8 @@ function renderPaletteContent(test, isReview, pageQSet) {
       .join('');
 
     sections.push(`
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <span class="hint" style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">${esc(part.name)}</span>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span class="ets-palette-part-title">P${part.id}</span>
         <div class="ets-palette-grid">${btnsHtml}</div>
       </div>
     `);
@@ -1587,6 +1654,36 @@ function bindExamRoomEvents(box, test, page, isReview) {
 
   bindPaletteJumpButtons(box, setPaletteOpen);
   bindAudioBars(box, page);
+
+  // Keyboard navigation: ArrowLeft / ArrowRight when focus is not in an interactive control
+  unbindExamKeyboard();
+  examKeyHandler = (e) => {
+    if (lightboxEl || !session || (curView !== 'exam' && curView !== 'review')) return;
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const active = document.activeElement;
+    const tag = active ? active.tagName : '';
+    if (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      tag === 'BUTTON' ||
+      (active && active.isContentEditable)
+    ) {
+      return;
+    }
+    if (e.key === 'ArrowLeft' && session.pageIdx > 0) {
+      e.preventDefault();
+      session.pageIdx -= 1;
+      renderCurrent();
+      scrollMainTop(box);
+    } else if (e.key === 'ArrowRight' && session.pageIdx < session.pages.length - 1) {
+      e.preventDefault();
+      session.pageIdx += 1;
+      renderCurrent();
+      scrollMainTop(box);
+    }
+  };
+  document.addEventListener('keydown', examKeyHandler);
 }
 
 function bindPaletteJumpButtons(box, setPaletteOpen) {
@@ -1686,7 +1783,7 @@ function bindAudioBars(box, page) {
         activeAudioBarEl = null;
       }
 
-      // Part 2 Auto-Next Audio
+      // Part 2 Auto-Next Audio (same page bar or next Part 2 tab)
       if (page.part === 2 && session && session.autoNextAudio && !session.paused) {
         const curIdx = bars.indexOf(bar);
         const nextBar = curIdx >= 0 ? bars[curIdx + 1] : null;
@@ -1694,6 +1791,13 @@ function bindAudioBars(box, page) {
           nextBar.scrollIntoView({ behavior: 'smooth', block: 'center' });
           const nextToggle = nextBar.querySelector('[data-audio-toggle]');
           if (nextToggle) nextToggle.click();
+        } else if (session.pageIdx + 1 < session.pages.length) {
+          const nextPage = session.pages[session.pageIdx + 1];
+          if (nextPage && nextPage.part === 2) {
+            session.pageIdx += 1;
+            pendingAutoPlay = true;
+            renderCurrent();
+          }
         }
       }
     });
@@ -1780,6 +1884,18 @@ function bindAudioBars(box, page) {
       });
     });
   });
+
+  if (pendingAutoPlay) {
+    pendingAutoPlay = false;
+    if (bars.length > 0 && (!session || !session.paused)) {
+      const firstToggle = bars[0].querySelector('[data-audio-toggle]');
+      if (firstToggle) {
+        requestAnimationFrame(() => {
+          if (firstToggle.isConnected) firstToggle.click();
+        });
+      }
+    }
+  }
 }
 
 // ============================================================================

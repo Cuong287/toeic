@@ -2681,6 +2681,24 @@ function highlightOne(s, w){
 
 // ---------- Quiz: Trắc nghiệm ----------
 
+function getWordIpa(v, fallbackTopicId) {
+  if (!v || !v.w) return '';
+  const tid = v.topicId || fallbackTopicId;
+  if (tid) {
+    const e = enr(tid);
+    if (e && e.vocab && e.vocab[v.w] && e.vocab[v.w][0]) return e.vocab[v.w][0];
+  }
+  const cw = cleanWord(v.w).toLowerCase();
+  for (const e of Object.values(ENR)) {
+    if (!e || !e.vocab) continue;
+    if (e.vocab[v.w] && e.vocab[v.w][0]) return e.vocab[v.w][0];
+    for (const [k, val] of Object.entries(e.vocab)) {
+      if (val && val[0] && cleanWord(k).toLowerCase() === cw) return val[0];
+    }
+  }
+  return '';
+}
+
 function getWordDescVi(t, v, opts = [], dir = 'en') {
   if (!v) return '';
   const clue = getWordClue(v.w, t ? t.id : null, v, 'vi', dir, opts);
@@ -2804,6 +2822,8 @@ function quiz(t, box){
     const effectiveDir = q.qDir === 'cloze' ? 'en' : q.qDir;
     const viDesc = getWordDescVi(t, q.v, q.opts, effectiveDir);
 
+    const ipa = getWordIpa(q.v, t.id);
+    const ipaSpan = ipa ? ` <span class="ipa" style="font-size:16px;font-weight:500">${esc(ipa)}</span>` : '';
     let promptHtml = '';
     let optRenderer = null;
     if (q.qDir === 'cloze' && q.cloze) {
@@ -2813,7 +2833,7 @@ function quiz(t, box){
       promptHtml = `${esc(shortVi(q.v.vi, q.v.pos))}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select the English word</small>`;
       optRenderer = o => cleanWord(o.w);
     } else {
-      promptHtml = `${esc(q.v.w)}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select the Vietnamese meaning</small>`;
+      promptHtml = `<div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:8px">${esc(q.v.w)}${ipaSpan}</div><small>${q.v.pos?esc(q.v.pos)+' · ':''}Select the Vietnamese meaning</small>`;
       optRenderer = o => shortVi(o.vi, o.pos);
     }
 
@@ -2868,7 +2888,10 @@ function quiz(t, box){
         store.addReviewWord(q.v, t.id, 'quiz');
       } else score++;
       const fb = box.querySelector('#fb'); fb.className = 'fb ' + (ok?'ok':'no');
-      fb.textContent = ok ? 'Correct' : `Incorrect — Answer: ${cleanWord(q.v.w)} = ${shortVi(q.v.vi, q.v.pos)}`;
+      const ipaTxt = ipa ? ` ${ipa}` : '';
+      fb.textContent = ok
+        ? (q.qDir === 'en' ? 'Correct' : `Correct — ${cleanWord(q.v.w)}${ipaTxt}`)
+        : `Incorrect — Answer: ${cleanWord(q.v.w)}${ipaTxt} = ${shortVi(q.v.vi, q.v.pos)}`;
       if (q.qDir === 'en' || ok || q.qDir === 'cloze') speak(cleanWord(q.v.w));
       const n = box.querySelector('#next'); n.hidden = false; n.focus();
       n.onclick = () => { i++; draw(); };
@@ -3644,9 +3667,11 @@ function renderT0Quiz(container, rawPool) {
     const q = questions[i];
     const topObj = TOPICS.find(t => t.id === q.v.topicId) || TOPICS[0];
     const viDesc = getWordDescVi(topObj, q.v, q.opts, q.qDir);
+    const ipa = getWordIpa(q.v, topObj.id);
+    const ipaSpan = ipa ? `<span class="ipa" style="font-size:16px;font-weight:500">${esc(ipa)}</span>` : '';
 
     const promptHtml = q.qDir === 'en'
-      ? `<div style="display:flex;align-items:center;gap:10px">${esc(q.v.w)} <button class="icon-btn" id="t0-q-speak" title="Listen to pronunciation" style="display:inline-flex">${SPEAK}</button></div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`
+      ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px">${esc(q.v.w)} ${ipaSpan} <button class="icon-btn" id="t0-q-speak" title="Listen to pronunciation" style="display:inline-flex">${SPEAK}</button></div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`
       : `<div>${esc(shortVi(q.v.vi, q.v.pos))}</div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select the English word</small>`;
 
     const isAllSelected = userT0Len === 'all' || sampleCount >= rawPool.length;
@@ -4093,9 +4118,11 @@ function renderT0Combo(container, rawPool) {
     const opts = shuffle([v, ...distractors]);
 
     const viDesc = getWordDescVi(topObj, v, opts, qDir);
+    const ipa = getWordIpa(v, topObj.id);
+    const ipaSpan = ipa ? `<span class="ipa" style="font-size:16px;font-weight:500">${esc(ipa)}</span>` : '';
 
     const promptHtml = (qDir === 'en')
-      ? `<div style="display:flex;align-items:center;gap:10px">${esc(v.w)} <button class="icon-btn" id="combo-q-speak" title="Listen to pronunciation" style="display:inline-flex">${SPEAK}</button></div><small>${v.pos ? esc(v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`
+      ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px">${esc(v.w)} ${ipaSpan} <button class="icon-btn" id="combo-q-speak" title="Listen to pronunciation" style="display:inline-flex">${SPEAK}</button></div><small>${v.pos ? esc(v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`
       : `<div>${esc(shortVi(v.vi, v.pos))}</div><small>${v.pos ? esc(v.pos) + ' · ' : ''}Select the English word</small>`;
 
     const optRenderer = (qDir === 'en')
@@ -4553,7 +4580,9 @@ function runHardWordsQuiz(box, words) {
     }
 
     const q = qs[i];
-    const prompt = `${esc(q.v.w)}<small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`;
+    const ipa = getWordIpa(q.v, q.v.topicId);
+    const ipaSpan = ipa ? ` <span class="ipa" style="font-size:16px;font-weight:500">${esc(ipa)}</span>` : '';
+    const prompt = `<div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:8px">${esc(q.v.w)}${ipaSpan}</div><small>${q.v.pos ? esc(q.v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`;
     const isAllSelected = userHwLen === 'all' || sampleCount >= pool.length;
 
     box.innerHTML = `

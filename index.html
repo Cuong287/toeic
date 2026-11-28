@@ -2699,6 +2699,11 @@ function getWordIpa(v, fallbackTopicId) {
   return '';
 }
 
+function formatWordOptHtml(o, fallbackTopicId) {
+  const ipa = getWordIpa(o, fallbackTopicId);
+  return `${esc(cleanWord(o.w))}${ipa ? ` <span class="ipa" style="font-size:12.5px;font-weight:400">${esc(ipa)}</span>` : ''}`;
+}
+
 function getWordDescVi(t, v, opts = [], dir = 'en') {
   if (!v) return '';
   const clue = getWordClue(v.w, t ? t.id : null, v, 'vi', dir, opts);
@@ -2813,7 +2818,7 @@ function quiz(t, box){
         <div class="hint">Score: <b>${pct}%</b> · Highest Score: <b>${newBest}%</b> · Questions: <b>${qs.length}</b></div>
         ${newBest >= 80 ? '<div class="fb ok" style="margin-top:10px">Topic completed (80%+).</div>' : '<div class="hint" style="margin-top:8px">Score 80% or higher to complete this topic.</div>'}
         ${currentUser && currentUid !== 'guest' ? '<div class="hint" style="margin-top:4px;font-size:12.5px;color:var(--good)">Progress synced to cloud & Leaderboard.</div>' : '<div class="hint" style="margin-top:4px;font-size:12px;color:var(--muted)">Sign in to save progress and join the Leaderboard.</div>'}
-        ${wrong.length?`<div style="margin-top:12px"><b>Words needing review (${wrong.length} saved to Saved Vocabulary):</b><ul class="wrong-list">${wrong.map(v=>`<li><b>${esc(v.w)}</b>${v.pos?` (${esc(v.pos)})`:''}: ${esc(v.vi)}</li>`).join('')}</ul></div>`:'<div class="fb ok" style="margin-top:10px">Perfect score! All answers correct.</div>'}
+        ${wrong.length?`<div style="margin-top:12px"><b>Words needing review (${wrong.length} saved to Saved Vocabulary):</b><ul class="wrong-list">${wrong.map(v=>{const wIpa=getWordIpa(v,t.id);return `<li><b>${esc(v.w)}</b>${wIpa?` <span class="ipa">${esc(wIpa)}</span>`:''}${v.pos?` (${esc(v.pos)})`:''}: ${esc(v.vi)}</li>`;}).join('')}</ul></div>`:'<div class="fb ok" style="margin-top:10px">Perfect score! All answers correct.</div>'}
         <div class="row" style="margin-top:14px"><button class="btn primary" id="again">Practice Again</button></div></div>`;
       box.querySelector('#again').onclick = () => quiz(t, box);
       renderSide(); return;
@@ -2825,16 +2830,16 @@ function quiz(t, box){
     const ipa = getWordIpa(q.v, t.id);
     const ipaSpan = ipa ? ` <span class="ipa" style="font-size:16px;font-weight:500">${esc(ipa)}</span>` : '';
     let promptHtml = '';
-    let optRenderer = null;
+    let optHtmlRenderer = null;
     if (q.qDir === 'cloze' && q.cloze) {
       promptHtml = `<div class="qcloze-box"><div class="cloze-sentence">${esc(q.cloze.blankSentence)}</div><small>Fill in the blank${q.cloze.viSentence ? ' · ' + esc(q.cloze.viSentence) : ''}</small></div>`;
-      optRenderer = o => cleanWord(o.w);
+      optHtmlRenderer = o => formatWordOptHtml(o, t.id);
     } else if (q.qDir === 'vi') {
       promptHtml = `${esc(shortVi(q.v.vi, q.v.pos))}<small>${q.v.pos?esc(q.v.pos)+' · ':''}Select the English word</small>`;
-      optRenderer = o => cleanWord(o.w);
+      optHtmlRenderer = o => formatWordOptHtml(o, t.id);
     } else {
       promptHtml = `<div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:8px">${esc(q.v.w)}${ipaSpan}</div><small>${q.v.pos?esc(q.v.pos)+' · ':''}Select the Vietnamese meaning</small>`;
-      optRenderer = o => shortVi(o.vi, o.pos);
+      optHtmlRenderer = o => esc(shortVi(o.vi, o.pos));
     }
 
     box.innerHTML = `<div class="row between quiz-bar-row" style="margin-bottom:8px;gap:8px;flex-wrap:wrap">
@@ -2855,7 +2860,7 @@ function quiz(t, box){
     </div>
     <div class="card"><div class="qprog"><i style="width:${i/qs.length*100}%"></i></div>
     <div class="qprompt">${promptHtml}${viDesc ? `<div class="qdesc-vi"><span class="qdesc-tag">Hint:</span>${esc(viDesc)}</div>` : ''}</div>
-    <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="l">${'ABCD'[k]}</span><span>${esc(optRenderer(o))}</span></button>`).join('')}</div>
+    <div class="opts">${q.opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="l">${'ABCD'[k]}</span><span>${optHtmlRenderer(o)}</span></button>`).join('')}</div>
     <div class="row between"><span class="fb" id="fb"></span><button class="btn primary" id="next" hidden>${i + 1 < qs.length ? 'Next →' : 'View Results →'}</button></div></div>`;
 
     box.querySelectorAll('#dir button').forEach(b => {
@@ -3651,7 +3656,7 @@ function renderT0Quiz(container, rawPool) {
             <div style="text-align:left;margin-top:18px">
               <b>Words needing review (${wrongList.length} saved to Saved Vocabulary):</b>
               <ul class="wrong-list" style="margin-top:8px">
-                ${wrongList.map(v => `<li><b>${esc(v.w)}</b>${v.pos ? ` (${esc(v.pos)})` : ''}: ${esc(v.vi)} <small>(${esc(v.topicTitle)})</small></li>`).join('')}
+                ${wrongList.map(v => { const wIpa = getWordIpa(v, v.topicId); return `<li><b>${esc(v.w)}</b>${wIpa ? ` <span class="ipa">${esc(wIpa)}</span>` : ''}${v.pos ? ` (${esc(v.pos)})` : ''}: ${esc(v.vi)} <small>(${esc(v.topicTitle)})</small></li>`; }).join('')}
               </ul>
             </div>
           ` : ''}
@@ -3704,7 +3709,7 @@ function renderT0Quiz(container, rawPool) {
           ${q.opts.map((o, k) => `
             <button class="opt" data-k="${k}">
               <span class="l">${'ABCD'[k]}</span>
-              <span>${esc(q.qDir === 'en' ? shortVi(o.vi, o.pos) : cleanWord(o.w))}</span>
+              <span>${q.qDir === 'en' ? esc(shortVi(o.vi, o.pos)) : formatWordOptHtml(o, o.topicId || topObj.id)}</span>
             </button>
           `).join('')}
         </div>
@@ -3747,16 +3752,17 @@ function renderT0Quiz(container, rawPool) {
         const ok = chosen.w === q.v.w;
         btn.classList.add(ok ? 'ok' : 'no');
 
+        const ipaTxt = ipa ? ` ${ipa}` : '';
         if (ok) {
           score++;
           container.querySelector('#t0-fb').className = 'fb ok';
-          container.querySelector('#t0-fb').textContent = 'Correct';
+          container.querySelector('#t0-fb').textContent = q.qDir === 'en' ? 'Correct' : `Correct — ${cleanWord(q.v.w)}${ipaTxt}`;
           speak(cleanWord(q.v.w));
         } else {
           wrongList.push(q.v);
           store.addReviewWord(q.v, q.v.topicId, 'quiz');
           container.querySelector('#t0-fb').className = 'fb no';
-          container.querySelector('#t0-fb').textContent = 'Incorrect — Answer: ' + (q.qDir === 'en' ? shortVi(q.v.vi, q.v.pos) : cleanWord(q.v.w));
+          container.querySelector('#t0-fb').textContent = 'Incorrect — Answer: ' + (q.qDir === 'en' ? `${cleanWord(q.v.w)}${ipaTxt} = ${shortVi(q.v.vi, q.v.pos)}` : `${cleanWord(q.v.w)}${ipaTxt}`);
           // Highlight nút đúng
           container.querySelectorAll('.opts .opt').forEach((b, k) => {
             if (q.opts[k].w === q.v.w) b.classList.add('ok');
@@ -4125,9 +4131,9 @@ function renderT0Combo(container, rawPool) {
       ? `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px">${esc(v.w)} ${ipaSpan} <button class="icon-btn" id="combo-q-speak" title="Listen to pronunciation" style="display:inline-flex">${SPEAK}</button></div><small>${v.pos ? esc(v.pos) + ' · ' : ''}Select the Vietnamese meaning</small>`
       : `<div>${esc(shortVi(v.vi, v.pos))}</div><small>${v.pos ? esc(v.pos) + ' · ' : ''}Select the English word</small>`;
 
-    const optRenderer = (qDir === 'en')
-      ? (o) => shortVi(o.vi, o.pos)
-      : (o) => cleanWord(o.w);
+    const optHtmlRenderer = (qDir === 'en')
+      ? (o) => esc(shortVi(o.vi, o.pos))
+      : (o) => formatWordOptHtml(o, o.topicId || topObj.id);
 
     box.innerHTML = `
       <div class="card">
@@ -4142,7 +4148,7 @@ function renderT0Combo(container, rawPool) {
           ${opts.map((o, k) => `
             <button class="opt" data-k="${k}">
               <span class="l">${'ABCD'[k]}</span>
-              <span>${esc(optRenderer(o))}</span>
+              <span>${optHtmlRenderer(o)}</span>
             </button>
           `).join('')}
         </div>
@@ -4171,16 +4177,17 @@ function renderT0Combo(container, rawPool) {
         const ok = (chosen.w === v.w);
         btn.classList.add(ok ? 'ok' : 'no');
 
+        const ipaTxt = ipa ? ` ${ipa}` : '';
         if (ok) {
           stats.quizCorrect++;
           fbEl.className = 'fb ok';
-          fbEl.textContent = 'Correct';
+          fbEl.textContent = qDir === 'en' ? 'Correct' : `Correct — ${cleanWord(v.w)}${ipaTxt}`;
           speak(cleanWord(v.w));
         } else {
           stats.wrongWords.push(v);
           store.addReviewWord(v, v.topicId || topObj.id, 'combo_quiz');
           fbEl.className = 'fb no';
-          fbEl.textContent = 'Incorrect — Answer: ' + (qDir === 'en' ? shortVi(v.vi, v.pos) : cleanWord(v.w));
+          fbEl.textContent = 'Incorrect — Answer: ' + (qDir === 'en' ? `${cleanWord(v.w)}${ipaTxt} = ${shortVi(v.vi, v.pos)}` : `${cleanWord(v.w)}${ipaTxt}`);
           box.querySelectorAll('.opts .opt').forEach((b, k) => {
             if (opts[k].w === v.w) b.classList.add('ok');
           });
@@ -4567,7 +4574,7 @@ function runHardWordsQuiz(box, words) {
             <div>
               <b>Words still missed:</b>
               <ul class="wrong-list">
-                ${wrong.map(v => `<li><b>${esc(v.w)}</b>${v.pos ? ` (${esc(v.pos)})` : ''}: ${esc(v.vi)}</li>`).join('')}
+                ${wrong.map(v => { const wIpa = getWordIpa(v, v.topicId); return `<li><b>${esc(v.w)}</b>${wIpa ? ` <span class="ipa">${esc(wIpa)}</span>` : ''}${v.pos ? ` (${esc(v.pos)})` : ''}: ${esc(v.vi)}</li>`; }).join('')}
               </ul>
             </div>
           ` : '<div class="fb ok">Great job! All saved words answered correctly.</div>'}
@@ -4641,7 +4648,8 @@ function runHardWordsQuiz(box, words) {
         }
         const fb = box.querySelector('#rfb');
         fb.className = 'fb ' + (ok ? 'ok' : 'no');
-        fb.textContent = ok ? 'Correct' : `Incorrect — Answer: ${cleanWord(q.v.w)} = ${shortVi(q.v.vi, q.v.pos)}`;
+        const ipaTxt = ipa ? ` ${ipa}` : '';
+        fb.textContent = ok ? 'Correct' : `Incorrect — Answer: ${cleanWord(q.v.w)}${ipaTxt} = ${shortVi(q.v.vi, q.v.pos)}`;
         speak(cleanWord(q.v.w));
         const n = box.querySelector('#rnext');
         n.hidden = false;

@@ -4975,8 +4975,23 @@ body.ets-focus-mode .app.side-collapsed .wrap,
 body.ets-focus-mode .wrap:has(.ets-exam-shell) {
   max-width: 1480px;
   width: 100%;
+  box-sizing: border-box;
   padding: 12px 18px 24px;
   gap: 12px;
+}
+
+.ets-listening-split.is-transcript-closed {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 780px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.ets-listening-split.is-transcript-closed .ets-doc-pane,
+.ets-listening-split.is-transcript-closed .ets-q-pane {
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
 }
 
 @media (max-width: 860px) {

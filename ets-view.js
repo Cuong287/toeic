@@ -1921,10 +1921,12 @@ function renderExamRoom(box) {
       .join('');
     const transcriptHtml = isReview || !isRealExam ? renderReviewTranscript(page.part, groupKey, test, null, content, isReview) : '';
 
-    if (graphics.length > 0) {
-      const graphicHtml = graphics
-        .map(
-          (g) => `
+    const hasGraphics = graphics.length > 0;
+    const trIsOpen = Boolean(transcriptHtml && session.transcriptOpen && session.transcriptOpen.has(String(groupKey)));
+    const graphicHtml = hasGraphics
+      ? graphics
+          .map(
+            (g) => `
           <div class="ets-doc-card">
             <img
               class="ets-page-img"
@@ -1937,17 +1939,24 @@ function renderExamRoom(box) {
             ${g.caption ? `<div class="hint" style="margin-top:6px;text-align:center">${esc(g.caption)}</div>` : ''}
           </div>
         `
-        )
-        .join('');
+          )
+          .join('')
+      : '';
+
+    // Always render side-by-side split container when graphic or transcript exists;
+    // when no graphic and transcript is closed, .is-transcript-closed collapses to clean single-column
+    // and smoothly expands to 2-column side-by-side when user clicks Show Transcript (without stopping audio!).
+    if (hasGraphics || transcriptHtml) {
+      const closedCls = !hasGraphics && !trIsOpen ? 'is-transcript-closed' : '';
       stageHtml = `
-        <div class="ets-cbt-split">
+        <div class="ets-cbt-split ets-listening-split ${closedCls}" data-listening-split="${esc(groupKey)}">
           <div class="ets-doc-pane">
+            ${audioHtml}
             ${graphicHtml}
+            ${transcriptHtml}
           </div>
           <div class="ets-q-pane">
-            ${audioHtml}
             ${qCardsHtml}
-            ${transcriptHtml}
           </div>
         </div>
       `;
@@ -1956,7 +1965,6 @@ function renderExamRoom(box) {
         <div class="ets-cbt-single-col">
           ${audioHtml}
           ${qCardsHtml}
-          ${transcriptHtml}
         </div>
       `;
     }
@@ -2722,6 +2730,10 @@ function bindExamRoomEvents(box, test, page, isReview, isRealExam, showDirection
       if (boxEl) boxEl.classList.toggle('is-open', nowOpen);
       if (bodyEl) bodyEl.hidden = !nowOpen;
       if (cluesBtn) cluesBtn.hidden = !nowOpen;
+      const splitEl = box.querySelector(`[data-listening-split="${key}"]`);
+      if (splitEl && !splitEl.querySelector('.ets-doc-card')) {
+        splitEl.classList.toggle('is-transcript-closed', !nowOpen);
+      }
       btn.textContent = nowOpen ? 'Hide Transcript' : 'Show Transcript';
     });
   });

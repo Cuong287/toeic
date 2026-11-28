@@ -235,6 +235,31 @@ function buildTestPages(num) {
   ];
 }
 
+export const ETS_PART_DIRECTIONS = {
+  1: 'For each photograph, you will hear four short statements played once. Choose the statement (A), (B), (C), or (D) that best matches what is shown in the image.',
+  2: 'You will hear a question or statement followed by three responses, played once. Choose the most appropriate response: (A), (B), or (C).',
+  3: 'You will hear short conversations between two or more speakers, played once. Answer three questions about each conversation by choosing (A), (B), (C), or (D).',
+  4: 'You will hear short talks given by a single speaker, played once. Answer three questions about each talk by choosing (A), (B), (C), or (D).',
+  5: 'Each sentence has one missing word or phrase. Choose the option (A), (B), (C), or (D) that best completes the sentence.',
+  6: 'Read each passage with four numbered blanks. For each blank, choose the word, phrase, or sentence (A), (B), (C), or (D) that best fits the context.',
+  7: 'Read the single, double, and triple passages carefully. Answer each comprehension question by choosing the best option (A), (B), (C), or (D).',
+};
+
+const contentCache = new Map();
+
+export async function loadTestContent(test) {
+  if (!test || !test.contentModule) return null;
+  if (contentCache.has(test.id)) return contentCache.get(test.id);
+  try {
+    const mod = await import(test.contentModule);
+    const content = (mod && mod.TEST_CONTENT) || null;
+    contentCache.set(test.id, content);
+    return content;
+  } catch {
+    return null;
+  }
+}
+
 export const ETS_TESTS = Array.from({ length: 10 }, (_, i) => {
   const num = i + 1;
   const code = pad2(num);
@@ -245,6 +270,8 @@ export const ETS_TESTS = Array.from({ length: 10 }, (_, i) => {
     title: `ETS 2026 — Test ${code}`,
     year: 2026,
     status: 'ready',
+    digitized: num === 1,
+    contentModule: num === 1 ? './ets-data-t01.js?v=55' : null,
     questionsCount: 200,
     durationMin: 120,
     answers: buildAnswers(ans.lc, ans.rc),

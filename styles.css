@@ -4872,7 +4872,6 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
 
 /* Responsive Breakpoints */
 @media (min-width: 1024px) {
-  #ets-palette-toggle,
   #ets-palette-close {
     display: none;
   }
@@ -4948,5 +4947,913 @@ mark{background:var(--mark);color:var(--mark-ink);border-radius:3px;padding:0 2p
   }
   .ets-score-ring strong {
     font-size: 24px;
+  }
+}
+
+/* ==========================================================================
+   Real Computer-Based TOEIC (CBT) Exam Room Styles
+   ========================================================================== */
+
+/* 1. Full-Screen Focus Mode */
+body.ets-focus-mode .side,
+body.ets-focus-mode .mobile-top-bar,
+body.ets-focus-mode .desktop-expand-btn,
+body.ets-focus-mode .side-backdrop {
+  display: none !important;
+}
+
+body.ets-focus-mode .app {
+  grid-template-columns: 1fr !important;
+}
+
+body.ets-focus-mode .main {
+  padding: 0 !important;
+}
+
+body.ets-focus-mode .wrap,
+body.ets-focus-mode .app.side-collapsed .wrap,
+body.ets-focus-mode .wrap:has(.ets-exam-shell) {
+  max-width: 1480px;
+  width: 100%;
+  padding: 12px 18px 24px;
+  gap: 12px;
+}
+
+@media (max-width: 860px) {
+  body.ets-focus-mode .wrap,
+  body.ets-focus-mode .app.side-collapsed .wrap,
+  body.ets-focus-mode .wrap:has(.ets-exam-shell) {
+    padding: 8px 10px 20px;
+  }
+}
+
+/* 2. CBT Sticky Header & Controls */
+.ets-cbt-bar {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+}
+
+.ets-cbt-bar .ets-timer {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.ets-cbt-bar .ets-timer.is-hidden-time {
+  opacity: 0.72;
+  letter-spacing: 0.03em;
+}
+
+.ets-vol-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ets-vol-slider {
+  width: 76px;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+
+.ets-vol-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+}
+
+.ets-timer-toggle {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease;
+}
+
+.ets-timer-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Collapsible Right Palette on Desktop */
+@media (min-width: 1024px) {
+  .ets-workspace.is-palette-hidden {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ets-workspace.is-palette-hidden .ets-palette-pane {
+    display: none;
+  }
+}
+
+/* Centered Single-Column CBT Stage (Part 3/4 without graphic & Part 5) */
+.ets-cbt-single-col {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Setup Mode Info Box */
+.ets-mode-info {
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+}
+
+/* Strict Real Exam Audio Bar */
+.ets-audio-bar.is-cbt-locked {
+  gap: 10px;
+}
+
+.ets-audio-status {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.ets-audio-progress-track {
+  flex: 1 1 140px;
+  min-width: 100px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.ets-audio-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.2s linear;
+}
+
+/* 3. CBT 2-Column Independent-Scroll Split-Pane */
+.ets-cbt-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+}
+
+.ets-doc-pane,
+.ets-q-pane {
+  max-height: calc(100vh - 155px);
+  overflow-y: auto;
+  padding-right: 4px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 959px) {
+  .ets-cbt-split {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .ets-doc-pane,
+  .ets-q-pane {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+}
+
+/* 4. Digitized Document Styling */
+.ets-doc-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.ets-doc-tabs,
+.ets-doc-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ets-doc-tab,
+.ets-hl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.ets-doc-tab:hover,
+.ets-hl-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.ets-doc-tab.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ets-hl-btn.is-active {
+  background: var(--mark);
+  border-color: var(--warn);
+  color: var(--mark-ink);
+}
+
+.ets-doc-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  line-height: 1.65;
+  font-size: 14.5px;
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+.ets-doc-card h3,
+.ets-doc-card h4 {
+  margin: 0 0 10px;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.ets-doc-card h3 {
+  font-size: 16.5px;
+  font-weight: 800;
+}
+
+.ets-doc-card h4 {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.ets-doc-card p {
+  margin: 0 0 11px;
+}
+
+.ets-doc-card p:last-child {
+  margin-bottom: 0;
+}
+
+.ets-doc-card ul,
+.ets-doc-card ol {
+  margin: 0 0 11px;
+  padding-left: 20px;
+}
+
+.ets-doc-card li {
+  margin-bottom: 4px;
+}
+
+.ets-doc-type {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.ets-email-headers {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 14px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13.5px;
+}
+
+.ets-email-headers tr {
+  border-bottom: 1px solid var(--line);
+}
+
+.ets-email-headers tr:last-child {
+  border-bottom: none;
+}
+
+.ets-email-headers th,
+.ets-email-headers td {
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ets-email-headers th {
+  width: 96px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.ets-email-headers td {
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.ets-email-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ets-email-row:last-child {
+  border-bottom: none;
+}
+
+.ets-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ets-chat-msg {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 13px;
+}
+
+.ets-chat-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.ets-chat-sender {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ets-chat-time {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ets-doc-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.ets-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13.5px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.ets-doc-table th,
+.ets-doc-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ets-doc-table th {
+  background: var(--sunk);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ets-blank-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 48px;
+  padding: 1px 8px;
+  margin: 0 2px;
+  border-radius: 6px;
+  border: 1.5px dashed var(--muted);
+  background: var(--sunk);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  cursor: pointer;
+  vertical-align: baseline;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.ets-blank-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ets-blank-pill.is-filled {
+  background: var(--accent-soft);
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ets-blank-pill.is-active {
+  background: var(--accent-soft);
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.ets-ins-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  margin: 0 2px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  vertical-align: baseline;
+}
+
+mark.ets-hl {
+  background: #FEF08A;
+  color: #0F172A;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) mark.ets-hl {
+    background: rgba(250, 204, 21, 0.28);
+    color: inherit;
+  }
+}
+
+:root[data-theme="dark"] mark.ets-hl {
+  background: rgba(250, 204, 21, 0.28);
+  color: inherit;
+}
+
+/* 5. Digitized Question & Option Cards */
+.ets-q-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ets-q-card.is-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+}
+
+.ets-q-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ets-q-prompt {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.ets-q-blank {
+  display: inline-block;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  padding: 0 3px;
+  border-bottom: 2px solid var(--accent);
+}
+
+.ets-opt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ets-opt-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.45;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+}
+
+.ets-opt-card:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.ets-opt-letter {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--sunk);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+
+.ets-opt-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.ets-opt-card.is-selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.ets-opt-card.is-selected .ets-opt-letter {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ets-opt-card.is-correct {
+  background: var(--good-soft);
+  border-color: var(--good);
+}
+
+.ets-opt-card.is-correct .ets-opt-letter {
+  background: var(--good);
+  border-color: var(--good);
+  color: #ffffff;
+}
+
+.ets-opt-card.is-wrong {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+}
+
+.ets-opt-card.is-wrong .ets-opt-letter {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #ffffff;
+}
+
+.ets-opt-card.is-struck {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
+.ets-opt-card.is-struck .ets-opt-text {
+  text-decoration: line-through;
+}
+
+.ets-strike-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s ease, background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.ets-opt-card:hover .ets-strike-btn,
+.ets-opt-card:focus-within .ets-strike-btn,
+.ets-opt-card.is-struck .ets-strike-btn,
+.ets-strike-btn:focus-visible {
+  opacity: 1;
+}
+
+.ets-strike-btn:hover {
+  background: var(--sunk);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+@media (hover: none), (max-width: 860px) {
+  .ets-strike-btn {
+    opacity: 0.75;
+  }
+}
+
+/* 6. Directions Screen, Transcript Box & CBT Catalog Badge */
+.ets-directions-card {
+  max-width: 720px;
+  width: 100%;
+  margin: 20px auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 26px 28px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--ink);
+}
+
+.ets-directions-card h2,
+.ets-directions-card h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.ets-directions-card p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.ets-directions-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.ets-transcript-box {
+  background: var(--sunk);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ets-tr-line {
+  margin: 0;
+}
+
+.ets-tr-speaker {
+  font-weight: 700;
+  color: var(--accent);
+  margin-right: 4px;
+}
+
+.ets-cbt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  white-space: nowrap;
+}
+
+/* Additional CBT Document, Review Status & Transcript Details */
+.ets-doc-intro {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted);
+  padding: 2px 4px;
+}
+
+.ets-doc-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ets-doc-url {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.ets-doc-subtitle {
+  margin: -4px 0 10px;
+  font-size: 13.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ets-doc-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ets-doc-img-wrap {
+  margin: 10px 0;
+}
+
+.ets-chat-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.ets-q-blank.is-filled {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 0 6px;
+}
+
+.ets-q-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ets-q-status.is-good {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.ets-q-status.is-bad {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.ets-q-status.is-skip {
+  background: var(--sunk);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.ets-bubble.is-struck {
+  opacity: 0.38;
+  text-decoration: line-through;
+}
+
+.ets-transcript-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.ets-transcript-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 4px;
+}
+
+.ets-transcript-q {
+  font-size: 13.5px;
+  color: var(--ink);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ets-transcript-line {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.ets-transcript-line.is-correct {
+  background: var(--good-soft);
+  color: var(--good);
+  font-weight: 600;
+}
+
+.ets-transcript-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+@media (max-width: 860px) {
+  .ets-cbt-bar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .ets-doc-card {
+    padding: 14px 14px;
+    font-size: 14px;
+  }
+  .ets-q-card {
+    padding: 12px 12px;
+  }
+  .ets-directions-card {
+    padding: 18px 16px;
+    margin: 10px auto;
   }
 }

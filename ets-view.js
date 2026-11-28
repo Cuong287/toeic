@@ -607,6 +607,7 @@ async function startNewSession(test, { examMode = 'practice', mode, modeLabel, q
     pendingDirectionsPart: isRealExam ? pages[0].part : null,
     audioPlayedTabs: new Set(),
     transcriptOpen: new Set(),
+    checkedQuestions: new Set(),
     activeDocIdx: 0,
   };
 
@@ -670,6 +671,7 @@ async function openReviewForAttempt(attempt) {
     pendingDirectionsPart: null,
     audioPlayedTabs: new Set(),
     transcriptOpen: new Set(),
+    checkedQuestions: new Set(),
     activeDocIdx: 0,
   };
 
@@ -1657,8 +1659,10 @@ function renderDigitizedQuestionCard(q, partId, test, isReview, qData) {
     stemHtml = `<div class="ets-q-prompt">${formattedStem}</div>`;
   }
 
+  const showResult = isReview || Boolean(session && session.checkedQuestions && session.checkedQuestions.has(q));
+
   let reviewStatusHtml = '';
-  if (isReview) {
+  if (showResult) {
     if (!userAns) {
       reviewStatusHtml = `<span class="ets-q-status is-skip">Skipped · Key: ${esc(key)}</span>`;
     } else if (userAns === key) {
@@ -1671,9 +1675,9 @@ function renderDigitizedQuestionCard(q, partId, test, isReview, qData) {
   const optsHtml = options
     .map((opt) => {
       const optText = getOptionText(qData, opt);
-      const struck = !isReview && isOptionStruck(q, opt);
+      const struck = !showResult && isOptionStruck(q, opt);
       const classes = ['ets-opt-card'];
-      if (isReview) {
+      if (showResult) {
         if (opt === key) classes.push('is-correct');
         if (userAns === opt && opt !== key) classes.push('is-wrong');
       } else {
@@ -1687,7 +1691,7 @@ function renderDigitizedQuestionCard(q, partId, test, isReview, qData) {
         <div
           class="${classes.join(' ')}"
           role="radio"
-          tabindex="${isReview ? '-1' : '0'}"
+          tabindex="${showResult ? '-1' : '0'}"
           aria-checked="${userAns === opt}"
           data-opt-card-q="${q}"
           data-opt="${opt}"
@@ -1716,7 +1720,7 @@ function renderDigitizedQuestionCard(q, partId, test, isReview, qData) {
       <div class="ets-q-head">
         <div class="row" style="gap:8px">
           <span class="ets-q-num">Question ${q}</span>
-          ${reviewStatusHtml}
+          <span data-q-status="${q}">${reviewStatusHtml}</span>
         </div>
         <button
           type="button"
@@ -2198,7 +2202,14 @@ function renderExamRoom(box) {
                 <button type="button" class="btn ghost" id="ets-prev-page" ${prevLocked ? 'disabled' : ''}>
                   &larr; Previous
                 </button>
-                <span class="hint">${esc(tabPositionLabel)}</span>
+                <div class="row" style="gap:10px">
+                  <span class="hint">${esc(tabPositionLabel)}</span>
+                  ${
+                    !isReview && !isRealExam
+                      ? `<button type="button" class="btn" id="ets-check-tab">${pageQuestions.length > 1 ? 'Check Answers' : 'Check Answer'}</button>`
+                      : ''
+                  }
+                </div>
                 ${
                   isLastPage
                     ? isReview
@@ -2257,11 +2268,13 @@ function renderQuestionRow(q, partId, test, isReview) {
   const isFlagged = session.flags.has(q);
   const key = getOfficialKey(test, q);
 
+  const showResult = isReview || Boolean(session && session.checkedQuestions && session.checkedQuestions.has(q));
+
   const bubblesHtml = options
     .map((opt) => {
-      const struck = !isReview && isOptionStruck(q, opt);
+      const struck = !showResult && isOptionStruck(q, opt);
       const classes = ['ets-bubble'];
-      if (isReview) {
+      if (showResult) {
         if (opt === key) classes.push('is-correct');
         if (userAns === opt && opt !== key) classes.push('is-wrong');
       } else {
@@ -2275,20 +2288,20 @@ function renderQuestionRow(q, partId, test, isReview) {
           data-q="${q}"
           data-opt="${opt}"
           aria-pressed="${userAns === opt}"
-          ${isReview ? 'disabled' : ''}
+          ${showResult ? 'disabled' : ''}
         >${opt}</button>
       `;
     })
     .join('');
 
   let reviewStatusHtml = '';
-  if (isReview) {
+  if (showResult) {
     if (!userAns) {
-      reviewStatusHtml = `<span style="font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap">Skipped · Key: ${esc(key)}</span>`;
+      reviewStatusHtml = `<span class="ets-q-status is-skip">Skipped · Key: ${esc(key)}</span>`;
     } else if (userAns === key) {
-      reviewStatusHtml = `<span style="font-size:12px;font-weight:700;color:var(--good);white-space:nowrap">Correct</span>`;
+      reviewStatusHtml = `<span class="ets-q-status is-good">Correct</span>`;
     } else {
-      reviewStatusHtml = `<span style="font-size:12px;font-weight:700;color:var(--bad);white-space:nowrap">Your: ${esc(userAns)} · Key: ${esc(key)}</span>`;
+      reviewStatusHtml = `<span class="ets-q-status is-bad">Your: ${esc(userAns)} · Key: ${esc(key)}</span>`;
     }
   }
 
@@ -2299,7 +2312,7 @@ function renderQuestionRow(q, partId, test, isReview) {
         <div class="ets-bubbles" role="group" aria-label="Question ${q} choices">
           ${bubblesHtml}
         </div>
-        ${reviewStatusHtml}
+        <span data-q-status="${q}">${reviewStatusHtml}</span>
       </div>
       <button
         type="button"
@@ -2348,7 +2361,7 @@ function renderPaletteContent(test, isReview, pageQSet) {
         if (isCurrent) classes.push('is-current');
         if (isFlagged) classes.push('is-flagged');
 
-        if (isReview) {
+        if (isReview || (session.checkedQuestions && session.checkedQuestions.has(q))) {
           const key = getOfficialKey(test, q);
           if (!userAns) classes.push('is-skipped');
           else if (userAns === key) classes.push('is-correct');
@@ -2381,6 +2394,7 @@ function renderPaletteContent(test, isReview, pageQSet) {
 
 function selectAnswer(box, q, opt) {
   if (!session || curView !== 'exam') return;
+  if (session.checkedQuestions && session.checkedQuestions.has(q)) return;
   if (session.paused) {
     appShowToast('Resume the exam to record answers.');
     return;
@@ -2810,6 +2824,77 @@ function bindExamRoomEvents(box, test, page, isReview, isRealExam, showDirection
       toggleFlag(box, q);
     });
   });
+
+  // Practice Mode: Check Answers for current tab (in-place, zero audio interruption)
+  const checkTabBtn = box.querySelector('#ets-check-tab');
+  if (checkTabBtn) {
+    checkTabBtn.addEventListener('click', () => {
+      if (!session || curView !== 'exam' || session.isRealExam) return;
+      if (!session.checkedQuestions) session.checkedQuestions = new Set();
+      const pageQs = getPageQuestions(page, session.questionSet);
+      const answeredOnTab = pageQs.filter((q) => Boolean(session.answers[q]));
+      if (!answeredOnTab.length) {
+        appShowToast('Select an answer first.');
+        return;
+      }
+      let correctNow = 0;
+      let checkedNow = 0;
+      answeredOnTab.forEach((q) => {
+        const userAns = session.answers[q];
+        const key = getOfficialKey(test, q);
+        if (!session.checkedQuestions.has(q)) {
+          session.checkedQuestions.add(q);
+          checkedNow++;
+          if (userAns === key) correctNow++;
+        }
+        // Update digitized option cards in-place
+        const card = box.querySelector(`[data-q-card="${q}"]`);
+        if (card) {
+          card.querySelectorAll('[data-opt-card-q]').forEach((el) => {
+            const opt = el.getAttribute('data-opt');
+            el.classList.remove('is-selected', 'is-struck');
+            el.classList.toggle('is-correct', opt === key);
+            el.classList.toggle('is-wrong', userAns === opt && opt !== key);
+            el.setAttribute('tabindex', '-1');
+          });
+        }
+        // Update bubble row in-place
+        const row = box.querySelector(`[data-q-row="${q}"]`);
+        if (row) {
+          row.querySelectorAll('.ets-bubble').forEach((b) => {
+            const opt = b.getAttribute('data-opt');
+            b.classList.remove('is-selected', 'is-struck');
+            b.classList.toggle('is-correct', opt === key);
+            b.classList.toggle('is-wrong', userAns === opt && opt !== key);
+            b.disabled = true;
+          });
+        }
+        // Update status badge in-place
+        const statusSlot = box.querySelector(`[data-q-status="${q}"]`);
+        if (statusSlot) {
+          statusSlot.innerHTML =
+            userAns === key
+              ? `<span class="ets-q-status is-good">Correct</span>`
+              : `<span class="ets-q-status is-bad">Your: ${esc(userAns)} · Key: ${esc(key)}</span>`;
+        }
+        // Update palette button in-place
+        const palBtn = box.querySelector(`[data-palette-q="${q}"]`);
+        if (palBtn) {
+          palBtn.classList.remove('is-answered', 'is-skipped');
+          palBtn.classList.toggle('is-correct', userAns === key);
+          palBtn.classList.toggle('is-wrong', userAns !== key);
+        }
+      });
+
+      if (checkedNow === 0) {
+        appShowToast('Selected answers on this tab are already checked.');
+      } else if (checkedNow === 1) {
+        appShowToast(correctNow === 1 ? 'Correct!' : 'Incorrect — check the highlighted key.');
+      } else {
+        appShowToast(`Checked ${checkedNow} answers: ${correctNow}/${checkedNow} correct.`);
+      }
+    });
+  }
 
   // Review filter in palette
   const reviewFilterSeg = box.querySelector('#ets-review-filter');

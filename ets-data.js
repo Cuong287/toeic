@@ -161,10 +161,22 @@ const TEST_ANSWER_STRINGS = {
   },
 };
 
+// Per-test Part 7 Single Passage question-range overrides where ETS splits differ from Test 01
+const PART7_RANGE_OVERRIDES = {
+  2: { 'p7-4': [153, 155], 'p7-5': [156, 157] },
+};
+
+const DIGITIZED_TESTS = new Set([1, 2, 3]);
+
 function buildTestPages(num) {
   const code = pad2(num);
   const audioPrefix = `audio/ets2026/t${code}/E26-T${code}`;
   const imgDir = `img/ets2026/t${code}`;
+  const ov = PART7_RANGE_OVERRIDES[num] || {};
+  const p7Single = (id, defFrom, defTo, imgs) => {
+    const [qFrom, qTo] = ov[id] || [defFrom, defTo];
+    return { id, part: 7, label: `Part 7 · Q${qFrom}–${qTo}`, images: imgs.map(f => `${imgDir}/${f}`), groups: [{ qFrom, qTo, audio: null }] };
+  };
   return [
     // Part 1 (6 tabs, 1 question & 1 cropped photo per tab)
     ...buildPart1Pages(audioPrefix, imgDir),
@@ -217,16 +229,16 @@ function buildTestPages(num) {
     { id: 'p6-4', part: 6, label: 'Part 6 · Q143–146', images: [`${imgDir}/r_p08.webp`], groups: [{ qFrom: 143, qTo: 146, audio: null }] },
 
     // Part 7 (15 tabs, 1 passage set per tab)
-    { id: 'p7-1', part: 7, label: 'Part 7 · Q147–148', images: [`${imgDir}/r_p09.webp`], groups: [{ qFrom: 147, qTo: 148, audio: null }] },
-    { id: 'p7-2', part: 7, label: 'Part 7 · Q149–150', images: [`${imgDir}/r_p10.webp`], groups: [{ qFrom: 149, qTo: 150, audio: null }] },
-    { id: 'p7-3', part: 7, label: 'Part 7 · Q151–152', images: [`${imgDir}/r_p11.webp`], groups: [{ qFrom: 151, qTo: 152, audio: null }] },
-    { id: 'p7-4', part: 7, label: 'Part 7 · Q153–154', images: [`${imgDir}/r_p12.webp`], groups: [{ qFrom: 153, qTo: 154, audio: null }] },
-    { id: 'p7-5', part: 7, label: 'Part 7 · Q155–157', images: [`${imgDir}/r_p13.webp`], groups: [{ qFrom: 155, qTo: 157, audio: null }] },
-    { id: 'p7-6', part: 7, label: 'Part 7 · Q158–160', images: [`${imgDir}/r_p14.webp`], groups: [{ qFrom: 158, qTo: 160, audio: null }] },
-    { id: 'p7-7', part: 7, label: 'Part 7 · Q161–163', images: [`${imgDir}/r_p15.webp`], groups: [{ qFrom: 161, qTo: 163, audio: null }] },
-    { id: 'p7-8', part: 7, label: 'Part 7 · Q164–167', images: [`${imgDir}/r_p16.webp`], groups: [{ qFrom: 164, qTo: 167, audio: null }] },
-    { id: 'p7-9', part: 7, label: 'Part 7 · Q168–171', images: [`${imgDir}/r_p17.webp`], groups: [{ qFrom: 168, qTo: 171, audio: null }] },
-    { id: 'p7-10', part: 7, label: 'Part 7 · Q172–175', images: [`${imgDir}/r_p18.webp`, `${imgDir}/r_p19.webp`], groups: [{ qFrom: 172, qTo: 175, audio: null }] },
+    p7Single('p7-1', 147, 148, ['r_p09.webp']),
+    p7Single('p7-2', 149, 150, ['r_p10.webp']),
+    p7Single('p7-3', 151, 152, ['r_p11.webp']),
+    p7Single('p7-4', 153, 154, ['r_p12.webp']),
+    p7Single('p7-5', 155, 157, ['r_p13.webp']),
+    p7Single('p7-6', 158, 160, ['r_p14.webp']),
+    p7Single('p7-7', 161, 163, ['r_p15.webp']),
+    p7Single('p7-8', 164, 167, ['r_p16.webp']),
+    p7Single('p7-9', 168, 171, ['r_p17.webp']),
+    p7Single('p7-10', 172, 175, ['r_p18.webp', 'r_p19.webp']),
     { id: 'p7-11', part: 7, label: 'Part 7 · Q176–180 (Double Passage)', images: [`${imgDir}/r_p20.webp`, `${imgDir}/r_p21.webp`], groups: [{ qFrom: 176, qTo: 180, audio: null }] },
     { id: 'p7-12', part: 7, label: 'Part 7 · Q181–185 (Double Passage)', images: [`${imgDir}/r_p22.webp`, `${imgDir}/r_p23.webp`], groups: [{ qFrom: 181, qTo: 185, audio: null }] },
     { id: 'p7-13', part: 7, label: 'Part 7 · Q186–190 (Triple Passage)', images: [`${imgDir}/r_p24.webp`, `${imgDir}/r_p25.webp`], groups: [{ qFrom: 186, qTo: 190, audio: null }] },
@@ -270,8 +282,8 @@ export const ETS_TESTS = Array.from({ length: 10 }, (_, i) => {
     title: `ETS 2026 — Test ${code}`,
     year: 2026,
     status: 'ready',
-    digitized: num === 1,
-    contentModule: num === 1 ? './ets-data-t01.js?v=57' : null,
+    digitized: DIGITIZED_TESTS.has(num),
+    contentModule: DIGITIZED_TESTS.has(num) ? `./ets-data-t${code}.js?v=63` : null,
     questionsCount: 200,
     durationMin: 120,
     answers: buildAnswers(ans.lc, ans.rc),

@@ -166,9 +166,10 @@ const PART7_RANGE_OVERRIDES = {
   2: { 'p7-4': [153, 155], 'p7-5': [156, 157] },
   4: { 'p7-2': [149, 151], 'p7-3': [152, 153], 'p7-4': [154, 156], 'p7-5': [157, 158], 'p7-6': [159, 161], 'p7-7': [162, 163] },
   5: { 'p7-7': [161, 164], 'p7-8': [165, 167] },
+  6: { 'p7-2': [149, 151], 'p7-3': [152, 153], 'p7-4': [154, 157], 'p7-5': [158, 159], 'p7-6': [160, 161], 'p7-7': [162, 164], 'p7-8': [165, 168], 'p7-9': [169, 171] },
 };
 
-const DIGITIZED_TESTS = new Set([1, 2, 3, 4, 5]);
+const DIGITIZED_TESTS = new Set([1, 2, 3, 4, 5, 6, 7]);
 
 function buildTestPages(num) {
   const code = pad2(num);
@@ -285,7 +286,7 @@ export const ETS_TESTS = Array.from({ length: 10 }, (_, i) => {
     year: 2026,
     status: 'ready',
     digitized: DIGITIZED_TESTS.has(num),
-    contentModule: DIGITIZED_TESTS.has(num) ? `./ets-data-t${code}.js?v=64` : null,
+    contentModule: DIGITIZED_TESTS.has(num) ? `./ets-data-t${code}.js?v=65` : null,
     questionsCount: 200,
     durationMin: 120,
     answers: buildAnswers(ans.lc, ans.rc),

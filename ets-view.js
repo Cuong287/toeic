@@ -3,7 +3,7 @@
 import {
   loadTestContent as defaultLoadTestContent,
   ETS_PART_DIRECTIONS as defaultPartDirections,
-} from './ets-data.js?v=55';
+} from './ets-data.js?v=61';
 
 const HISTORY_KEY = 'ets2026_history';
 const VOLUME_KEY = 'ets2026_volume';

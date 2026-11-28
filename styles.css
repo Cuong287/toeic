@@ -5831,7 +5831,50 @@ mark.ets-hl {
 .ets-transcript-line.is-correct {
   background: var(--good-soft);
   color: var(--good);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.ets-tr-evidence {
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--accent-soft);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.ets-transcript-line.is-correct .ets-tr-evidence {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.ets-tr-qtag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  vertical-align: 1px;
+  margin-right: 2px;
+}
+
+.ets-transcript-box.is-hide-clues .ets-tr-evidence {
+  font-weight: 400;
+  background: transparent;
+  padding: 0;
+}
+
+.ets-transcript-box.is-hide-clues .ets-tr-qtag {
+  display: none;
+}
+
+.ets-transcript-box.is-hide-clues .ets-transcript-line.is-correct {
+  background: transparent;
+  color: var(--ink);
+  font-weight: 400;
 }
 
 .ets-transcript-text {

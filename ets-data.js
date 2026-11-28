@@ -271,7 +271,7 @@ export const ETS_TESTS = Array.from({ length: 10 }, (_, i) => {
     year: 2026,
     status: 'ready',
     digitized: num === 1,
-    contentModule: num === 1 ? './ets-data-t01.js?v=55' : null,
+    contentModule: num === 1 ? './ets-data-t01.js?v=57' : null,
     questionsCount: 200,
     durationMin: 120,
     answers: buildAnswers(ans.lc, ans.rc),

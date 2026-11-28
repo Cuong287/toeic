@@ -1472,52 +1472,66 @@ function renderDocCard(doc, idx, totalDocs, partId, content) {
   `;
 }
 
+function formatTranscriptRichText(text) {
+  const safe = esc(text);
+  return safe.replace(/\*\*([\s\S]+?)\*\*/g, (_, inner) => {
+    const withTag = inner.replace(/\[(\d+)\]\s*/g, '<span class="ets-tr-qtag">Q$1</span> ');
+    return `<strong class="ets-tr-evidence">${withTag}</strong>`;
+  });
+}
+
 function renderReviewTranscript(partId, key, test, qNum, content, isReview = true) {
   const tr = getTranscriptData(content, key);
   if (!tr) return '';
   const trKey = String(key);
+  const hideClues = session && session.transcriptHideClues && session.transcriptHideClues.has(trKey);
 
-  // Part 1: 4 statements (A)-(D); expanded & key-highlighted in Review, collapsible without spoiler in Practice
+  // Part 1: 4 statements (A)-(D); bolds the correct statement (toggleable with Hide Clues)
   if (partId === 1) {
-    const officialKey = isReview ? getOfficialKey(test, qNum) : '';
+    const officialKey = getOfficialKey(test, qNum);
     let rowsHtml = '';
     if (typeof tr === 'string') {
-      rowsHtml = `<div class="ets-transcript-text">${esc(tr).replace(/\n/g, '<br />')}</div>`;
+      rowsHtml = `<div class="ets-transcript-text">${formatTranscriptRichText(tr).replace(/\n/g, '<br />')}</div>`;
     } else {
       const map = tr.statements || tr.options || tr;
       rowsHtml = ['A', 'B', 'C', 'D']
         .map((opt) => {
           const line = map[opt];
           if (!line) return '';
-          const isKey = isReview && opt === officialKey;
-          return `<div class="ets-transcript-line ${isKey ? 'is-correct' : ''}"><strong>(${opt})</strong> ${esc(line)}</div>`;
+          const isKey = opt === officialKey;
+          return `<div class="ets-transcript-line ${isKey ? 'is-correct' : ''}"><strong>(${opt})</strong> ${isKey ? `<strong class="ets-tr-evidence">${esc(line)}</strong>` : esc(line)}</div>`;
         })
         .join('');
     }
     const isOpen = isReview || (session && session.transcriptOpen && session.transcriptOpen.has(trKey));
     return `
-      <div class="ets-transcript-box ${isOpen ? 'is-open' : ''}" data-transcript-box="${esc(trKey)}">
+      <div class="ets-transcript-box ${isOpen ? 'is-open' : ''} ${hideClues ? 'is-hide-clues' : ''}" data-transcript-box="${esc(trKey)}">
         <div class="ets-transcript-head">
           <strong>Audio Transcript · Question ${qNum}</strong>
-          ${
-            !isReview
-              ? `<button type="button" class="btn ghost" data-toggle-transcript="${esc(trKey)}" style="padding:3px 8px;font-size:12.5px">
-                  ${isOpen ? 'Hide Transcript' : 'Show Transcript'}
-                </button>`
-              : ''
-          }
+          <div class="row" style="gap:6px">
+            <button type="button" class="btn ghost" data-toggle-clues="${esc(trKey)}" style="padding:3px 8px;font-size:12px" ${isOpen ? '' : 'hidden'}>
+              ${hideClues ? 'Show Clues' : 'Hide Clues'}
+            </button>
+            ${
+              !isReview
+                ? `<button type="button" class="btn ghost" data-toggle-transcript="${esc(trKey)}" style="padding:3px 8px;font-size:12.5px">
+                    ${isOpen ? 'Hide Transcript' : 'Show Transcript'}
+                  </button>`
+                : ''
+            }
+          </div>
         </div>
         <div class="ets-transcript-body" ${isOpen ? '' : 'hidden'}>${rowsHtml}</div>
       </div>
     `;
   }
 
-  // Part 2: Question + (A)/(B)/(C); expanded & key-highlighted in Review, collapsible without spoiler in Practice
+  // Part 2: Question + (A)/(B)/(C); bolds the correct response (toggleable with Hide Clues)
   if (partId === 2) {
-    const officialKey = isReview ? getOfficialKey(test, qNum) : '';
+    const officialKey = getOfficialKey(test, qNum);
     let bodyHtml = '';
     if (typeof tr === 'string') {
-      bodyHtml = `<div class="ets-transcript-text">${esc(tr).replace(/\n/g, '<br />')}</div>`;
+      bodyHtml = `<div class="ets-transcript-text">${formatTranscriptRichText(tr).replace(/\n/g, '<br />')}</div>`;
     } else {
       const qLine = tr.q || tr.question || tr.prompt || '';
       const map = tr.options || tr.responses || tr;
@@ -1526,32 +1540,37 @@ function renderReviewTranscript(partId, key, test, qNum, content, isReview = tru
         .map((opt) => {
           const line = map[opt];
           if (!line) return '';
-          const isKey = isReview && opt === officialKey;
-          return `<div class="ets-transcript-line ${isKey ? 'is-correct' : ''}"><strong>(${opt})</strong> ${esc(line)}</div>`;
+          const isKey = opt === officialKey;
+          return `<div class="ets-transcript-line ${isKey ? 'is-correct' : ''}"><strong>(${opt})</strong> ${isKey ? `<strong class="ets-tr-evidence">${esc(line)}</strong>` : esc(line)}</div>`;
         })
         .join('');
       bodyHtml = qHtml + optsHtml;
     }
     const isOpen = isReview || (session && session.transcriptOpen && session.transcriptOpen.has(trKey));
     return `
-      <div class="ets-transcript-box ${isOpen ? 'is-open' : ''}" data-transcript-box="${esc(trKey)}">
+      <div class="ets-transcript-box ${isOpen ? 'is-open' : ''} ${hideClues ? 'is-hide-clues' : ''}" data-transcript-box="${esc(trKey)}">
         <div class="ets-transcript-head">
           <strong>Audio Transcript · Question ${qNum}</strong>
-          ${
-            !isReview
-              ? `<button type="button" class="btn ghost" data-toggle-transcript="${esc(trKey)}" style="padding:3px 8px;font-size:12.5px">
-                  ${isOpen ? 'Hide Transcript' : 'Show Transcript'}
-                </button>`
-              : ''
-          }
+          <div class="row" style="gap:6px">
+            <button type="button" class="btn ghost" data-toggle-clues="${esc(trKey)}" style="padding:3px 8px;font-size:12px" ${isOpen ? '' : 'hidden'}>
+              ${hideClues ? 'Show Clues' : 'Hide Clues'}
+            </button>
+            ${
+              !isReview
+                ? `<button type="button" class="btn ghost" data-toggle-transcript="${esc(trKey)}" style="padding:3px 8px;font-size:12.5px">
+                    ${isOpen ? 'Hide Transcript' : 'Show Transcript'}
+                  </button>`
+                : ''
+            }
+          </div>
         </div>
         <div class="ets-transcript-body" ${isOpen ? '' : 'hidden'}>${bodyHtml}</div>
       </div>
     `;
   }
 
-  // Part 3 & 4: Collapsible transcript formatted by speaker lines
-  const isOpen = session && session.transcriptOpen && session.transcriptOpen.has(key);
+  // Part 3 & 4: Collapsible transcript formatted by speaker lines with bolded answer evidence
+  const isOpen = session && session.transcriptOpen && session.transcriptOpen.has(trKey);
   let linesHtml = '';
   if (typeof tr === 'string') {
     linesHtml = tr
@@ -1565,7 +1584,7 @@ function renderReviewTranscript(partId, key, test, qNum, content, isReview = tru
       .map((item) => {
         if (typeof item === 'string') return formatSpeakerLine(item);
         const sp = item.speaker ? `<strong>${esc(item.speaker)}:</strong> ` : '';
-        return `<div class="ets-transcript-line">${sp}${esc(item.text || '')}</div>`;
+        return `<div class="ets-transcript-line">${sp}${formatTranscriptRichText(item.text || '')}</div>`;
       })
       .join('');
   } else if (typeof tr === 'object') {
@@ -1574,7 +1593,7 @@ function renderReviewTranscript(partId, key, test, qNum, content, isReview = tru
         .map((item) =>
           typeof item === 'string'
             ? formatSpeakerLine(item)
-            : `<div class="ets-transcript-line">${item.speaker ? `<strong>${esc(item.speaker)}:</strong> ` : ''}${esc(item.text || '')}</div>`
+            : `<div class="ets-transcript-line">${item.speaker ? `<strong>${esc(item.speaker)}:</strong> ` : ''}${formatTranscriptRichText(item.text || '')}</div>`
         )
         .join('');
     } else if (tr.text) {
@@ -1588,12 +1607,17 @@ function renderReviewTranscript(partId, key, test, qNum, content, isReview = tru
   }
 
   return `
-    <div class="ets-transcript-box ${isOpen ? 'is-open' : ''}" data-transcript-box="${esc(key)}">
+    <div class="ets-transcript-box ${isOpen ? 'is-open' : ''} ${hideClues ? 'is-hide-clues' : ''}" data-transcript-box="${esc(trKey)}">
       <div class="ets-transcript-head">
-        <strong>Audio Transcript · Questions ${esc(key)}</strong>
-        <button type="button" class="btn ghost" data-toggle-transcript="${esc(key)}" style="padding:3px 8px;font-size:12.5px">
-          ${isOpen ? 'Hide Transcript' : 'Show Transcript'}
-        </button>
+        <strong>Audio Transcript · Questions ${esc(trKey)}</strong>
+        <div class="row" style="gap:6px">
+          <button type="button" class="btn ghost" data-toggle-clues="${esc(trKey)}" style="padding:3px 8px;font-size:12px" ${isOpen ? '' : 'hidden'}>
+            ${hideClues ? 'Show Clues' : 'Hide Clues'}
+          </button>
+          <button type="button" class="btn ghost" data-toggle-transcript="${esc(trKey)}" style="padding:3px 8px;font-size:12.5px">
+            ${isOpen ? 'Hide Transcript' : 'Show Transcript'}
+          </button>
+        </div>
       </div>
       <div class="ets-transcript-body" ${isOpen ? '' : 'hidden'}>
         ${linesHtml}
@@ -1605,9 +1629,9 @@ function renderReviewTranscript(partId, key, test, qNum, content, isReview = tru
 function formatSpeakerLine(line) {
   const m = line.match(/^([A-Za-z][A-Za-z0-9\s\-]{0,20}):\s*(.+)$/);
   if (m) {
-    return `<div class="ets-transcript-line"><strong>${esc(m[1])}:</strong> ${esc(m[2])}</div>`;
+    return `<div class="ets-transcript-line"><strong>${esc(m[1])}:</strong> ${formatTranscriptRichText(m[2])}</div>`;
   }
-  return `<div class="ets-transcript-line">${esc(line)}</div>`;
+  return `<div class="ets-transcript-line">${formatTranscriptRichText(line)}</div>`;
 }
 
 // ============================================================================
@@ -2685,18 +2709,33 @@ function bindExamRoomEvents(box, test, page, isReview, isRealExam, showDirection
   box.querySelector('#ets-hl-apply')?.addEventListener('click', () => applyPassageHighlight(docPane));
   box.querySelector('#ets-hl-clear')?.addEventListener('click', () => clearPassageHighlights(docPane));
 
-  // Collapsible Transcript toggles (Review Mode Part 3 & 4)
+  // Collapsible Transcript & Evidence Clues toggles
   box.querySelectorAll('[data-toggle-transcript]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const key = btn.getAttribute('data-toggle-transcript');
       const boxEl = box.querySelector(`[data-transcript-box="${key}"]`);
       const bodyEl = boxEl?.querySelector('.ets-transcript-body');
+      const cluesBtn = boxEl?.querySelector(`[data-toggle-clues="${key}"]`);
       const nowOpen = !session.transcriptOpen.has(key);
       if (nowOpen) session.transcriptOpen.add(key);
       else session.transcriptOpen.delete(key);
       if (boxEl) boxEl.classList.toggle('is-open', nowOpen);
       if (bodyEl) bodyEl.hidden = !nowOpen;
+      if (cluesBtn) cluesBtn.hidden = !nowOpen;
       btn.textContent = nowOpen ? 'Hide Transcript' : 'Show Transcript';
+    });
+  });
+
+  box.querySelectorAll('[data-toggle-clues]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-toggle-clues');
+      const boxEl = box.querySelector(`[data-transcript-box="${key}"]`);
+      if (!session.transcriptHideClues) session.transcriptHideClues = new Set();
+      const nowHide = !session.transcriptHideClues.has(key);
+      if (nowHide) session.transcriptHideClues.add(key);
+      else session.transcriptHideClues.delete(key);
+      if (boxEl) boxEl.classList.toggle('is-hide-clues', nowHide);
+      btn.textContent = nowHide ? 'Show Clues' : 'Hide Clues';
     });
   });
 
